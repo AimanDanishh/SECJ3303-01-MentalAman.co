@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpSession;
@@ -39,11 +40,26 @@ public class APISettingsController {
 
     private List<APIKey> initializeMockKeys() {
         return new ArrayList<>(Arrays.asList(
-            new APIKey(1, "AI Coach Service", "sk_live_abc123def456ghi789jkl012mno345pqr678stu901vwx234", "OpenAI GPT-4", "active", "Oct 1, 2025", "2 hours ago"),
-            new APIKey(2, "Email Notifications", "SG.xyz789abc123def456ghi789jkl012mno345pqr678", "SendGrid", "active", "Sep 15, 2025", "5 minutes ago"),
-            new APIKey(3, "Video Call Integration", "app_xyz123_abc456def789ghi012jkl345mno678pqr901", "Zoom API", "active", "Aug 20, 2025", "1 day ago"),
-            new APIKey(4, "SMS Alerts", "AC1234567890abcdef1234567890abcdef12345678", "Twilio", "inactive", "Jul 10, 2025", "1 week ago"),
-            new APIKey(5, "Analytics Service", "ga_tracking_UA-123456789-1", "Google Analytics", "active", "Jun 5, 2025", "30 minutes ago")
+            // USE FAKE/PLACEHOLDER KEYS - NOT REAL ONES!
+            new APIKey(1, "AI Coach Service", 
+                      "sk_test_" + UUID.randomUUID().toString().substring(0, 24), // Fake OpenAI key
+                      "OpenAI GPT-4", "active", "Oct 1, 2025", "2 hours ago"),
+            
+            new APIKey(2, "Email Notifications", 
+                      "SG.test" + UUID.randomUUID().toString().substring(0, 20), // Fake SendGrid key
+                      "SendGrid", "active", "Sep 15, 2025", "5 minutes ago"),
+            
+            new APIKey(3, "Video Call Integration", 
+                      "app_test_" + UUID.randomUUID().toString().substring(0, 20), // Fake Zoom key
+                      "Zoom API", "active", "Aug 20, 2025", "1 day ago"),
+            
+            new APIKey(4, "SMS Alerts", 
+                      "AC" + UUID.randomUUID().toString().substring(0, 32).toUpperCase(), // Fake Twilio key
+                      "Twilio", "inactive", "Jul 10, 2025", "1 week ago"),
+            
+            new APIKey(5, "Analytics Service", 
+                      "UA-test-" + UUID.randomUUID().toString().substring(0, 8), // Fake GA key
+                      "Google Analytics", "active", "Jun 5, 2025", "30 minutes ago")
         ));
     }
 
@@ -129,8 +145,8 @@ public class APISettingsController {
         List<APIKey> keys = getApiKeys(session);
         
         keys.stream().filter(k -> k.getId() == id).findFirst().ifPresent(key -> {
-            // Simulate key regeneration
-            String newKey = "sk_live_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+            // Generate fake key - USE test prefix
+            String newKey = "sk_test_" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
             key.setKey(newKey);
             key.setLastUsed("Never");
             
