@@ -1,5 +1,6 @@
 com\secj3303\model\Referral.class
 com\secj3303\controller\AdminController.class
+com\secj3303\controller\MentalHealthController.class
 com\secj3303\model\APIKey.class
 com\secj3303\model\GamificationData.class
 com\secj3303\model\AssessmentModels$AssessmentAnswers.class
