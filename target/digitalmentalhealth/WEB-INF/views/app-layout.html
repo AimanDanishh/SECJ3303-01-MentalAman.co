@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="|Mental Health Hub - ${currentView}|">Mental Health Hub</title>
+    <!-- Load Tailwind CSS via CDN for development -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Style Injection (Simulating the provided CSS theme) -->
+    <style>
+        :root {
+            /* Using a subset of your provided colors for Tailwind classes */
+            --color-primary: #1f50ff; /* Blue for primary actions */
+            --color-secondary: #8b5cf6; /* Purple for secondary accents */
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        h1 { font-size: 1.5rem; font-weight: 700; }
+        h2 { font-size: 1.25rem; font-weight: 600; }
+        /* Style adjustments for better blending with the provided color scheme */
+        .bg-blue-600 { background-color: var(--color-primary); }
+        .hover\:bg-blue-700:hover { background-color: #173dff; }
+        .text-blue-600 { color: var(--color-primary); }
+        .ring-blue-500:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(31, 80, 255, 0.5); }
+    </style>
+</head>
+<body>
+
+    <!-- Main Container -->
+    <div class="flex min-h-screen">
+
+        <!-- Sidebar Fragment -->
+        <nav th:replace="~{fragments/sidebar :: sidebar(user=${user}, currentView=${currentView})}"></nav>
+
+        <main class="flex-1 overflow-auto">
+            
+            <!-- Mobile Header with Menu Button (Replicates TSX mobile header) -->
+            <div class="lg:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+                <button
+                    onclick="toggleSidebar('open')"
+                    class="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                    <script>document.write('<i data-lucide="menu" class="w-6 h-6 text-slate-600"></i>');</script>
+                </button>
+                <h2 class="font-semibold text-slate-900">Mental Health Hub</h2>
+            </div>
+
+            <!-- Main Content Area (Conditional Rendering replaces React Switch/Case) -->
+            <div class="flex-1">
+                <div th:switch="${currentView}">
+                    
+                    <!-- Core Student & Multi-Role Views -->
+                    <div th:case="'dashboard'" th:replace="~{fragments/dashboard-content :: content}">Dashboard View</div>
+                    <div th:case="'profile'" th:replace="~{fragments/profile-content :: content}">Profile View</div>
+                    <div th:case="'learning'" th:replace="~{fragments/learning-content :: content}">Learning Modules View</div>
+                    <div th:case="'coach'" th:replace="~{fragments/coach-content :: content}">AI Coach View</div>
+                    <div th:case="'forum'" th:replace="~{fragments/peer-support-content :: content}">Peer Support View</div>
+                    <div th:case="'gamification'" th:replace="~{fragments/gamification-content :: content}">Gamification View</div>
+                    <div th:case="'counselling'" th:replace="~{fragments/counselling-session-content :: content}">Counselling Session View</div>
+                    <div th:case="'careplan'" th:replace="~{fragments/careplan-content :: content}">Care Plan View</div>
+
+                    <!-- Administrative & Faculty Views -->
+                    <div th:case="'assessment'" th:replace="~{fragments/self-assessment-content :: content}">Self Assessment View</div>
+                    <div th:case="'analytics'" th:replace="~{fragments/analytics-content :: content}">Student Analytics View</div>
+                    <div th:case="'content'" th:replace="~{fragments/content-management-content :: content}">Content Management View</div>
+                    <div th:case="'referral'" th:replace="~{fragments/referral-content :: content}">At-Risk Referral View</div>
+                    <div th:case="'api'" th:replace="~{fragments/api-settings-content :: content}">API Settings View</div>
+                    <div th:case="'admin'" th:replace="~{fragments/admin-content :: content}">Admin Dashboard View</div>
+
+                    <!-- Default/Login View -->
+                    <div th:case="'login'" th:replace="~{login :: login}">Login Page</div>
+                    
+                    <div th:case="*" class="text-center p-20 text-slate-500">
+                        <h2 class="text-2xl font-bold">404 - Page Not Found</h2>
+                        <p>The requested application view (<span th:text="${currentView}"></span>) could not be loaded.</p>
+                        <a href="/" class="mt-4 inline-block text-blue-600 hover:text-blue-800">Go to Dashboard/Login</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Final Lucide initialization after all HTML is rendered -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+             if (typeof lucide !== 'undefined') {
+                 lucide.createIcons();
+             }
+        });
+    </script>
+</body>
+</html>
