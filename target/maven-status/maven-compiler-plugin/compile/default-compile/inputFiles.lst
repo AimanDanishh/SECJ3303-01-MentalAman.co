@@ -1,11 +1,9 @@
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\LearningModuleData.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Referral.java
-C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\MainController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\User.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\AdminController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\CarePlanModels.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\TeleCounsellingModels.java
-C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\ApiController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\PeerSupportController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PersonDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\APIKey.java
@@ -23,6 +21,7 @@ C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\TestDBController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\StudentEngagement.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\PersonController.java
+C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\ProfileController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\AdminData.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\LearningController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\DashboardData.java

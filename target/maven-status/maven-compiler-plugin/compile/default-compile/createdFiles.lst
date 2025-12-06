@@ -14,6 +14,7 @@ com\secj3303\controller\CounsellingSessionController.class
 com\secj3303\controller\TestDBController.class
 com\secj3303\model\PeerSupportModels.class
 com\secj3303\controller\AnalyticsController.class
+com\secj3303\controller\ProfileController.class
 com\secj3303\model\TeleCounsellingModels$AvailableCounsellor.class
 com\secj3303\model\CarePlanModels$RiskAssessment.class
 com\secj3303\model\CounsellingSessionModels$Counsellor.class
@@ -32,10 +33,8 @@ com\secj3303\model\DashboardData$ActivityItem.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
 com\secj3303\model\CarePlanModels.class
 com\secj3303\model\CounsellingSessionModels.class
-com\secj3303\controller\ApiController.class
 com\secj3303\model\UserProfile.class
 com\secj3303\model\PeerSupportModels$Reply.class
-com\secj3303\controller\MainController.class
 com\secj3303\model\AdminData.class
 com\secj3303\model\AssessmentModels.class
 com\secj3303\model\CounsellingSessionModels$Session.class

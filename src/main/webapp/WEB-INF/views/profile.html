@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="content(user, userProfile)">
+    <h1 class="text-3xl font-bold mb-4">Profile Page</h1>
+
+    <p><strong>Full Name:</strong> <span th:text="${userProfile.fullName}">John Doe</span></p>
+    <p><strong>Email:</strong> <span th:text="${user.email}">test@example.com</span></p>
+    <p><strong>Phone:</strong> <span th:text="${userProfile.phone}">+1 (555) 123-4567</span></p>
+    <p><strong>Location:</strong> <span th:text="${userProfile.location}">San Francisco, CA</span></p>
+    <p><strong>Bio:</strong> <span th:text="${userProfile.bio}">Passionate about mental health...</span></p>
+</th:block>
+</body>
+</html>

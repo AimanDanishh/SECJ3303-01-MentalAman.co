@@ -1,0 +1,208 @@
+<th:block th:fragment="content(upcomingSessions, pastSessions, availableCounsellors)">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+
+    <div class="p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">Counselling Session</h1>
+            <p class="text-slate-600">Book and manage your counselling sessions</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Upcoming Sessions & History (lg:col-span-2) -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Upcoming Sessions -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4 border-b pb-4">
+                            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                <script>document.write('<i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>');</script>
+                                Upcoming Sessions
+                            </h2>
+                            <button class="py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                Book New Session
+                            </button>
+                        </div>
+                        
+                        <div th:if="${upcomingSessions.size() > 0}" class="space-y-4">
+                            <div th:each="session : ${upcomingSessions}" th:class="${session.getCardClass()}" class="p-4 border-2 rounded-lg">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-xl font-semibold">
+                                            <span th:text="${session.initials}"></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-900" th:text="${session.counsellor}"></p>
+                                            <p class="text-slate-600 text-sm" th:text="${session.specialty}"></p>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase bg-green-100 text-green-800">
+                                        <script>document.write('<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i>');</script>
+                                        <span th:text="${session.status}"></span>
+                                    </span>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div class="flex items-center gap-2 text-slate-700">
+                                        <script>document.write('<i data-lucide="calendar" class="w-4 h-4"></i>');</script>
+                                        <span class="text-sm" th:text="${session.date}"></span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-slate-700">
+                                        <script>document.write('<i data-lucide="clock" class="w-4 h-4"></i>');</script>
+                                        <span class="text-sm" th:text="${session.time}"></span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-slate-700">
+                                        <script>document.write('<i data-lucide="video" class="w-4 h-4"></i>');</script>
+                                        <span class="text-sm" th:text="${session.type}"></span>
+                                    </div>
+                                </div>
+
+                                <p th:if="${session.notes}" class="text-slate-600 text-sm mb-3 p-2 bg-white rounded">
+                                    📝 <span th:text="${session.notes}"></span>
+                                </p>
+
+                                <div class="flex gap-2">
+                                    <button class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                        Join Session
+                                    </button>
+                                    <button class="py-2 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm">
+                                        Reschedule
+                                    </button>
+                                    <button class="py-2 px-4 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors text-sm">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div th:unless="${upcomingSessions.size() > 0}" class="text-center py-12">
+                            <script>document.write('<i data-lucide="calendar" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>');</script>
+                            <p class="text-slate-600 mb-4">No upcoming sessions</p>
+                            <button class="py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                Book Your First Session
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Past Sessions -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-slate-900 mb-4 border-b pb-4">Session History</h2>
+                        <div th:if="${pastSessions.size() > 0}" class="space-y-3">
+                            <div th:each="session : ${pastSessions}" class="p-4 bg-slate-50 rounded-lg flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <div class="w-8 h-8 rounded-full bg-slate-300 text-slate-700 text-sm flex items-center justify-center font-semibold">
+                                            <span th:text="${session.initials}"></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-900" th:text="${session.counsellor}"></p>
+                                            <p class="text-slate-600 text-sm" th:text="${session.date} + ' • ' + ${session.time}"></p>
+                                        </div>
+                                    </div>
+                                    <p class="text-slate-700 text-sm" th:text="${session.notes}"></p>
+                                </div>
+                                <button class="ml-4 py-1 px-3 text-blue-600 hover:bg-blue-50 rounded text-sm">
+                                    View Notes
+                                </button>
+                            </div>
+                        </div>
+                        <div th:unless="${pastSessions.size() > 0}" class="text-center py-4">
+                            <p class="text-slate-600">No past sessions recorded.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar / Quick Info -->
+            <div class="space-y-6">
+                <!-- Session Information -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-3">Session Information</h3>
+                        <div class="space-y-4">
+                            <div class="p-3 bg-blue-50 rounded-lg">
+                                <p class="text-blue-900 mb-1">Session Duration</p>
+                                <p class="text-blue-700 text-sm">60 minutes per session</p>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded-lg">
+                                <p class="text-green-900 mb-1">Confidential</p>
+                                <p class="text-green-700 text-sm">All sessions are private and secure</p>
+                            </div>
+                            <div class="p-3 bg-purple-50 rounded-lg">
+                                <p class="text-purple-900 mb-1">Cancel Policy</p>
+                                <p class="text-purple-700 text-sm">Free cancellation 24h before</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Counsellors -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-3">
+                            <script>document.write('<i data-lucide="user" class="w-5 h-5 text-purple-600"></i>');</script>
+                            Available Counsellors
+                        </h3>
+                        <div th:each="counsellor, stat : ${availableCounsellors}" class="p-4 border border-slate-200 rounded-lg hover:shadow-sm transition-shadow mb-3">
+                            <div class="flex items-start gap-3 mb-4">
+                                <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-semibold">
+                                    <span th:text="${counsellor.image}"></span>
+                                </div>
+                                <div>
+                                    <p class="text-slate-900" th:text="${counsellor.name}"></p>
+                                    <p class="text-slate-600 text-sm" th:text="${counsellor.specialty}"></p>
+                                </div>
+                            </div>
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-slate-600">Experience</span>
+                                    <span class="text-slate-900" th:text="${counsellor.experience}"></span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-slate-600">Rating</span>
+                                    <span class="text-slate-900">⭐ <span th:text="${counsellor.rating}"></span></span>
+                                </div>
+                            </div>
+                            <span th:classappend="${counsellor.availability == 'Available Today'} ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                                  class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase mb-4 w-full justify-center">
+                                <span th:text="${counsellor.availability}"></span>
+                            </span>
+                            <button class="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                Book Appointment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Notes -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-3">Progress Notes</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-slate-700 mb-1">Total Sessions</p>
+                                <p class="text-slate-900">12 completed</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-700 mb-1">Current Focus</p>
+                                <p class="text-slate-900">Stress Management</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Final Lucide initialization
+        document.addEventListener('DOMContentLoaded', function() {
+             if (typeof lucide !== 'undefined') {
+                 lucide.createIcons();
+             }
+        });
+    </script>
+</th:block>

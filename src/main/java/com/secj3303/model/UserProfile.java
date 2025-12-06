@@ -4,32 +4,34 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 public class UserProfile implements Serializable {
-    // Basic fields from React formData
+    // Basic fields
     private String fullName;
+    private String email; // <-- added email
     private String phone;
     private String location;
     private String bio;
-    private LocalDate dateOfBirth; // Use LocalDate for proper date handling
+    private LocalDate dateOfBirth;
     private String emergencyContact;
-    
-    // Activity Stats (Simulated)
+
+    // Activity Stats (simulated)
     private int modulesCompleted = 12;
     private int forumPosts = 24;
     private int daysActive = 45;
     private int pointsEarned = 850;
 
-    // Preferences fields from React preferences
+    // Preferences
     private boolean emailNotifications = true;
     private boolean pushNotifications = true;
     private boolean weeklyReport = true;
     private boolean anonymousMode = false;
 
-    // Default Constructor (required for Spring form binding)
+    // Default constructor
     public UserProfile() {}
 
-    // Constructor for initial load (simulated data)
+    // Constructor with email
     public UserProfile(String fullName, String email) {
         this.fullName = fullName;
+        this.email = email; // store email
         this.phone = "+1 (555) 123-4567";
         this.location = "San Francisco, CA";
         this.bio = "Passionate about mental health and wellness. Always learning and growing.";
@@ -37,10 +39,12 @@ public class UserProfile implements Serializable {
         this.emergencyContact = "Jane Doe - +1 (555) 987-6543";
     }
 
-    // --- Getters and Setters (Omitted for brevity, but necessary for Spring/Thymeleaf) ---
-
+    // Getters and Setters
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getEmail() { return email; } // <-- getter for Thymeleaf
+    public void setEmail(String email) { this.email = email; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
@@ -61,8 +65,7 @@ public class UserProfile implements Serializable {
     public int getForumPosts() { return forumPosts; }
     public int getDaysActive() { return daysActive; }
     public int getPointsEarned() { return pointsEarned; }
-    
-    // Preferences
+
     public boolean isEmailNotifications() { return emailNotifications; }
     public void setEmailNotifications(boolean emailNotifications) { this.emailNotifications = emailNotifications; }
 

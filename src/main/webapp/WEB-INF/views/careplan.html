@@ -1,0 +1,319 @@
+<th:block th:fragment="content(userData, riskAssessment, carePlan, planGenerated, completedActivities, totalActivities, progressPercentage, showInsufficientDataWarning, showCounselorAlert)">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+    
+    <div class="p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <script>document.write('<i data-lucide="sparkles" class="w-8 h-8 text-purple-600"></i>');</script>
+                Personalized Care Plan
+            </h1>
+            <p class="text-slate-600">AI-generated wellness plan based on your mental health data and engagement</p>
+        </div>
+
+        <!-- Utility function for icon rendering (Replicates getCategoryIcon) -->
+        <script>
+            function getCategoryIconHtml(category) {
+                let iconName;
+                let colorClass;
+                switch (category) {
+                    case 'self-care': iconName = 'heart'; colorClass = 'text-pink-600'; break;
+                    case 'learning': iconName = 'file-text'; colorClass = 'text-blue-600'; break;
+                    case 'counseling': iconName = 'user'; colorClass = 'text-purple-600'; break;
+                    case 'assessment': iconName = 'bar-chart'; colorClass = 'text-orange-600'; break;
+                    case 'community': iconName = 'target'; colorClass = 'text-green-600'; break;
+                    default: iconName = 'activity'; colorClass = 'text-slate-600'; break;
+                }
+                return `<i data-lucide="${iconName}" class="w-5 h-5 ${colorClass}"></i>`;
+            }
+        </script>
+
+
+        <!-- Insufficient Data Warning (Flash Attribute) -->
+        <div th:if="${showInsufficientDataWarning}" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+            <script>document.write('<i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>');</script>
+            <div class="flex-1">
+                <p class="font-medium text-yellow-900 mb-1">Insufficient Data</p>
+                <p class="text-yellow-800 text-sm mb-3">
+                    We need more information to generate an accurate care plan. Please complete:
+                </p>
+                <ul class="text-yellow-800 text-sm list-disc list-inside space-y-1">
+                    <li>At least one self-assessment</li>
+                    <li>Some mood tracking entries</li>
+                    <li>Engage with learning modules or other features</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Counselor Alert (Flash Attribute) -->
+        <div th:if="${showCounselorAlert}" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <script>document.write('<i data-lucide="bell" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>');</script>
+            <div class="flex-1">
+                <p class="font-medium text-red-900 mb-1">Counselor Notification Sent</p>
+                <p class="text-red-800 text-sm">
+                    Based on your risk assessment, a counselor has been automatically notified and will reach out to you within 24 hours for personalized support.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Data Overview -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <script>document.write('<i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>');</script>
+                            Your Mental Health Data
+                        </h2>
+                        <!-- Data Refresh Button -->
+                        <form th:action="@{/careplan/refresh-data}" method="post">
+                            <button type="submit" class="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                                <script>document.write('<i data-lucide="refresh-cw" class="w-4 h-4"></i>');</script>
+                                Refresh Data
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <p class="text-2xl font-bold text-blue-900" th:text="${userData.assessmentScore}"></p>
+                            <p class="text-sm text-blue-700">Assessment Score</p>
+                        </div>
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <p class="text-2xl font-bold text-purple-900" th:text="${userData.moodEntries}"></p>
+                            <p class="text-sm text-purple-700">Mood Entries</p>
+                        </div>
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <p class="text-2xl font-bold text-green-900" th:text="${userData.engagementLevel} + '%'"></p>
+                            <p class="text-sm text-green-700">Engagement</p>
+                        </div>
+                        <div class="text-center p-4 bg-orange-50 rounded-lg">
+                            <p class="text-2xl font-bold text-orange-900" th:text="${userData.stressIndicators}"></p>
+                            <p class="text-sm text-orange-700">Stress Factors</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-6">
+                        <!-- NF1: Generate Plan Button -->
+                        <form th:action="@{/careplan/generate}" method="post" id="generate-form">
+                            <button type="submit" 
+                                class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
+                                th:classappend="${isGenerating} ? 'disabled:bg-slate-300 disabled:cursor-not-allowed'"
+                            >
+                                <span th:if="${isGenerating}" class="flex items-center gap-2">
+                                    <script>document.write('<i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i>');</script>
+                                    Analyzing Data...
+                                </span>
+                                <span th:unless="${isGenerating}" class="flex items-center gap-2">
+                                    <script>document.write('<i data-lucide="sparkles" class="w-5 h-5"></i>');</script>
+                                    <span th:text="${planGenerated} ? 'Regenerate Care Plan' : 'Generate Care Plan'"></span>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Risk Assessment (Show only if assessment exists) -->
+                <div th:if="${riskAssessment != null}" class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <script>document.write('<i data-lucide="trending-up" class="w-5 h-5 text-purple-600"></i>');</script>
+                            Risk Assessment
+                        </h2>
+                        <span th:class="${riskAssessment.getRiskLevelBadgeClass()}" class="inline-flex items-center rounded-full px-4 py-1 font-semibold uppercase" th:text="${riskAssessment.level} + ' Risk'"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-slate-700">Risk Score</span>
+                            <span class="text-sm font-bold text-slate-900" th:text="${riskAssessment.score} + '/100'"></span>
+                        </div>
+                        <!-- Simple Tailwind progress bar replacement for Shadcn Progress component -->
+                        <div class="w-full bg-slate-200 rounded-full h-3">
+                            <div class="bg-purple-600 h-3 rounded-full" th:style="'width: ' + ${riskAssessment.score} + '%'"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <p class="font-semibold text-slate-900 mb-2">Contributing Factors:</p>
+                            <ul class="space-y-1">
+                                <li th:each="factor : ${riskAssessment.factors}" class="text-sm text-slate-700 flex items-start gap-2">
+                                    <span class="text-orange-600 mt-1">•</span>
+                                    <span th:text="${factor}"></span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="font-semibold text-slate-900 mb-2">Recommendations:</p>
+                            <ul class="space-y-1">
+                                <li th:each="rec : ${riskAssessment.recommendations}" class="text-sm text-slate-700 flex items-start gap-2">
+                                    <script>document.write('<i data-lucide="check-circle" class="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+                                    <span th:text="${rec}"></span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div th:if="${riskAssessment.counselorAlerted}" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-sm text-red-800 flex items-center gap-2">
+                                <script>document.write('<i data-lucide="bell" class="w-4 h-4"></i>');</script>
+                                A counselor has been automatically notified for manual review
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Care Plan Activities (Show only if plan exists) -->
+                <div th:if="${carePlan != null and carePlan.size() > 0}" class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <script>document.write('<i data-lucide="target" class="w-5 h-5 text-purple-600"></i>');</script>
+                            Your Personalized Care Plan
+                        </h2>
+                        <span class="text-sm font-normal text-slate-600" th:text="${completedActivities} + '/' + ${totalActivities} + ' completed'"></span>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-slate-200 rounded-full h-3">
+                            <div class="bg-purple-600 h-3 rounded-full" th:style="'width: ' + ${progressPercentage} + '%'"></div>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-2" th:text="${#numbers.formatDecimal(progressPercentage, 0, 0)} + '% complete'"></p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Activity List -->
+                        <div th:each="activity : ${carePlan}"
+                            th:with="baseClass=${activity.completed} ? 'bg-green-50 border-green-200' : (activity.priority == 'high' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200')"
+                            th:classappend="${baseClass}"
+                            class="p-4 border-2 rounded-lg transition-all">
+                            
+                            <div class="flex items-start gap-3">
+                                <!-- Completion Form/Checkbox -->
+                                <form th:action="@{/careplan/complete}" method="post">
+                                    <input type="hidden" name="activityId" th:value="${activity.id}" />
+                                    <input type="checkbox" 
+                                        name="completed"
+                                        th:checked="${activity.completed}"
+                                        onchange="this.form.submit()"
+                                        class="mt-1 w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                                    />
+                                </form>
+
+                                <div class="flex-1">
+                                    <div class="flex items-start justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <!-- Category Icon -->
+                                            <span th:utext="${#strings.escapeXml(getCategoryIconHtml(activity.category))}"></span>
+                                            
+                                            <h3 th:classappend="${activity.completed} ? 'line-through text-slate-500' : 'text-slate-900'"
+                                                class="font-semibold"
+                                                th:text="${activity.title}">
+                                            </h3>
+                                        </div>
+                                        <!-- Priority Badge -->
+                                        <span th:class="${activity.getPriorityBadgeClass()}" 
+                                            class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase"
+                                            th:text="${activity.priority} + ' Priority'">
+                                        </span>
+                                    </div>
+                                    <p th:classappend="${activity.completed} ? 'text-slate-500' : 'text-slate-700'"
+                                        class="text-sm mb-2" th:text="${activity.description}">
+                                    </p>
+                                    <div th:if="${activity.dueDate != null}" class="text-xs text-slate-600 flex items-center gap-1">
+                                        <script>document.write('<i data-lucide="calendar" class="w-3 h-3"></i>');</script>
+                                        Due: <span th:text="${#dates.format(#dates.createNow(), 'MMM dd, yyyy')}" th:if="${activity.dueDate == null}"></span>
+                                        <span th:text="${activity.dueDate}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-3">How It Works</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-start gap-2">
+                            <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-900 font-bold text-xs">1</span>
+                            </div>
+                            <p class="text-slate-700">System analyzes your assessment data, mood tracking, and engagement</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-900 font-bold text-xs">2</span>
+                            </div>
+                            <p class="text-slate-700">AI determines your risk level based on multiple factors</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-900 font-bold text-xs">3</span>
+                            </div>
+                            <p class="text-slate-700">Personalized care plan is generated with recommended activities</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <div class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-900 font-bold text-xs">4</span>
+                            </div>
+                            <p class="text-slate-700">High-risk users are flagged for counselor intervention</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-3">Risk Levels</h3>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <p class="font-semibold text-green-900 text-sm mb-1">Low Risk</p>
+                            <p class="text-xs text-green-700">Healthy mental wellbeing, continue current practices</p>
+                        </div>
+                        <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="font-semibold text-yellow-900 text-sm mb-1">Medium Risk</p>
+                            <p class="text-xs text-yellow-700">Some concerns, recommended interventions provided</p>
+                        </div>
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="font-semibold text-red-900 text-sm mb-1">High Risk</p>
+                            <p class="text-xs text-red-700">Requires immediate attention, counselor notified</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${planGenerated}" class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-3">Quick Actions</h3>
+                    <div class="space-y-2">
+                        <a href="/counselling" class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm text-center block">
+                            Book Counseling Session
+                        </a>
+                        <a href="/assessment" class="w-full py-2 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm text-center block">
+                            Complete Assessment
+                        </a>
+                        <button class="w-full py-2 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm">
+                            Track Daily Mood
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 border-b pb-3">Privacy Notice</h3>
+                    <p class="text-sm text-slate-700">
+                        Your care plan and risk assessment are confidential and stored securely. Only you and authorized counselors can access this information.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Re-initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</th:block>

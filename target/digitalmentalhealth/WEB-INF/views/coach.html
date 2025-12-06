@@ -1,0 +1,228 @@
+<th:block th:fragment="content(messages, connectionError)">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+
+    <div class="p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <script>document.write('<i data-lucide="sparkles" class="w-8 h-8 text-purple-600"></i>');</script>
+                AI Mental Health Coach
+            </h1>
+            <p class="text-slate-600">Get instant support and guidance for your mental wellbeing</p>
+        </div>
+
+        <!-- Connection Error Alert (Replaces React state) -->
+        <div th:if="${connectionError}" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+            <script>document.write('<i data-lucide="alert-circle" class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>');</script>
+            <div class="flex-1">
+                <p class="font-medium text-yellow-900 mb-1">Connection Lost</p>
+                <p class="text-yellow-800 text-sm">
+                    Your chat history has been saved. Please check your internet connection and try again.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Chat Interface -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 lg:col-span-2">
+                <div class="p-6 border-b">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <script>document.write('<i data-lucide="bot" class="w-6 h-6 text-purple-600"></i>');</script>
+                            Chat with AI Coach
+                        </h2>
+                        <form th:action="@{/coach/clear}" method="post" onsubmit="return confirm('Are you sure you want to clear the chat history? This cannot be undone.');">
+                            <button type="submit" class="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                                <script>document.write('<i data-lucide="refresh-cw" class="w-4 h-4"></i>');</script>
+                                Clear Chat
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div id="messages-container" class="h-[500px] overflow-y-auto p-6 space-y-4">
+                    <div th:each="message : ${messages}"
+                        th:classappend="${message.isUser()} ? 'flex-row-reverse' : ''"
+                        class="flex items-start gap-3">
+                        
+                        <div th:classappend="${message.isAi()} ? 'bg-purple-100' : 'bg-blue-100'"
+                            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div th:if="${message.isAi()}">
+                                <script>document.write('<i data-lucide="bot" class="w-5 h-5 text-purple-600"></i>');</script>
+                            </div>
+                            <div th:if="${message.isUser()}">
+                                <script>document.write('<i data-lucide="user" class="w-5 h-5 text-blue-600"></i>');</script>
+                            </div>
+                        </div>
+                        
+                        <div th:classappend="${message.isUser()} ? 'text-right' : ''"
+                            class="flex-1 max-w-[80%]">
+                            <div th:classappend="${message.isAi()} ? 'bg-slate-100 text-slate-900' : 'bg-blue-600 text-white'"
+                                class="inline-block p-4 rounded-lg">
+                                <p class="whitespace-pre-line" th:text="${message.text}"></p>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1 px-2" th:text="${message.formattedTime}"></p>
+                        </div>
+                    </div>
+
+                    <!-- Typing Indicator: In pure MVC, this would require WebSockets/AJAX for a true effect. 
+                         We omit it for simplicity as the page redirects after sending. 
+                         If the previous message was a user message, we can show a brief "thinking" state before the redirect, 
+                         but for now, we rely on the redirect delay in the Controller. -->
+
+                    <div id="messages-end-ref"></div>
+                </div>
+
+                <!-- Input Area (Form Submission) -->
+                <div class="border-t p-4">
+                    <form th:action="@{/coach/send}" method="post" id="chat-form">
+                        <div class="flex gap-3">
+                            <textarea
+                                id="input-message"
+                                name="inputMessage"
+                                placeholder="Type your message here... (Press Enter to send)"
+                                rows="2"
+                                required
+                                class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                            ></textarea>
+                            <button
+                                type="submit"
+                                id="send-button"
+                                class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                            >
+                                <script>document.write('<i data-lucide="send" class="w-5 h-5"></i>');</script>
+                                Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold mb-3">Quick Topics</h3>
+                        <div class="space-y-2">
+                            <!-- Quick Topic Buttons (Use JS to populate textarea) -->
+                            <button onclick="setInputAndFocus('I\'m feeling stressed about exams')" class="w-full text-left px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm transition-colors">
+                                📚 Exam Stress
+                            </button>
+                            <button onclick="setInputAndFocus('I\'m feeling anxious')" class="w-full text-left px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm transition-colors">
+                                😰 Anxiety
+                            </button>
+                            <button onclick="setInputAndFocus('I can\'t sleep well')" class="w-full text-left px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm transition-colors">
+                                😴 Sleep Issues
+                            </button>
+                            <button onclick="setInputAndFocus('I need help managing stress')" class="w-full text-left px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm transition-colors">
+                                🧘 Stress Management
+                            </button>
+                            <button onclick="setInputAndFocus('I feel lonely')" class="w-full text-left px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm transition-colors">
+                                💔 Loneliness
+                            </button>
+                            <button onclick="setInputAndFocus('Tell me about self-care')" class="w-full text-left px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-sm transition-colors">
+                                💝 Self-Care Tips
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold mb-3">How AI Coach Works</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-start gap-2">
+                                <script>document.write('<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+                                <p class="text-slate-700">24/7 availability for instant support</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <script>document.write('<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+                                <p class="text-slate-700">Confidential and judgment-free</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <script>document.write('<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+                                <p class="text-slate-700">Evidence-based coping strategies</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <script>document.write('<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+                                <p class="text-slate-700">Helps identify when professional support is needed</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <script>document.write('<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+                                <p class="text-slate-700">Chat history saved automatically</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
+                            <script>document.write('<i data-lucide="alert-circle" class="w-5 h-5 text-orange-600"></i>');</script>
+                            Important Note
+                        </h3>
+                        <p class="text-sm text-slate-700 mb-3">
+                            The AI Coach provides general support and guidance, but is not a replacement for professional mental health care.
+                        </p>
+                        <p class="text-sm text-slate-700 mb-3">
+                            For serious concerns or crisis situations, please contact a counselor or emergency services immediately.
+                        </p>
+                        <!-- This button should link to the counseling session view -->
+                        <a href="/counselling" class="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm text-center block">
+                            Book Counselor Session
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-xl shadow-lg">
+                    <div class="pt-6 pb-6">
+                        <div class="text-center">
+                            <script>document.write('<i data-lucide="heart" class="w-12 h-12 text-purple-600 mx-auto mb-3"></i>');</script>
+                            <p class="text-sm text-slate-700 mb-2">
+                                Remember: Seeking support is a sign of strength, not weakness.
+                            </p>
+                            <p class="text-xs text-slate-600">
+                                You're taking an important step in caring for your mental health.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // NF3 & Auto-scroll functionality
+        const messagesContainer = document.getElementById('messages-container');
+        const inputMessage = document.getElementById('input-message');
+        const chatForm = document.getElementById('chat-form');
+
+        // Function to set input message and focus
+        function setInputAndFocus(message) {
+            inputMessage.value = message;
+            inputMessage.focus();
+        }
+
+        // Auto-scroll on page load (essential for MVC chat)
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Handle Enter key to submit form (mimics handleKeyPress)
+        inputMessage.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.submit();
+            }
+        });
+        
+        // This diagram illustrates the transformation of client-side state (React) 
+        // to server-side state (Spring MVC Session) necessary for this conversion.
+        // 
+
+        // Re-initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</th:block>

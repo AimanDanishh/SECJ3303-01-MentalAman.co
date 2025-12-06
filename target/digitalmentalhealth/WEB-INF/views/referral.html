@@ -1,0 +1,240 @@
+<th:block th:fragment="content(students, referrals, reasons, selectedStudent, showForm, formData, showSuccess, showError, errorMessage)">
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+
+    <div class="p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">At-Risk Student Referral</h1>
+            <p class="text-slate-600">Submit referrals for students showing signs of academic or emotional distress</p>
+        </div>
+
+        <!-- Success Alert (using flash attributes) -->
+        <div th:if="${showSuccess}" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+            <script>document.write('<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>');</script>
+            <div class="flex-1">
+                <p class="font-medium text-green-900 mb-1">Referral Submitted Successfully</p>
+                <p class="text-green-700 text-sm">
+                    The assigned counselor has been notified and will review the referral shortly.
+                </p>
+            </div>
+            <!-- Client-side dismissal is omitted; flash attributes naturally disappear on refresh/redirect -->
+        </div>
+
+        <!-- Error Alert (using flash attributes) -->
+        <div th:if="${showError}" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <script>document.write('<i data-lucide="alert-circle" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>');</script>
+            <div class="flex-1">
+                <p class="font-medium text-red-900 mb-1">Error</p>
+                <!-- Error message passed via flash attribute -->
+                <p class="text-red-700 text-sm" th:text="${errorMessage}"></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Column: Student Selection / Referral Form -->
+            <div>
+                <!-- Student Selection Mode -->
+                <div th:unless="${showForm}">
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-4">
+                            <script>document.write('<i data-lucide="user" class="w-5 h-5 text-blue-600"></i>');</script>
+                            Select Student
+                        </h2>
+                        <p class="text-slate-600 text-sm mb-4">Choose a student from your class list to submit a referral</p>
+                        <div class="space-y-3">
+                            <a th:each="student : ${students}"
+                               th:href="@{/referral(studentId=${student.id})}"
+                               class="block p-4 border border-slate-200 rounded-lg hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+                                
+                                <div class="flex items-start gap-3">
+                                    <!-- Avatar/Initials -->
+                                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
+                                        <span th:text="${student.initials}"></span>
+                                    </div>
+                                    
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-slate-900 mb-1" th:text="${student.name}"></h3>
+                                        <p class="text-sm text-slate-600 mb-2" th:text="${student.studentId} + ' • ' + ${student.department}"></p>
+                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <p class="text-slate-500">Grade</p>
+                                                <p class="font-semibold text-slate-900" th:text="${student.currentGrade}"></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-500">Attendance</p>
+                                                <p th:classappend="${student.attendanceColor}" class="font-semibold" th:text="${student.attendance} + '%'"></p>
+                                            </div>
+                                            <div>
+                                                <p class="text-slate-500">Last Active</p>
+                                                <p class="font-semibold text-slate-900" th:text="${student.lastActivity}"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Referral Form Mode -->
+                <div th:if="${showForm}">
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                        <div class="flex items-center justify-between mb-4 border-b pb-4">
+                            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                <script>document.write('<i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>');</script>
+                                Referral Form
+                            </h2>
+                            <!-- Cancel/Close Button -->
+                            <a th:href="@{/referral}" class="text-slate-400 hover:text-slate-600 transition-colors">
+                                <script>document.write('<i data-lucide="x" class="w-5 h-5"></i>');</script>
+                            </a>
+                        </div>
+                        
+                        <!-- Selected Student Info -->
+                        <div th:if="${selectedStudent}" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-sm text-blue-800 mb-1">Student</p>
+                            <p class="font-semibold text-blue-900" th:text="${selectedStudent.name}"></p>
+                            <p class="text-sm text-blue-700" th:text="${selectedStudent.studentId} + ' • ' + ${selectedStudent.department}"></p>
+                        </div>
+
+                        <!-- Referral Form -->
+                        <form th:action="@{/referral/submit}" th:object="${formData}" method="post">
+                            <!-- Hidden field to pass student ID back to the controller -->
+                            <input type="hidden" name="studentId" th:value="${selectedStudent.studentId}" />
+                            
+                            <div class="space-y-6">
+                                <!-- Reason -->
+                                <div>
+                                    <label for="reason" class="block text-sm font-medium text-slate-900 mb-2">
+                                        Reason for Referral <span class="text-red-600">*</span>
+                                    </label>
+                                    <select id="reason" th:field="*{reason}" required 
+                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select a reason</option>
+                                        <option th:each="reason : ${reasons}" th:value="${reason}" th:text="${reason}"></option>
+                                    </select>
+                                </div>
+
+                                <!-- Observations -->
+                                <div>
+                                    <label for="observations" class="block text-sm font-medium text-slate-900 mb-2">
+                                        Observations <span class="text-red-600">*</span>
+                                    </label>
+                                    <textarea id="observations" th:field="*{observations}" required
+                                        placeholder="Describe the specific behaviors, changes, or concerns you have observed..."
+                                        rows="6"
+                                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                    <p class="text-xs text-slate-500 mt-1">Minimum 20 characters</p>
+                                </div>
+
+                                <!-- Urgency Level -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-900 mb-2">Urgency Level</label>
+                                    <div class="flex gap-4">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" th:field="*{urgency}" value="low" class="w-4 h-4 text-blue-600" />
+                                            <span class="ml-2 text-slate-700">Low</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" th:field="*{urgency}" value="medium" class="w-4 h-4 text-blue-600" />
+                                            <span class="ml-2 text-slate-700">Medium</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" th:field="*{urgency}" value="high" class="w-4 h-4 text-blue-600" />
+                                            <span class="ml-2 text-slate-700">High</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Additional Notes -->
+                                <div>
+                                    <label for="additionalNotes" class="block text-sm font-medium text-slate-900 mb-2">
+                                        Additional Notes (Optional)
+                                    </label>
+                                    <textarea id="additionalNotes" th:field="*{additionalNotes}"
+                                        placeholder="Any other relevant information..."
+                                        rows="3"
+                                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex gap-3 pt-4">
+                                    <a th:href="@{/referral}" class="flex-1 py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center">
+                                        Cancel
+                                    </a>
+                                    <button type="submit"
+                                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                        <script>document.write('<i data-lucide="send" class="w-4 h-4"></i>');</script>
+                                        Submit Referral
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Submitted Referrals -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                <div class="p-6">
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-4">
+                        <script>document.write('<i data-lucide="alert-triangle" class="w-5 h-5 text-orange-600"></i>');</script>
+                        Your Submitted Referrals
+                    </h2>
+                    
+                    <div th:if="${referrals.size() > 0}" class="space-y-4">
+                        <div th:each="referral : ${referrals}" class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="font-semibold text-slate-900" th:text="${referral.studentName}"></h3>
+                                    <p class="text-sm text-slate-600" th:text="${referral.studentId}"></p>
+                                </div>
+                                <div class="flex flex-col gap-2 items-end">
+                                    <!-- Urgency Badge -->
+                                    <span th:classappend="${referral.urgencyColor}" 
+                                        class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase"
+                                        th:text="${referral.urgency}">
+                                    </span>
+                                    <!-- Status Badge -->
+                                    <span th:classappend="${referral.statusColor}"
+                                        class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase"
+                                        th:text="${referral.status}">
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-xs text-slate-500">Reason</p>
+                                    <p class="text-sm text-slate-900" th:text="${referral.reason}"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500">Observations</p>
+                                    <p class="text-sm text-slate-700" th:text="${referral.observations}"></p>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-slate-500 pt-2 border-t border-slate-200">
+                                    <script>document.write('<i data-lucide="calendar" class="w-3 h-3"></i>');</script>
+                                    <span>Submitted: <span th:text="${referral.submittedDate}"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:unless="${referrals.size() > 0}" class="text-center py-12">
+                        <script>document.write('<i data-lucide="alert-triangle" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>');</script>
+                        <p class="text-slate-600">No referrals submitted yet</p>
+                        <p class="text-sm text-slate-500 mt-2">Select a student to create your first referral</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Re-initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</th:block>
