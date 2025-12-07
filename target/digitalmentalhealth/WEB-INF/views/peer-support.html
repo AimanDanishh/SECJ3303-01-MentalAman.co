@@ -308,11 +308,18 @@
                     <input type="hidden" th:field="*{postId}" />
                     <div class="space-y-3 mb-4">
                         <div th:each="reason : ${reportReasons}" class="flex flex-col">
-                            <input type="radio" th:id="${reason.value}" th:field="*{reason}" th:value="${reason.value}" required class="hidden" />
+                            <input type="radio" th:id="${reason.value}" th:field="*{reason}" th:value="${reason.value}" 
+                                required class="hidden peer" />
+                            
                             <label th:for="${reason.value}" 
-                                   th:classappend="${reportFormData.reason == reason.value} ? 'border-red-500 bg-red-50' : 'border-slate-200 hover:border-slate-300'"
-                                   class="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-colors">
-                                <span class="w-4 h-4 text-red-600 flex-shrink-0" th:classappend="${reportFormData.reason == reason.value} ? 'opacity-100' : 'opacity-0'">✓</span>
+                                class="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-colors 
+                                        border-slate-200 hover:border-slate-300 
+                                        peer-checked:border-red-500 peer-checked:bg-red-50">
+                                
+                                <span class="w-4 h-4 text-red-600 flex-shrink-0 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                    ✓
+                                </span>
+                                
                                 <span class="ml-3 text-slate-900" th:text="${reason.label}"></span>
                             </label>
                         </div>
@@ -351,3 +358,5 @@
 </th:block>
 </body>
 </html>
+
+th:each="reason : ${reportReasons}"
