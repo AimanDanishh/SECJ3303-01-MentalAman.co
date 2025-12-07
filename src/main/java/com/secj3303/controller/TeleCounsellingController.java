@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.secj3303.model.TeleCounsellingModels;
+import com.secj3303.model.User;
 
 @Controller
 @RequestMapping("/tele-counselling")
@@ -17,6 +18,17 @@ public class TeleCounsellingController {
 
     @GetMapping
     public String teleCounsellingDashboard(Model model, HttpSession session) {
+        
+        // Get user from session
+        User user = (User) session.getAttribute("user");
+        
+        // Check if user is logged in
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        // Add user to model (REQUIRED for app-layout)
+        model.addAttribute("user", user);
         
         // Pass data to the view
         model.addAttribute("upcomingSessions", TeleCounsellingModels.getUpcomingSessions());

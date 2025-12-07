@@ -24,6 +24,7 @@ import com.secj3303.model.AssessmentModels.Assessment;
 import com.secj3303.model.AssessmentModels.AssessmentResult;
 import com.secj3303.model.AssessmentModels.Question;
 import com.secj3303.model.AssessmentModels.StudentData;
+import com.secj3303.model.User;
 import com.secj3303.service.AssessmentService;
 
 @Controller
@@ -84,15 +85,23 @@ public class SelfAssessmentController {
         @RequestParam(defaultValue = "all") String filterRisk,
         Model model, HttpSession session
     ) {
-        // MOCK role setting (use authenticated user role in real app)
-        model.addAttribute("userRole", userRole != null ? userRole : "student"); 
+        // Get user from session FIRST
+        User user = (User) session.getAttribute("user");
+        
+        // If no user, redirect to login
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        // Add user to model
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole()); // Use actual user role, not mock
         
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("activeTab", tab);
         
         // --- FACULTY/COUNSELLOR VIEW ---
-        if ("faculty".equals(userRole) || "counsellor".equals(userRole)) {
-            
+        if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
             List<StudentData> students = getAssignedStudents(session);
             model.addAttribute("assignedStudents", students);
             model.addAttribute("filteredStudents", assessmentService.filterStudents(searchQuery, filterRisk));
@@ -120,7 +129,7 @@ public class SelfAssessmentController {
         
         return "app-layout";
     }
-    
+        
     // --- Assessment Selection and Navigation ---
     
     @GetMapping("/start/{id}")
@@ -158,9 +167,15 @@ public class SelfAssessmentController {
     
     @GetMapping("/question")
     public String displayQuestion(
-        @RequestParam(defaultValue = "0") int q, // current question index
+        @RequestParam(defaultValue = "0") int q,
         Model model, HttpSession session, RedirectAttributes redirect
     ) {
+        // Get user from session
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
         Assessment assessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
         AssessmentModels.AssessmentAnswers answersObject = (AssessmentModels.AssessmentAnswers) session.getAttribute(ANSWERS_KEY);
 
@@ -170,19 +185,23 @@ public class SelfAssessmentController {
         
         Question currentQuestion = assessment.questions.get(q);
         
+        // Add user FIRST
+        model.addAttribute("user", user);
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("assessment", assessment);
         model.addAttribute("currentQuestion", currentQuestion);
         model.addAttribute("currentQuestionIndex", q);
         
         // Pass the raw map to the view for access
-        model.addAttribute("answers", answersObject.answers); 
+        model.addAttribute("answers", answersObject.answers != null ? answersObject.answers : new HashMap<>()); 
         
         model.addAttribute("progress", ((q + 1) / (double) assessment.questions.size()) * 100);
         
         // Provide scale labels dynamically
         if ("scale".equals(currentQuestion.type)) {
-             model.addAttribute("scaleLabels", assessmentService.getScaleLabels(currentQuestion.scaleMax));
+            model.addAttribute("scaleLabels", assessmentService.getScaleLabels(currentQuestion.scaleMax));
+        } else {
+            model.addAttribute("scaleLabels", new ArrayList<>()); // Empty list
         }
 
         return "app-layout";
