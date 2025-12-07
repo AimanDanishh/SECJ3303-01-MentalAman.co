@@ -1,14 +1,181 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<body>
-<th:block th:fragment="content(user, userProfile)">
-    <h1 class="text-3xl font-bold mb-4">Profile Page</h1>
+<div th:fragment="content(user)">
+  <div class="p-8 space-y-6">
 
-    <p><strong>Full Name:</strong> <span th:text="${userProfile.fullName}">John Doe</span></p>
-    <p><strong>Email:</strong> <span th:text="${user.email}">test@example.com</span></p>
-    <p><strong>Phone:</strong> <span th:text="${userProfile.phone}">+1 (555) 123-4567</span></p>
-    <p><strong>Location:</strong> <span th:text="${userProfile.location}">San Francisco, CA</span></p>
-    <p><strong>Bio:</strong> <span th:text="${userProfile.bio}">Passionate about mental health...</span></p>
-</th:block>
-</body>
-</html>
+    <!-- Page Header -->
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900 mb-2">Profile Settings</h1>
+      <p class="text-slate-600">Manage your account information and preferences</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Profile Overview & Stats -->
+      <div class="lg:col-span-1 space-y-6">
+
+        <!-- Profile Overview -->
+        <div class="bg-white p-6 rounded-lg shadow text-center">
+          <div class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+            <span class="text-white text-5xl">👤</span>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900 mb-1" th:text="${user.name}">John Doe</h2>
+          <p class="text-slate-600 text-sm" th:text="${user.email}">test@example.com</p>
+          <p class="text-slate-500 text-sm mt-1" th:text="${user.role}">student</p>
+        </div>
+
+        <!-- Activity Stats -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-semibold mb-4">Activity Stats</h3>
+          <div class="grid grid-cols-2 gap-4 text-center">
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">📚</div>
+              <p class="text-xl font-bold text-slate-900">12</p>
+              <p class="text-xs text-slate-600">Modules Completed</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">💬</div>
+              <p class="text-xl font-bold text-slate-900">24</p>
+              <p class="text-xs text-slate-600">Forum Posts</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">📅</div>
+              <p class="text-xl font-bold text-slate-900">45</p>
+              <p class="text-xs text-slate-600">Days Active</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">🏆</div>
+              <p class="text-xl font-bold text-slate-900">850</p>
+              <p class="text-xs text-slate-600">Points Earned</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Details -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Personal Info -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-semibold mb-4">Personal Information</h3>
+          <form id="profileForm" th:action="@{/profile/update}" th:object="${user}" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Full Name -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <p class="text-slate-900 py-2" id="nameLabel" th:text="${user.name}">John Doe</p>
+              <input type="text" th:field="*{name}" id="nameInput" class="w-full px-4 py-2 border rounded-lg hidden"/>
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <p class="text-slate-900 py-2" id="emailLabel" th:text="${user.email}">test@example.com</p>
+              <input type="email" th:field="*{email}" id="emailInput" class="w-full px-4 py-2 border rounded-lg hidden"/>
+            </div>
+
+            <!-- Phone -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+              <p class="text-slate-900 py-2" id="phoneLabel" th:text="${user.phone}">+1 (555) 123-4567</p>
+              <input type="tel" th:field="*{phone}" id="phoneInput" class="w-full px-4 py-2 border rounded-lg hidden"/>
+            </div>
+
+            <!-- Location -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+              <p class="text-slate-900 py-2" id="locationLabel" th:text="${user.location}">San Francisco, CA</p>
+              <input type="text" th:field="*{location}" id="locationInput" class="w-full px-4 py-2 border rounded-lg hidden"/>
+            </div>
+
+            <!-- DOB -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+              <p class="text-slate-900 py-2" id="dobLabel" th:text="${#dates.format(user.dateOfBirth, 'yyyy-MM-dd')}">1995-06-15</p>
+              <input type="date" th:field="*{dateOfBirth}" id="dobInput" class="w-full px-4 py-2 border rounded-lg hidden"/>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Emergency Contact</label>
+              <p class="text-slate-900 py-2" id="emergencyLabel" th:text="${user.emergencyContact}">Jane Doe - +1 (555) 987-6543</p>
+              <input type="text" th:field="*{emergencyContact}" id="emergencyInput" class="w-full px-4 py-2 border rounded-lg hidden"/>
+            </div>
+
+            <!-- Bio (full width) -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-slate-700 mb-1">Bio</label>
+              <p class="text-slate-900 py-2" id="bioLabel" th:text="${user.bio}">Passionate about mental health...</p>
+              <textarea th:field="*{bio}" id="bioInput" rows="3" class="w-full px-4 py-2 border rounded-lg hidden"></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="md:col-span-2 flex gap-2 mt-2">
+              <button type="button" id="editBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Edit</button>
+              <button type="submit" id="saveBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hidden">Save</button>
+              <button type="button" id="cancelBtn" class="px-4 py-2 border rounded-lg hidden">Cancel</button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Preferences -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-semibold mb-4">Notification Preferences</h3>
+          <form th:action="@{/profile/preferences}" method="post">
+            <div class="space-y-2">
+              <label><input type="checkbox" name="emailNotifications" th:checked="${user.emailNotifications}"/> Email Updates</label>
+              <label><input type="checkbox" name="pushNotifications" th:checked="${user.pushNotifications}"/> Push Notifications</label>
+              <label><input type="checkbox" name="weeklyReport" th:checked="${user.weeklyReport}"/> Weekly Report</label>
+              <label><input type="checkbox" name="anonymousMode" th:checked="${user.anonymousMode}"/> Anonymous Mode</label>
+            </div>
+            <button type="submit" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Preferences</button>
+          </form>
+        </div>
+
+        <!-- Security & Privacy -->
+        <div class="bg-white p-6 rounded-lg shadow space-y-2">
+          <h3 class="text-xl font-semibold mb-2">Security & Privacy</h3>
+          <button class="w-full py-3 px-4 border rounded-lg text-left hover:bg-slate-50">Change Password →</button>
+          <button class="w-full py-3 px-4 border rounded-lg text-left hover:bg-slate-50">Two-Factor Authentication</button>
+          <button class="w-full py-3 px-4 border rounded-lg text-left hover:bg-slate-50 text-red-700 border-red-300">Delete Account</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JS for inline editing -->
+  <script>
+    const editBtn = document.getElementById('editBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    const fields = ['name','email','phone','location','dob','emergency','bio'];
+
+    // store original values
+    const originals = {};
+    fields.forEach(f => {
+      originals[f] = document.getElementById(f+'Label').textContent;
+    });
+
+    editBtn.addEventListener('click', () => {
+      fields.forEach(f => {
+        document.getElementById(f+'Label').classList.add('hidden');
+        document.getElementById(f+'Input').classList.remove('hidden');
+      });
+      editBtn.classList.add('hidden');
+      saveBtn.classList.remove('hidden');
+      cancelBtn.classList.remove('hidden');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      fields.forEach(f => {
+        document.getElementById(f+'Input').value = originals[f];
+        document.getElementById(f+'Label').classList.remove('hidden');
+        document.getElementById(f+'Input').classList.add('hidden');
+      });
+      editBtn.classList.remove('hidden');
+      saveBtn.classList.add('hidden');
+      cancelBtn.classList.add('hidden');
+    });
+  </script>
+</div>
