@@ -1,44 +1,55 @@
-package com.secj3303.controller; // Assuming 'com.example' package based on prior files
+package com.secj3303.controller;
+
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.secj3303.model.PeerSupportModels;
+import com.secj3303.model.PeerSupportModels.ContentCheckResult;
 import com.secj3303.model.PeerSupportModels.Post;
 import com.secj3303.model.PeerSupportModels.Reply;
 import com.secj3303.model.PeerSupportModels.ReportForm;
-import com.secj3303.model.PeerSupportModels.ContentCheckResult;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import javax.servlet.http.HttpSession; // Use jakarta for modern Spring
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.ArrayList; // MISSING IMPORT ADDED
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import com.secj3303.service.AuthenticationService;
 
 @Controller
 @RequestMapping("/forum")
 public class PeerSupportController {
-
+    private final AuthenticationService authenticationService;
     private static final String POSTS_KEY = "forumPosts";
-    private static final String DEFAULT_VIEW = "forum";
-    // NOTE: TIME_FORMATTER is not used in the provided methods, but kept for context.
+    
+    // 1. MATCH FILENAME: This tells app-layout which file to inject (peer-support.html)
+    private static final String DEFAULT_VIEW = "peer-support";
+    
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mm a"); 
 
+    public PeerSupportController(AuthenticationService authenticationService) {
+        this.authenticationService = authenticationService;
+    }
+
     private List<Post> getPosts(HttpSession session) {
+        @SuppressWarnings("unchecked")
         List<Post> posts = (List<Post>) session.getAttribute(POSTS_KEY);
         if (posts == null) {
-            posts = PeerSupportModels.getInitialPosts();
+            posts = new ArrayList<>(PeerSupportModels.getInitialPosts());
             session.setAttribute(POSTS_KEY, posts);
         }
         return posts;
     }
-
-    // --- Main View and Filtering ---
 
     @GetMapping
     public String forumDashboard(
@@ -60,7 +71,6 @@ public class PeerSupportController {
         model.addAttribute("filteredPosts", filteredPosts);
         model.addAttribute("expandedPost", expandedId);
         
-        // --- Modal States (Replaces React useState for modals) ---
         model.addAttribute("showCreatePostModal", "create".equals(modal));
         model.addAttribute("showReportModal", "report".equals(modal) && reportId != null);
         
@@ -68,7 +78,6 @@ public class PeerSupportController {
             Optional<Post> postOpt = allPosts.stream().filter(p -> p.getId() == reportId).findFirst();
             if (postOpt.isPresent()) {
                 model.addAttribute("reportPostId", reportId);
-                // Pre-populate form object for error handling/initial report setup
                 if (!model.containsAttribute("reportFormData")) {
                      ReportForm form = new ReportForm();
                      form.setPostId(reportId);
@@ -79,20 +88,20 @@ public class PeerSupportController {
             }
         }
         
-        // Pass empty post form if creating
         if ("create".equals(modal) && !model.containsAttribute("newPostFormData")) {
              model.addAttribute("newPostFormData", new Post());
         }
-
+        
+        model.addAttribute("user", authenticationService.getAuthenticatedUser(session));
+        
+        // 2. RETURN LAYOUT: load app-layout.html, which will use DEFAULT_VIEW to find peer-support
         return "app-layout";
     }
 
     // --- Create New Post Handler ---
-
     @PostMapping("/create")
     public String handleCreatePost(@ModelAttribute Post newPostFormData, HttpSession session, RedirectAttributes redirect) {
         
-        // --- Content Filter (Server-side) ---
         ContentCheckResult titleCheck = PeerSupportModels.checkContentForHarmfulText(newPostFormData.getTitle());
         ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(newPostFormData.getContent());
         
@@ -102,12 +111,10 @@ public class PeerSupportController {
             redirect.addFlashAttribute("contentWarning", contentCheck.warning);
         }
         
-        // Validation (Replicating TSX logic)
         if (newPostFormData.getTitle() == null || newPostFormData.getTitle().trim().isEmpty() ||
             newPostFormData.getContent() == null || newPostFormData.getContent().trim().isEmpty() ||
             redirect.getFlashAttributes().containsKey("contentWarning")) {
             
-            // Redirect back to the form with data and warning
             redirect.addFlashAttribute("showError", true);
             redirect.addFlashAttribute("newPostFormData", newPostFormData); 
             redirect.addAttribute("modal", "create");
@@ -115,22 +122,22 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
         
-        // Success: Post message anonymously
         List<Post> posts = getPosts(session);
-        AtomicInteger maxId = new AtomicInteger(posts.stream().mapToInt(Post::getId).max().orElse(0));
+        List<Post> mutablePosts = new ArrayList<>(posts);
         
-        // --- FIX: Use Setters to avoid 'private access' error ---
+        AtomicInteger maxId = new AtomicInteger(mutablePosts.stream().mapToInt(Post::getId).max().orElse(0));
+        
         newPostFormData.setId(maxId.incrementAndGet());
         newPostFormData.setAuthor("Anonymous User");
         newPostFormData.setAuthorInitials("AU");
         newPostFormData.setTime("Just now");
         newPostFormData.setLikes(0);
-        newPostFormData.setReplies(new ArrayList<>()); // FIX: Use ArrayList constructor
+        newPostFormData.setReplies(new ArrayList<>());
         newPostFormData.setTrending(false);
         newPostFormData.setHelpful(false);
 
-        posts.add(0, newPostFormData);
-        session.setAttribute(POSTS_KEY, posts);
+        mutablePosts.add(0, newPostFormData);
+        session.setAttribute(POSTS_KEY, mutablePosts);
         
         redirect.addFlashAttribute("alert", "Your post has been published anonymously! ✓");
         redirect.addFlashAttribute("alertType", "success");
@@ -139,7 +146,6 @@ public class PeerSupportController {
     }
 
     // --- Reply Handler ---
-    
     @PostMapping("/reply/{postId}")
     public String handleSubmitReply(@PathVariable int postId, @RequestParam String replyText, HttpSession session, RedirectAttributes redirect) {
         
@@ -150,7 +156,6 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
         
-        // --- Content Filter (Server-side) ---
         ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(replyText);
         if (!contentCheck.isClean) {
             redirect.addFlashAttribute("alert", "Content Warning: " + contentCheck.warning);
@@ -162,11 +167,12 @@ public class PeerSupportController {
         List<Post> posts = getPosts(session);
         posts.stream().filter(p -> p.getId() == postId).findFirst().ifPresent(post -> {
             
-            AtomicInteger maxReplyId = new AtomicInteger(post.getReplies().stream().mapToInt(Reply::getId).max().orElse(0));
+            List<Reply> mutableReplies = new ArrayList<>(post.getReplies());
+            post.setReplies(mutableReplies);
+
+            AtomicInteger maxReplyId = new AtomicInteger(mutableReplies.stream().mapToInt(Reply::getId).max().orElse(0));
 
             Reply newReply = new Reply();
-            
-            // --- FIX: Use Setters for Reply ---
             newReply.setId(maxReplyId.incrementAndGet());
             newReply.setAuthor("Anonymous User");
             newReply.setAuthorInitials("AU");
@@ -174,7 +180,7 @@ public class PeerSupportController {
             newReply.setContent(replyText);
             newReply.setLikes(0);
             
-            post.getReplies().add(newReply);
+            mutableReplies.add(newReply);
             session.setAttribute(POSTS_KEY, posts);
             
             redirect.addFlashAttribute("alert", "Your reply has been posted anonymously! ✓");
@@ -186,7 +192,6 @@ public class PeerSupportController {
     }
     
     // --- Like Handlers ---
-
     @PostMapping("/like/{postId}")
     public String handleLike(@PathVariable int postId, @RequestParam String currentCategory, @RequestParam(required = false) Integer expandedId, HttpSession session) {
         List<Post> posts = getPosts(session);
@@ -195,7 +200,6 @@ public class PeerSupportController {
         });
         session.setAttribute(POSTS_KEY, posts);
         
-        // Maintain view state
         if (expandedId != null) {
             return "redirect:/forum?category=" + currentCategory + "&expandedId=" + expandedId;
         }
@@ -212,12 +216,9 @@ public class PeerSupportController {
         });
         session.setAttribute(POSTS_KEY, posts);
         
-        // Maintain view state
         return "redirect:/forum?category=" + currentCategory + "&expandedId=" + postId;
     }
     
-    // --- Report Handler ---
-
     @PostMapping("/report/submit")
     public String handleSubmitReport(@ModelAttribute ReportForm reportFormData, HttpSession session, RedirectAttributes redirect) {
         
@@ -229,9 +230,6 @@ public class PeerSupportController {
              redirect.addAttribute("reportId", reportFormData.getPostId());
              return "redirect:/forum";
         }
-        
-        // In a real app, this would log the report to an admin dashboard (similar to AtRiskReferral)
-        // We simulate success here.
         
         redirect.addFlashAttribute("alert", "Report submitted successfully! Our moderation team will review this within 24 hours.");
         redirect.addFlashAttribute("alertType", "success");
