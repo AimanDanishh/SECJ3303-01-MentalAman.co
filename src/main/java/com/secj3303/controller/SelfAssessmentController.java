@@ -75,7 +75,6 @@ public class SelfAssessmentController {
 
 
     // --- Main Dashboard/List View ---
-
     @GetMapping
     public String dashboard(
         @RequestParam(required = false) String userRole, // MOCK role
@@ -100,6 +99,16 @@ public class SelfAssessmentController {
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("activeTab", tab);
         
+        // FIX: Check session attributes directly and pass to model
+        Assessment selectedAssessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
+        String showResultsFlag = (String) session.getAttribute("showResultsFlag");
+        boolean showResults = "true".equals(showResultsFlag);
+        
+        // Add the actual objects to model
+        model.addAttribute("selectedAssessment", selectedAssessment); // This is the Assessment object or null
+        model.addAttribute("showResultsFlag", showResultsFlag); // This is the flag
+        model.addAttribute("showResults", showResults); // This is boolean
+        
         // --- FACULTY/COUNSELLOR VIEW ---
         if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
             List<StudentData> students = getAssignedStudents(session);
@@ -109,25 +118,31 @@ public class SelfAssessmentController {
             model.addAttribute("filterRisk", filterRisk);
             
             if (selectStudentId != null) {
-                students.stream().filter(s -> s.id == selectStudentId).findFirst().ifPresent(student -> {
-                    model.addAttribute("selectedStudent", student);
-                });
+                students.stream()
+                    .filter(s -> s.id == selectStudentId)
+                    .findFirst()
+                    .ifPresent(student -> {
+                        model.addAttribute("selectedStudent", student);
+                        // Store in session for later use
+                        session.setAttribute(SELECTED_STUDENT_KEY, student);
+                    });
             }
-            return "app-layout";
+            return "self-assessment";
         }
         
         // --- STUDENT VIEW (Default) ---
         
-        // Reset assessment flow variables
-        session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-        session.removeAttribute(ANSWERS_KEY);
-        session.removeAttribute(SELECTED_STUDENT_KEY);
-
+        // Only reset assessment flow variables if NOT in assessment mode
+        if (selectedAssessment == null && !showResults) {
+            session.removeAttribute(SELECTED_ASSESSMENT_KEY);
+            session.removeAttribute(ANSWERS_KEY);
+            session.removeAttribute(SELECTED_STUDENT_KEY);
+        }
         model.addAttribute("assessments", assessmentService.getAllAssessments());
         model.addAttribute("pastResults", getStudentHistory(session));
         model.addAttribute("savedProgress", session.getAttribute(SAVED_PROGRESS_KEY));
         
-        return "app-layout";
+        return "self-assessment";
     }
         
     // --- Assessment Selection and Navigation ---
