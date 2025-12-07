@@ -100,7 +100,7 @@ public class CounsellingSessionController {
             model.addAttribute("showBookingModal", true);
         }
 
-        return "app-layout";
+        return "counselling-session";
     }
     
     // --- Session Action Handlers (POSTs) ---

@@ -97,11 +97,11 @@
                 </div>
 
                  <!-- Assessment List & History -->
-                <div th:if="${activeTab == 'assessments' and assessment == null and !showResults}">
+                <div th:if="${activeTab == 'assessments' and selectedAssessment == null and !showResults}">
                     <div class="space-y-6">
                         <!-- Available Assessments -->
                         <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-                            <h2 class="text-xl font-bold text-slate-900 mb-4 border-b pb-4">Available Assessments</h2>
+                            <h2 class="text-xl font-bold text-slate-900 mb-4">Available Assessments</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div th:each="assess : ${assessments}" 
                                      th:onclick="'window.location.href=\'' + @{/assessment/start/{id}(id=${assess.id})} + '\''"
@@ -130,7 +130,7 @@
 
                         <!-- Assessment History -->
                         <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-                            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-4">
+                            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4">
                                 <i data-lucide="trending-up" class="w-5 h-5 text-blue-600"></i>
                                 Your Assessment History
                             </h2>
@@ -153,7 +153,7 @@
                                         </div>
                                     </div>
                                     <a th:if="${result.reportAvailable}" 
-                                       th:href="@{/assessment/results}"
+                                       th:href="@{'/assessment/results/' + ${result.id}}"
                                        class="ml-4 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm flex items-center gap-2">
                                         <i data-lucide="file-text" class="w-4 h-4"></i>
                                         View Report
@@ -163,6 +163,215 @@
                             <div th:if="${pastResults == null or pastResults.isEmpty()}" class="text-center py-8 text-slate-500">
                                 <p>No assessment history yet. Complete your first assessment above!</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question View (when taking assessment) -->
+                <div th:if="${selectedAssessment != null and !showResults}">
+                    <div class="max-w-3xl mx-auto">
+                        <div class="bg-white rounded-xl shadow-lg border border-slate-200">
+                            <!-- Card Header -->
+                            <div class="p-6 border-b border-slate-200">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 class="text-xl font-bold text-slate-900" th:text="${assessment.title}"></h2>
+                                        <p class="text-slate-600 text-sm mt-1">
+                                            Question <span th:text="${currentQuestionIndex + 1}"></span> 
+                                            of <span th:text="${assessment.questions.size()}"></span>
+                                        </p>
+                                    </div>
+                                    <a th:href="@{/assessment/clear}"
+                                    class="text-slate-400 hover:text-slate-600 transition-colors">
+                                        <i data-lucide="x" class="w-6 h-6"></i>
+                                    </a>
+                                </div>
+                                
+                                <!-- Progress Bar -->
+                                <div class="w-full bg-slate-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full bg-blue-600 transition-all duration-300" 
+                                        th:style="'width: ' + ${progress} + '%'"></div>
+                                </div>
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="p-6">
+                                <div class="mb-8">
+                                    <h3 class="text-lg font-medium text-slate-900 mb-6" 
+                                        th:text="${currentQuestion.questionText}"></h3>
+
+                                    <!-- Scale Questions -->
+                                    <div th:if="${currentQuestion.type == 'scale'}">
+                                        <div class="space-y-3">
+                                            <!-- Scale Labels Row -->
+                                            <div th:if="${currentQuestion.scaleMax == 5}" class="flex justify-between text-sm text-slate-600 mb-2">
+                                                <span>Not at all</span>
+                                                <span>Several days</span>
+                                                <span>More than half</span>
+                                                <span>Nearly every</span>
+                                                <span class="text-right">Every day</span>
+                                            </div>
+                                            <div th:if="${currentQuestion.scaleMax == 4}" class="flex justify-between text-sm text-slate-600 mb-2">
+                                                <span>Never</span>
+                                                <span>Sometimes</span>
+                                                <span>Often</span>
+                                                <span class="text-right">Always</span>
+                                            </div>
+                                            
+                                            <!-- Radio Options -->
+                                            <div class="space-y-3">
+                                                <div th:each="value : ${#numbers.sequence(0, currentQuestion.scaleMax)}">
+                                                    <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
+                                                                    (${answers.get('q_' + currentQuestion.id)} == value ? 
+                                                                    'border-blue-500 bg-blue-50' : 
+                                                                    'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
+                                                        <input type="radio"
+                                                            th:name="q_${currentQuestion.id}"
+                                                            th:value="${value}"
+                                                            th:checked="${answers.get('q_' + currentQuestion.id) == value}"
+                                                            class="w-5 h-5 text-blue-600"
+                                                            onclick="this.form.submit()">
+                                                        <div class="ml-3">
+                                                            <span class="font-medium text-slate-900" th:text="${value}"></span>
+                                                            <span class="text-slate-600 ml-2" 
+                                                                th:if="${currentQuestion.scaleMax == 5}">
+                                                                <span th:switch="${value}">
+                                                                    <span th:case="0">- Not at all</span>
+                                                                    <span th:case="1">- Several days</span>
+                                                                    <span th:case="2">- More than half the days</span>
+                                                                    <span th:case="3">- Nearly every day</span>
+                                                                    <span th:case="4">- Every day</span>
+                                                                </span>
+                                                            </span>
+                                                            <span class="text-slate-600 ml-2" 
+                                                                th:if="${currentQuestion.scaleMax == 4}">
+                                                                <span th:switch="${value}">
+                                                                    <span th:case="0">- Never</span>
+                                                                    <span th:case="1">- Sometimes</span>
+                                                                    <span th:case="2">- Often</span>
+                                                                    <span th:case="3">- Always</span>
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Multiple Choice Questions -->
+                                    <div th:if="${currentQuestion.type == 'multiple-choice'}">
+                                        <div class="space-y-3">
+                                            <div th:each="option, stat : ${currentQuestion.options}">
+                                                <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
+                                                                (${answers.get('q_' + currentQuestion.id)} == option.value ? 
+                                                                'border-blue-500 bg-blue-50' : 
+                                                                'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
+                                                    <input type="radio"
+                                                        th:name="q_${currentQuestion.id}"
+                                                        th:value="${option.value}"
+                                                        th:checked="${answers.get('q_' + currentQuestion.id) == option.value}"
+                                                        class="w-5 h-5 text-blue-600"
+                                                        onclick="this.form.submit()">
+                                                    <div class="ml-3 flex items-center gap-3">
+                                                        <span th:class="'w-8 h-8 rounded-full flex items-center justify-center ' +
+                                                                    (${answers.get('q_' + currentQuestion.id)} == option.value ? 
+                                                                        'bg-blue-100' : 'bg-slate-100')">
+                                                            <span class="font-medium text-slate-900" 
+                                                                th:text="${#strings.substring('ABCDE', stat.index, stat.index + 1)}"></span>
+                                                        </span>
+                                                        <span th:text="${option.text}" class="text-slate-900"></span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Navigation Buttons -->
+                                <form th:action="@{/assessment/submit}" method="post" class="space-y-4">
+                                    <input type="hidden" name="currentQuestionIndex" th:value="${currentQuestionIndex}">
+                                    
+                                    <div class="flex items-center justify-between gap-4 pt-6 border-t border-slate-200">
+                                        <button type="submit" name="nextStep" value="-1"
+                                                th:disabled="${currentQuestionIndex == 0}"
+                                                th:class="${currentQuestionIndex == 0} ? 
+                                                        'opacity-50 cursor-not-allowed px-6 py-3 border border-slate-300 text-slate-700 rounded-lg' :
+                                                        'px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors'">
+                                            Previous
+                                        </button>
+
+                                        <button type="submit" name="nextStep" value="3"
+                                                class="px-6 py-3 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2">
+                                            <i data-lucide="save" class="w-4 h-4"></i>
+                                            Save Progress
+                                        </button>
+
+                                        <div th:if="${currentQuestionIndex == assessment.questions.size() - 1}">
+                                            <button type="submit" name="nextStep" value="2"
+                                                    class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                                Submit Assessment
+                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                        <div th:unless="${currentQuestionIndex == assessment.questions.size() - 1}">
+                                            <button type="submit" name="nextStep" value="1"
+                                                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Help Text -->
+                        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p class="text-blue-800 text-sm flex items-start gap-2">
+                                <i data-lucide="info" class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"></i>
+                                <span>Your responses are confidential and will be accessible only to authorized counsellors and relevant faculty members.</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                <div th:if="${showResults}" class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4 border-b pb-4">Assessment Complete</h2>
+
+                        <div class="w-32 h-32 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
+                            <i data-lucide="check-circle" class="w-16 h-16 text-green-600"></i>
+                        </div>
+                        
+                        <h3 class="text-2xl font-bold text-slate-900 mb-2">Your Score: <span th:text="${assessmentScore} + '%'"></span></h3>
+                        <span th:with="severity=${assessmentScore < 33 ? 'Mild' : (assessmentScore < 66 ? 'Moderate' : 'Severe')}"
+                              th:classappend="${severity == 'Mild' ? 'bg-green-100 text-green-800' : 
+                                              severity == 'Moderate' ? 'bg-yellow-100 text-yellow-800' : 
+                                              'bg-red-100 text-red-800'}"
+                              class="mb-6 text-lg py-2 px-4 inline-flex items-center rounded-full font-semibold uppercase"
+                              th:text="${severity}">
+                        </span>
+
+                        <div class="p-4 bg-blue-50 rounded-lg mb-6 text-left">
+                            <p class="text-blue-900 font-medium mb-2">Report Summary</p>
+                            <p class="text-blue-800 text-sm">
+                                Your assessment has been completed and saved securely. The report is now available to authorized counsellors 
+                                and relevant faculty members who can provide appropriate support and guidance.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <a th:href="@{/assessment/clear}"
+                                class="flex-1 py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center">
+                                Back to Assessments
+                            </a>
+                            <a th:href="@{/assessment/results}"
+                                th:if="${selectedReport != null}"
+                                class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                                View Full Report
+                            </a>
                         </div>
                     </div>
                 </div>
