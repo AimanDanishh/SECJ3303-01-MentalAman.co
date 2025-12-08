@@ -11,6 +11,54 @@
     
     <!-- Load Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        // Function to handle radio button selection
+        function handleRadioChange(radio) {
+            console.log('Radio changed:', radio.name, radio.value);
+            
+            // Update visual state
+            const labels = document.querySelectorAll('label');
+            labels.forEach(label => {
+                label.classList.remove('border-blue-500', 'bg-blue-50');
+                label.classList.add('border-slate-200');
+            });
+            
+            // Highlight selected option
+            const selectedLabel = radio.closest('label');
+            if (selectedLabel) {
+                selectedLabel.classList.add('border-blue-500', 'bg-blue-50');
+                selectedLabel.classList.remove('border-slate-200');
+            }
+        }
+
+        // Function to set nextStep value before form submission
+        function setNextStep(step) {
+            const input = document.getElementById('nextStepInput');
+            if (input) {
+                input.value = step;
+            }
+            return true; // Allow form submission
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Highlight initially selected radio button
+            const checkedRadios = document.querySelectorAll('input[type="radio"]:checked');
+            checkedRadios.forEach(radio => {
+                const selectedLabel = radio.closest('label');
+                if (selectedLabel) {
+                    selectedLabel.classList.add('border-blue-500', 'bg-blue-50');
+                    selectedLabel.classList.remove('border-slate-200');
+                }
+            });
+            
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
     
     <!-- Custom Style Injection (Simulating the provided CSS theme) -->
     <style>
@@ -196,62 +244,105 @@
 
                             <!-- Card Content -->
                             <div class="p-6">
-                                <div class="mb-8">
-                                    <h3 class="text-lg font-medium text-slate-900 mb-6" 
-                                        th:text="${currentQuestion.questionText}"></h3>
+                                <form th:action="@{/assessment/submit}" method="post" class="space-y-4">
+                                    <div class="mb-8">
+                                        <h3 class="text-lg font-medium text-slate-900 mb-6" 
+                                            th:text="${currentQuestion.text}"></h3>
 
-                                    <!-- Scale Questions -->
-                                    <div th:if="${currentQuestion.type == 'scale'}">
-                                        <div class="space-y-3">
-                                            <!-- Scale Labels Row -->
-                                            <div th:if="${currentQuestion.scaleMax == 5}" class="flex justify-between text-sm text-slate-600 mb-2">
-                                                <span>Not at all</span>
-                                                <span>Several days</span>
-                                                <span>More than half</span>
-                                                <span>Nearly every</span>
-                                                <span class="text-right">Every day</span>
-                                            </div>
-                                            <div th:if="${currentQuestion.scaleMax == 4}" class="flex justify-between text-sm text-slate-600 mb-2">
-                                                <span>Never</span>
-                                                <span>Sometimes</span>
-                                                <span>Often</span>
-                                                <span class="text-right">Always</span>
-                                            </div>
-                                            
-                                            <!-- Radio Options -->
+                                        <!-- Scale Questions -->
+                                        <div th:if="${currentQuestion.type == 'scale'}">
                                             <div class="space-y-3">
-                                                <div th:each="value : ${#numbers.sequence(0, currentQuestion.scaleMax)}">
+                                                <!-- Scale Labels Row - ADDED scaleMax == 3 -->
+                                                <div th:if="${currentQuestion.scaleMax == 3}" class="flex justify-between text-sm text-slate-600 mb-2">
+                                                    <span>Not at all</span>
+                                                    <span>Several days</span>
+                                                    <span>Nearly every day</span>
+                                                </div>
+                                                <div th:if="${currentQuestion.scaleMax == 4}" class="flex justify-between text-sm text-slate-600 mb-2">
+                                                    <span>Never</span>
+                                                    <span>Sometimes</span>
+                                                    <span>Often</span>
+                                                    <span class="text-right">Always</span>
+                                                </div>
+                                                <div th:if="${currentQuestion.scaleMax == 5}" class="flex justify-between text-sm text-slate-600 mb-2">
+                                                    <span>Not at all</span>
+                                                    <span>Several days</span>
+                                                    <span>More than half</span>
+                                                    <span>Nearly every</span>
+                                                    <span class="text-right">Every day</span>
+                                                </div>
+                                                
+                                                <!-- Radio Options - FIXED THE SEQUENCE -->
+                                                <div class="space-y-3">
+                                                    <div th:each="value : ${#numbers.sequence(0, currentQuestion.scaleMax - 1)}">
+                                                        <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
+                                                                        (${answers.get('q_' + currentQuestion.id)} == value ? 
+                                                                        'border-blue-500 bg-blue-50' : 
+                                                                        'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
+                                                            <input type="radio"
+                                                                th:name="'q_' + ${currentQuestion.id}"
+                                                                th:value="${value}"
+                                                                th:checked="${answers.get('q_' + currentQuestion.id) == value}"
+                                                                class="w-5 h-5 text-blue-600"
+                                                                onchange="handleRadioChange(this)">
+                                                            <div class="ml-3">
+                                                                <span class="font-medium text-slate-900" th:text="${value}"></span>
+                                                                <span class="text-slate-600 ml-2">
+                                                                    <!-- ADDED scaleMax == 3 handling -->
+                                                                    <span th:if="${currentQuestion.scaleMax == 3}">
+                                                                        <span th:switch="${value}">
+                                                                            <span th:case="0">- Not at all</span>
+                                                                            <span th:case="1">- Several days</span>
+                                                                            <span th:case="2">- Nearly every day</span>
+                                                                        </span>
+                                                                    </span>
+                                                                    <span th:if="${currentQuestion.scaleMax == 4}">
+                                                                        <span th:switch="${value}">
+                                                                            <span th:case="0">- Never</span>
+                                                                            <span th:case="1">- Sometimes</span>
+                                                                            <span th:case="2">- Often</span>
+                                                                            <span th:case="3">- Always</span>
+                                                                        </span>
+                                                                    </span>
+                                                                    <span th:if="${currentQuestion.scaleMax == 5}">
+                                                                        <span th:switch="${value}">
+                                                                            <span th:case="0">- Not at all</span>
+                                                                            <span th:case="1">- Several days</span>
+                                                                            <span th:case="2">- More than half the days</span>
+                                                                            <span th:case="3">- Nearly every day</span>
+                                                                            <span th:case="4">- Every day</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Multiple Choice Questions -->
+                                        <div th:if="${currentQuestion.type == 'multiple-choice'}">
+                                            <div class="space-y-3">
+                                                <div th:each="option, stat : ${currentQuestion.options}">
                                                     <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
-                                                                    (${answers.get('q_' + currentQuestion.id)} == value ? 
+                                                                    (${answers.get('q_' + currentQuestion.id)} == option.value ? 
                                                                     'border-blue-500 bg-blue-50' : 
                                                                     'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
                                                         <input type="radio"
                                                             th:name="q_${currentQuestion.id}"
-                                                            th:value="${value}"
-                                                            th:checked="${answers.get('q_' + currentQuestion.id) == value}"
+                                                            th:value="${option.value}"
+                                                            th:checked="${answers.get('q_' + currentQuestion.id) == option.value}"
                                                             class="w-5 h-5 text-blue-600"
                                                             onclick="this.form.submit()">
-                                                        <div class="ml-3">
-                                                            <span class="font-medium text-slate-900" th:text="${value}"></span>
-                                                            <span class="text-slate-600 ml-2" 
-                                                                th:if="${currentQuestion.scaleMax == 5}">
-                                                                <span th:switch="${value}">
-                                                                    <span th:case="0">- Not at all</span>
-                                                                    <span th:case="1">- Several days</span>
-                                                                    <span th:case="2">- More than half the days</span>
-                                                                    <span th:case="3">- Nearly every day</span>
-                                                                    <span th:case="4">- Every day</span>
-                                                                </span>
+                                                        <div class="ml-3 flex items-center gap-3">
+                                                            <span th:class="'w-8 h-8 rounded-full flex items-center justify-center ' +
+                                                                        (${answers.get('q_' + currentQuestion.id)} == option.value ? 
+                                                                            'bg-blue-100' : 'bg-slate-100')">
+                                                                <span class="font-medium text-slate-900" 
+                                                                    th:text="${#strings.substring('ABCDE', stat.index, stat.index + 1)}"></span>
                                                             </span>
-                                                            <span class="text-slate-600 ml-2" 
-                                                                th:if="${currentQuestion.scaleMax == 4}">
-                                                                <span th:switch="${value}">
-                                                                    <span th:case="0">- Never</span>
-                                                                    <span th:case="1">- Sometimes</span>
-                                                                    <span th:case="2">- Often</span>
-                                                                    <span th:case="3">- Always</span>
-                                                                </span>
-                                                            </span>
+                                                            <span th:text="${option.text}" class="text-slate-900"></span>
                                                         </div>
                                                     </label>
                                                 </div>
@@ -259,37 +350,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Multiple Choice Questions -->
-                                    <div th:if="${currentQuestion.type == 'multiple-choice'}">
-                                        <div class="space-y-3">
-                                            <div th:each="option, stat : ${currentQuestion.options}">
-                                                <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
-                                                                (${answers.get('q_' + currentQuestion.id)} == option.value ? 
-                                                                'border-blue-500 bg-blue-50' : 
-                                                                'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
-                                                    <input type="radio"
-                                                        th:name="q_${currentQuestion.id}"
-                                                        th:value="${option.value}"
-                                                        th:checked="${answers.get('q_' + currentQuestion.id) == option.value}"
-                                                        class="w-5 h-5 text-blue-600"
-                                                        onclick="this.form.submit()">
-                                                    <div class="ml-3 flex items-center gap-3">
-                                                        <span th:class="'w-8 h-8 rounded-full flex items-center justify-center ' +
-                                                                    (${answers.get('q_' + currentQuestion.id)} == option.value ? 
-                                                                        'bg-blue-100' : 'bg-slate-100')">
-                                                            <span class="font-medium text-slate-900" 
-                                                                th:text="${#strings.substring('ABCDE', stat.index, stat.index + 1)}"></span>
-                                                        </span>
-                                                        <span th:text="${option.text}" class="text-slate-900"></span>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Navigation Buttons -->
-                                <form th:action="@{/assessment/submit}" method="post" class="space-y-4">
+                                    <!-- Navigation Buttons -->
                                     <input type="hidden" name="currentQuestionIndex" th:value="${currentQuestionIndex}">
                                     
                                     <div class="flex items-center justify-between gap-4 pt-6 border-t border-slate-200">

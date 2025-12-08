@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.swing.text.html.Option;
+
 public class AssessmentModels implements Serializable {
 
     // --- Data Structures ---
@@ -15,12 +17,19 @@ public class AssessmentModels implements Serializable {
         public String text;
         public String type; // 'scale' | 'multiple'
         public int scaleMax; // 3 or 4 or 5
+        public List<Option> options;
+        
         public Question(int id, String text, String type, int scaleMax) {
             this.id = id;
             this.text = text;
             this.type = type;
             this.scaleMax = scaleMax;
         }
+
+        public int getId() { return id; }
+        public String getText() { return text; }
+        public String getType() { return type; }
+        public int getScaleMax() { return scaleMax; }
     }
 
     public static class Assessment implements Serializable {
@@ -41,6 +50,14 @@ public class AssessmentModels implements Serializable {
             this.color = color;
             this.questions = questions;
         }
+
+        public int getId() { return id; }
+        public String getTitle() { return title; }
+        public String getDescription() { return description; }
+        public String getCategory() { return category; }
+        public String getDuration() { return duration; }
+        public String getColor() { return color; }
+        public List<Question> getQuestions() { return questions; }
     }
 
     public static class AssessmentResult implements Serializable {
@@ -59,6 +76,13 @@ public class AssessmentModels implements Serializable {
             this.severity = severity;
             this.reportAvailable = reportAvailable;
         }
+
+        public int getId() { return id; }
+        public String getAssessmentTitle() { return assessmentTitle; }
+        public String getDate() { return date; }
+        public int getScore() { return score; }
+        public String getSeverity() { return severity; }
+        public boolean isReportAvailable() { return reportAvailable; }
     }
 
     public static class MoodEntry implements Serializable {

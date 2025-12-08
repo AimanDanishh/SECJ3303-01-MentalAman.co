@@ -200,9 +200,16 @@ public class SelfAssessmentController {
         
         Question currentQuestion = assessment.questions.get(q);
         
-        // Add user FIRST
+        // CRITICAL: Add ALL required model attributes
         model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
         model.addAttribute("currentView", DEFAULT_VIEW);
+        
+        // These are needed for the template's conditional rendering
+        model.addAttribute("selectedAssessment", assessment);  
+        model.addAttribute("showResults", false);             
+        model.addAttribute("showResultsFlag", "false");        
+        
         model.addAttribute("assessment", assessment);
         model.addAttribute("currentQuestion", currentQuestion);
         model.addAttribute("currentQuestionIndex", q);
@@ -246,7 +253,8 @@ public class SelfAssessmentController {
         
         if (formData.containsKey(answerKey)) {
             try {
-                 int answerValue = Integer.parseInt(formData.get(answerKey));
+                 String answerValueStr = formData.get(answerKey);
+                 int answerValue = Integer.parseInt(answerValueStr);
                  // FIX: Insert String key and Integer value into the map
                  sessionAnswers.put(answerKey, answerValue); 
                  session.setAttribute(ANSWERS_KEY, answersObject); // Save the updated object back
@@ -256,7 +264,7 @@ public class SelfAssessmentController {
         }
         
         // 2. Check if answer is required for navigation
-        boolean answered = sessionAnswers.containsKey(currentQuestion.id);
+        boolean answered = sessionAnswers.containsKey(answerKey);
 
         if (nextStep == 1 && !answered) {
             redirect.addFlashAttribute("errorMessage", "Please answer the current question before moving forward.");
@@ -283,52 +291,52 @@ public class SelfAssessmentController {
 
             AssessmentResult result = assessmentService.calculateScore(assessment, answersObject);
 
-// Save result to student history
-List<AssessmentResult> history = getStudentHistory(session);
-history.add(0, result);
-session.setAttribute(HISTORY_KEY, history);
+            // Save result to student history
+            List<AssessmentResult> history = getStudentHistory(session);
+            history.add(0, result);
+            session.setAttribute(HISTORY_KEY, history);
 
-// Clean up session state and show results
-session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-session.removeAttribute(ANSWERS_KEY);
+            // Clean up session state and show results
+            session.removeAttribute(SELECTED_ASSESSMENT_KEY);
+            session.removeAttribute(ANSWERS_KEY);
 
-// Remove from saved progress
-Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
-if (savedProgress != null) {
-    savedProgress.remove(assessment.id);
-    session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
-}
-
-// Redirect to view the specific result
-return "redirect:/assessment/results/" + result.id;
-        } 
-        
-        else if (nextStep == 3) { 
-            // SAVE PROGRESS
+            // Remove from saved progress
             Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
-            if (savedProgress == null) {
-                 savedProgress = new HashMap<>();
+            if (savedProgress != null) {
+                savedProgress.remove(assessment.id);
+                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+            }
+
+            // Redirect to view the specific result
+            return "redirect:/assessment/results/" + result.id;
+                    } 
+        
+            else if (nextStep == 3) { 
+                // SAVE PROGRESS
+                Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
+                if (savedProgress == null) {
+                    savedProgress = new HashMap<>();
+                }
+                
+                AssessmentModels.AssessmentAnswers progress = new AssessmentModels.AssessmentAnswers();
+                progress.answers = sessionAnswers;
+                progress.assessmentId = assessment.id;
+                progress.currentQuestionIndex = currentQuestionIndex;
+
+                savedProgress.put(assessment.id, progress);
+                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+                
+                redirect.addFlashAttribute("alert", "✓ Progress saved! You can resume this assessment later.");
+                redirect.addFlashAttribute("alertType", "success");
+                return "redirect:/assessment";
             }
             
-            AssessmentModels.AssessmentAnswers progress = new AssessmentModels.AssessmentAnswers();
-            progress.answers = sessionAnswers;
-            progress.assessmentId = assessment.id;
-            progress.currentQuestionIndex = currentQuestionIndex;
-
-            savedProgress.put(assessment.id, progress);
-            session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
-            
-            redirect.addFlashAttribute("alert", "✓ Progress saved! You can resume this assessment later.");
-            redirect.addFlashAttribute("alertType", "success");
-            return "redirect:/assessment";
+            else {
+                // NEXT/PREVIOUS NAVIGATION
+                int newIndex = currentQuestionIndex + nextStep;
+                return "redirect:/assessment/question?q=" + newIndex;
+            }
         }
-        
-        else {
-            // NEXT/PREVIOUS NAVIGATION
-            int newIndex = currentQuestionIndex + nextStep;
-            return "redirect:/assessment/question?q=" + newIndex;
-        }
-    }
 
     // --- Results View (Redirect target after submission) ---
 

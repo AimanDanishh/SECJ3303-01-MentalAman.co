@@ -80,94 +80,145 @@
                 <!-- NF2: Display list of scheduled sessions -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white rounded-xl shadow-lg border border-slate-200 lg:col-span-2">
-                        <div class="p-6 border-b border-slate-200">
-                            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <div class="p-6 border-slate-200">
+                            <h2 class="text-xl text-slate-600 flex items-center gap-2">
                                 <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
                                 Your Sessions
                             </h2>
                         </div>
+                        
                         <div class="p-6 space-y-4">
                             <div th:if="${sessions != null and !sessions.isEmpty()}">
+                                <!-- Loop through sessions -->
                                 <div th:each="session : ${sessions}" 
                                     th:class="'p-4 border-2 rounded-lg ' + 
-                                            ${session.status == 'completed' ? 'bg-slate-50 border-slate-200' :
-                                                session.status == 'cancelled' ? 'bg-red-50 border-red-200' :
-                                                session.status == 'confirmed' ? 'bg-green-50 border-green-200' :
-                                                'bg-blue-50 border-blue-200'}">
+                                            ${session.status == 'completed'} ? 'bg-slate-50 border-slate-200' :
+                                            ${session.status == 'cancelled'} ? 'bg-red-50 border-red-200' :
+                                            ${session.status == 'confirmed'} ? 'bg-green-50 border-green-200' :
+                                            'bg-blue-50 border-blue-200'"
+                                    class="p-4 border-2 rounded-lg">
+                                    
                                     <div class="flex items-start justify-between mb-3">
                                         <div class="flex items-start gap-3">
-                                            <div th:class="'w-10 h-10 rounded-full flex items-center justify-center ' +
-                                                        ${session.status == 'cancelled' ? 'bg-red-200 text-red-700' :
-                                                            session.status == 'completed' ? 'bg-slate-300 text-slate-700' :
-                                                            'bg-blue-600 text-white'}">
-                                                <span class="font-medium" th:text="${session.counsellorId}"></span>
+                                            <div th:class="${session.status == 'cancelled'} ? 'bg-red-200 text-red-700' :
+                                                        ${session.status == 'completed'} ? 'bg-slate-300 text-slate-700' :
+                                                        'bg-blue-600 text-white'"
+                                                class="w-10 h-10 rounded-full flex items-center justify-center font-bold">
+                                                <span th:text="${session.counsellorId}"></span>
                                             </div>
                                             <div>
-                                                <p class="font-medium text-slate-900" th:text="${session.counsellor}"></p>
+                                                <p class="text-slate-900 font-medium" th:text="${session.counsellor}"></p>
                                                 <p class="text-slate-600 text-sm" th:text="${session.specialty}"></p>
                                             </div>
                                         </div>
-                                        <span th:class="'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ' +
-                                                    ${session.status == 'completed' ? 'bg-slate-200 text-slate-800' :
-                                                        session.status == 'cancelled' ? 'bg-red-200 text-red-800' :
-                                                        session.status == 'confirmed' ? 'bg-green-200 text-green-800' :
-                                                        'bg-blue-200 text-blue-800'}"
-                                            th:text="${session.status}"></span>
+                                        
+                                        <!-- Status Badge -->
+                                        <span th:text="${session.status}"
+                                            th:class="${session.status == 'completed'} ? 'bg-slate-200 text-slate-700' :
+                                                        ${session.status == 'cancelled'} ? 'bg-red-200 text-red-700' :
+                                                        ${session.status == 'confirmed'} ? 'bg-green-200 text-green-700' :
+                                                        'bg-blue-200 text-blue-700'"
+                                            class="text-xs font-semibold px-2 py-1 rounded-full">
+                                        </span>
                                     </div>
                                     
+                                    <!-- Session Details Grid -->
                                     <div class="grid grid-cols-2 gap-4 mb-3">
                                         <div class="flex items-center gap-2 text-slate-700">
-                                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                                            <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
                                             <span class="text-sm" th:text="${session.date}"></span>
                                         </div>
                                         <div class="flex items-center gap-2 text-slate-700">
-                                            <i data-lucide="clock" class="w-4 h-4"></i>
+                                            <i data-lucide="clock" class="w-4 h-4 text-slate-500"></i>
                                             <span class="text-sm" th:text="${session.time}"></span>
                                         </div>
                                         <div class="flex items-center gap-2 text-slate-700">
-                                            <i data-lucide="video" class="w-4 h-4"></i>
+                                            <i data-lucide="video" class="w-4 h-4 text-slate-500"></i>
                                             <span class="text-sm" th:text="${session.type}"></span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-slate-700">
+                                            <i data-lucide="user-check" class="w-4 h-4 text-slate-500"></i>
+                                            <span class="text-sm" th:text="${session.studentConfirmed} ? 'Confirmed' : 'Not Confirmed'"
+                                                th:class="${session.studentConfirmed} ? 'text-green-600' : 'text-slate-500'">
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div th:if="${session.notes}" class="text-slate-600 text-sm mb-3 p-2 bg-white rounded border border-slate-200">
-                                        <i data-lucide="sticky-note" class="w-4 h-4 inline-block mr-1"></i>
+                                    <!-- Notes -->
+                                    <div th:if="${session.notes != null and !session.notes.isEmpty()}" 
+                                        class="text-slate-600 text-sm mb-3 p-2 bg-white rounded border border-slate-100">
+                                        <i data-lucide="sticky-note" class="w-4 h-4 inline mr-1 text-slate-400"></i>
                                         <span th:text="${session.notes}"></span>
                                     </div>
 
-                                    <div th:if="${session.cancellationReason}" class="text-red-700 text-sm mb-3 p-2 bg-red-100 rounded border border-red-200">
-                                        <i data-lucide="x-circle" class="w-4 h-4 inline-block mr-1"></i>
-                                        <span>Cancelled: <span th:text="${session.cancellationReason}"></span></span>
+                                    <!-- Cancellation Reason -->
+                                    <div th:if="${session.cancellationReason != null and !session.cancellationReason.isEmpty()}" 
+                                        class="text-red-700 text-sm mb-3 p-2 bg-red-100 rounded border border-red-200">
+                                        <i data-lucide="x-circle" class="w-4 h-4 inline mr-1 text-red-600"></i>
+                                        <span th:text="'Cancelled: ' + ${session.cancellationReason}"></span>
+                                    </div>
+
+                                    <!-- Report Content (if available) -->
+                                    <div th:if="${session.reportAvailable and session.reportContent != null}" 
+                                        class="text-slate-600 text-sm mb-3 p-2 bg-slate-50 rounded border border-slate-200">
+                                        <i data-lucide="file-text" class="w-4 h-4 inline mr-1 text-slate-400"></i>
+                                        <span th:text="${#strings.substring(session.reportContent, 0, 100)} + '...'"></span>
                                     </div>
 
                                     <!-- Action Buttons -->
                                     <div class="flex gap-2">
-                                        <a th:href="@{'/sessions/details/' + ${session.id}}"
+                                        <a th:href="@{'/counselling?detailId=' + ${session.id}}"
                                         class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm text-center">
                                             View Details
                                         </a>
                                         
                                         <a th:if="${session.reportAvailable}"
-                                        th:href="@{'/sessions/report/' + ${session.id}}"
+                                        th:href="@{'/counselling?detailId=' + ${session.id} + '&modal=report'}"
                                         class="py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center justify-center gap-2">
                                             <i data-lucide="file-text" class="w-4 h-4"></i>
                                             Report
+                                        </a>
+                                        
+                                        <!-- Confirm Button (only for scheduled sessions not confirmed) -->
+                                        <form th:if="${session.status == 'scheduled' and !session.studentConfirmed}"
+                                            th:action="@{'/counselling/confirm/' + ${session.id}}" 
+                                            method="post" 
+                                            class="flex-1">
+                                            <button type="submit"
+                                                    class="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                                Confirm Attendance
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Cancel Button (only for scheduled/confirmed sessions) -->
+                                        <a th:if="${session.status == 'scheduled' or session.status == 'confirmed'}"
+                                        th:href="@{'/counselling?detailId=' + ${session.id} + '&modal=cancel'}"
+                                        class="py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                                            Cancel
+                                        </a>
+                                        
+                                        <!-- Reschedule Button (only for scheduled/confirmed sessions) -->
+                                        <a th:if="${session.status == 'scheduled' or session.status == 'confirmed'}"
+                                        th:href="@{'/counselling?detailId=' + ${session.id} + '&modal=reschedule'}"
+                                        class="py-2 px-4 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm">
+                                            Reschedule
                                         </a>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div th:if="${sessions == null or sessions.isEmpty()}" class="text-center py-12">
+                            <!-- No Sessions Message -->
+                            <div th:unless="${sessions != null and !sessions.isEmpty()}" class="text-center py-12">
                                 <i data-lucide="calendar" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
                                 <p class="text-slate-600 mb-4">No sessions scheduled</p>
-                                <a th:href="@{/sessions/book}"
+                                <a th:href="@{/counselling?modal=book}"
                                 class="inline-block py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                     Book Your First Session
                                 </a>
                             </div>
                         </div>
                     </div>
-                </div>
+                   </div>
 
             </div>
         </main>
