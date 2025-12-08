@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.secj3303.model.User;
-import com.secj3303.model.UserProfile;
 import com.secj3303.service.AuthenticationService;
 
 @Controller

@@ -1,6 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
 <th:block th:fragment="content(user)">
-    <section>
-        <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-        <p>Welcome to your dashboard. Access quick links and overview here.</p>
-    </section>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+
+    <div class="p-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">
+                Welcome back, <span th:text="${user != null ? user.name : 'Student'}">Student</span>! 👋
+            </h1>
+            <p class="text-slate-600">Here's your mental health journey overview</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div th:each="stat : ${studentStats}" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                        <i th:data-lucide="${stat.icon}" class="w-6 h-6 text-blue-600"></i>
+                    </div>
+                    <span class="text-xl font-bold text-slate-900" th:text="${stat.value}">0</span>
+                </div>
+                <p class="text-slate-600" th:text="${stat.label}">Label</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-2 space-y-6">
+                
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-semibold text-lg text-slate-900">Learning Progress</h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-700">Stress Management</span>
+                                <span class="text-slate-600">85%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-slate-900 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-700">Anxiety Awareness</span>
+                                <span class="text-slate-600">60%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-slate-900 h-2 rounded-full" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-700">Mindfulness Basics</span>
+                                <span class="text-slate-600">45%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-slate-900 h-2 rounded-full" style="width: 45%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-700">Depression Understanding</span>
+                                <span class="text-slate-600">30%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2">
+                                <div class="bg-slate-900 h-2 rounded-full" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-semibold text-lg text-slate-900">Recent Activities</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div th:each="activity : ${recentActivities}" 
+                                 class="flex items-start gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                                
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="book-open" class="w-5 h-5 text-blue-600" th:if="${activity.type == 'learning'}"></i>
+                                    <i data-lucide="target" class="w-5 h-5 text-green-600" th:if="${activity.type == 'assessment'}"></i>
+                                    <i data-lucide="users" class="w-5 h-5 text-purple-600" th:if="${activity.type == 'community'}"></i>
+                                    <i data-lucide="brain-circuit" class="w-5 h-5 text-orange-600" th:if="${activity.type == 'ai'}"></i>
+                                    <i data-lucide="activity" class="w-5 h-5 text-slate-600" 
+                                       th:if="${activity.type != 'learning' and activity.type != 'assessment' and activity.type != 'community' and activity.type != 'ai'}"></i>
+                                </div>
+                                
+                                <div class="flex-1">
+                                    <p class="text-slate-900 font-medium" th:text="${activity.title}"></p>
+                                    <p class="text-slate-500 text-sm" th:text="${activity.time}"></p>
+                                </div>
+                            </div>
+                            <div th:if="${recentActivities == null or recentActivities.empty}" class="text-center text-slate-400 py-2">
+                                No recent activities found.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-semibold text-lg text-slate-900 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                            Upcoming Events
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div th:each="event : ${upcomingEvents}" class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-slate-900 font-medium mb-1" th:text="${event.title}">Event Title</p>
+                            <p class="text-slate-600 text-sm" th:text="${event.date}">Date</p>
+                            <p class="text-slate-600 text-sm" th:text="${event.time}">Time</p>
+                        </div>
+                        <div th:if="${upcomingEvents == null or upcomingEvents.empty}" class="text-center text-slate-400 py-2">
+                            No upcoming events.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 class="font-semibold text-lg text-slate-900">Quick Actions</h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <a href="/digitalmentalhealth/self-assessment" class="block w-full p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all text-center font-medium shadow-md hover:shadow-lg">
+                            Daily Mood Check-in
+                        </a>
+                        <a href="/digitalmentalhealth/ai-coach" class="block w-full p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all text-center font-medium shadow-md hover:shadow-lg">
+                            Chat with AI Coach
+                        </a>
+                        <a href="/digitalmentalhealth/counselling" class="block w-full p-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all text-center font-medium shadow-md hover:shadow-lg">
+                            Book Counselling
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
 </th:block>
+
+</body>
+</html>
