@@ -14,6 +14,7 @@ com\secj3303\controller\CounsellingSessionController.class
 com\secj3303\controller\TestDBController.class
 com\secj3303\model\PeerSupportModels.class
 com\secj3303\controller\AnalyticsController.class
+com\secj3303\controller\ProfileController.class
 com\secj3303\model\TeleCounsellingModels$AvailableCounsellor.class
 com\secj3303\model\CarePlanModels$RiskAssessment.class
 com\secj3303\model\CounsellingSessionModels$Counsellor.class
