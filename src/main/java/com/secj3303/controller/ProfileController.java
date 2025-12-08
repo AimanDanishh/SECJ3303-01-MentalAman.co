@@ -46,11 +46,16 @@ public class ProfileController {
             return "redirect:/login";
         }
 
-        // Update in session (you can later store in DB)
+        // Copy updated fields into the existing session user
         user.setName(updatedUser.getName());
         user.setEmail(updatedUser.getEmail());
-        user.setRole(updatedUser.getRole());
+        user.setPhone(updatedUser.getPhone());
+        user.setLocation(updatedUser.getLocation());
+        user.setDateOfBirth(updatedUser.getDateOfBirth());
+        user.setEmergencyContact(updatedUser.getEmergencyContact());
+        user.setBio(updatedUser.getBio());
 
+        // Save back to session
         session.setAttribute("currentUser", user);
 
         model.addAttribute("user", user);
@@ -59,6 +64,7 @@ public class ProfileController {
 
         return "app-layout";
     }
+
 
     @PostMapping("/profile/preferences")
     public String updatePreferences(
