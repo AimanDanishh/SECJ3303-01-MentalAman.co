@@ -60,5 +60,22 @@
         });
     </script>
 
+    <script>
+        function toggleSidebar(action) {
+            const sidebar = document.querySelector('nav'); // Assuming your sidebar <nav> is the target
+            const backdrop = document.getElementById('sidebar-backdrop'); // If you have a backdrop
+            
+            // Simple logic to toggle a 'hidden' or 'translate' class
+            // You'll need to ensure your sidebar fragment handles these classes
+            if (action === 'open') {
+                sidebar.classList.remove('-translate-x-full');
+                // Show backdrop if it exists
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                // Hide backdrop
+            }
+        }
+    </script>
+
 </body>
 </html>

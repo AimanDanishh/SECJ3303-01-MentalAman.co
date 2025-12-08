@@ -1,5 +1,5 @@
-<th:block th:fragment="content(userPoints, nextLevelPoints, currentLevel, progressPercentage, badges, leaderboard, recentAchievements, pointsActivities)">
-    <!-- Load Lucide Icons -->
+<th:block th:fragment="content">
+    
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
 
@@ -10,42 +10,50 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Level & Points -->
             <div class="bg-white rounded-xl shadow-lg border border-slate-200 lg:col-span-2 p-6">
                 <div class="flex items-center justify-between mb-4 border-b pb-4">
                     <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        <script>document.write('<i data-lucide="trophy" class="w-5 h-5 text-yellow-600"></i>');</script>
+                        <i data-lucide="trophy" class="w-5 h-5 text-yellow-600"></i>
                         Your Progress
                     </h2>
-                    <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-3 py-1 font-semibold text-lg">Level <span th:text="${currentLevel}"></span></span>
+                    <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-3 py-1 font-semibold text-lg">
+                        Level <span th:text="${currentLevel}">1</span>
+                    </span>
                 </div>
                 
                 <div class="space-y-6">
                     <div>
                         <div class="flex justify-between mb-2">
                             <span class="text-slate-700">Total Points</span>
-                            <span class="text-slate-900"><span th:text="${userPoints}"></span> / <span th:text="${nextLevelPoints}"></span> XP</span>
+                            <span class="text-slate-900">
+                                <span th:text="${userPoints}">0</span> / <span th:text="${nextLevelPoints}">1000</span> XP
+                            </span>
                         </div>
-                        <!-- Progress Bar -->
                         <div class="w-full bg-slate-200 rounded-full h-3">
-                            <div class="bg-purple-600 h-3 rounded-full" th:style="'width: ' + ${progressPercentage} + '%'"></div>
+                            <div class="bg-purple-600 h-3 rounded-full" 
+                                 th:style="'width: ' + ${progressPercentage} + '%'"></div>
                         </div>
-                        <p class="text-slate-600 text-sm mt-2"><span th:text="${nextLevelPoints - userPoints}"></span> points to Level <span th:text="${currentLevel + 1}"></span></p>
+                        <p class="text-slate-600 text-sm mt-2">
+                            <span th:text="${nextLevelPoints - userPoints}">100</span> points to Level <span th:text="${currentLevel + 1}">2</span>
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4">
                         <div class="p-4 bg-blue-50 rounded-lg text-center">
-                            <script>document.write('<i data-lucide="zap" class="w-8 h-8 text-blue-600 mx-auto mb-2"></i>');</script>
-                            <p class="text-3xl font-bold text-blue-900 mb-1" th:text="${userPoints}"></p>
+                            <i data-lucide="zap" class="w-8 h-8 text-blue-600 mx-auto mb-2"></i>
+                            <p class="text-3xl font-bold text-blue-900 mb-1" th:text="${userPoints}">0</p>
                             <p class="text-slate-600 text-sm">Total Points</p>
                         </div>
+                        
                         <div class="p-4 bg-purple-50 rounded-lg text-center">
-                            <script>document.write('<i data-lucide="award" class="w-8 h-8 text-purple-600 mx-auto mb-2"></i>');</script>
-                            <p class="text-3xl font-bold text-purple-900 mb-1" th:text="${badges.stream().filter(b -> b.earned).count()}"></p>
+                            <i data-lucide="award" class="w-8 h-8 text-purple-600 mx-auto mb-2"></i>
+                            <p class="text-3xl font-bold text-purple-900 mb-1" 
+                                th:text="${badges != null ? badges.?[earned].size() : 0}">0</p>
                             <p class="text-slate-600 text-sm">Badges Earned</p>
                         </div>
+                        
                         <div class="p-4 bg-green-50 rounded-lg text-center">
-                            <script>document.write('<i data-lucide="target" class="w-8 h-8 text-green-600 mx-auto mb-2"></i>');</script>
+                            <i data-lucide="target" class="w-8 h-8 text-green-600 mx-auto mb-2"></i>
                             <p class="text-3xl font-bold text-green-900 mb-1">12</p>
                             <p class="text-slate-600 text-sm">Day Streak</p>
                         </div>
@@ -53,10 +61,9 @@
                 </div>
             </div>
 
-            <!-- Recent Achievements -->
             <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
                 <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-4">
-                    <script>document.write('<i data-lucide="star" class="w-5 h-5 text-yellow-600"></i>');</script>
+                    <i data-lucide="star" class="w-5 h-5 text-yellow-600"></i>
                     Recent Achievements
                 </h2>
                 <div class="space-y-3">
@@ -68,13 +75,15 @@
                         <p class="text-yellow-700 text-sm mb-1" th:text="${achievement.description}"></p>
                         <p class="text-yellow-600 text-xs" th:text="${achievement.time}"></p>
                     </div>
+                    <div th:if="${recentAchievements == null or recentAchievements.empty}" class="text-center text-slate-400 py-4">
+                        No recent achievements
+                    </div>
                 </div>
             </div>
 
-            <!-- Badges Collection -->
             <div class="bg-white rounded-xl shadow-lg border border-slate-200 lg:col-span-2 p-6">
                 <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-4">
-                    <script>document.write('<i data-lucide="award" class="w-5 h-5 text-purple-600"></i>');</script>
+                    <i data-lucide="award" class="w-5 h-5 text-purple-600"></i>
                     Badge Collection
                 </h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -94,10 +103,9 @@
                 </div>
             </div>
 
-            <!-- Leaderboard -->
             <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
                 <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4 border-b pb-4">
-                    <script>document.write('<i data-lucide="trending-up" class="w-5 h-5 text-orange-600"></i>');</script>
+                    <i data-lucide="trending-up" class="w-5 h-5 text-orange-600"></i>
                     Leaderboard
                 </h2>
                 <div class="space-y-3">
@@ -121,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- How to Earn Points -->
             <div class="bg-white rounded-xl shadow-lg border border-slate-200 lg:col-span-3 p-6">
                 <h2 class="text-xl font-bold text-slate-900 mb-4 border-b pb-4">How to Earn Points</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -135,9 +142,7 @@
     </div>
     
     <script>
-        // Re-initialize Lucide Icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        // Initialize Icons
+        lucide.createIcons();
     </script>
 </th:block>
