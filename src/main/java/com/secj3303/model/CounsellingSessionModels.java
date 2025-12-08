@@ -76,17 +76,67 @@ public class CounsellingSessionModels implements Serializable {
         // --- Utility Methods for Thymeleaf Styling ---
         public String getCardClass() {
             switch (status) {
-                case "completed": return "bg-slate-50 border-slate-200";
-                case "cancelled": return "bg-red-50 border-red-200";
-                case "confirmed": return "bg-green-50 border-green-200";
-                default: return "bg-blue-50 border-blue-200";
+                case "completed": 
+                    return "bg-slate-50 border-slate-200";
+                case "cancelled": 
+                    return "bg-red-50 border-red-200";
+                case "confirmed": 
+                    return "bg-green-50 border-green-200";
+                case "scheduled": // scheduled and pending-reschedule will use default blue
+                case "pending-reschedule": 
+                default: 
+                    return "bg-blue-50 border-blue-200";
             }
         }
         public String getAvatarClass() {
             switch (status) {
-                case "cancelled": return "bg-red-200 text-red-700";
-                case "completed": return "bg-slate-300 text-slate-700";
-                default: return "bg-blue-600 text-white";
+                case "completed": 
+                    return "bg-slate-200 text-slate-700";
+                case "cancelled": 
+                    return "bg-red-200 text-red-700";
+                case "confirmed": 
+                    return "bg-green-200 text-green-700";
+                case "pending-reschedule": 
+                    return "bg-yellow-200 text-yellow-700"; // Use a distinct color for this new state
+                default: // scheduled
+                    return "bg-blue-200 text-blue-700";
+            }
+        }
+        public String getStatusBadgeClass() {
+            if (status == null) {
+                return "bg-gray-200 text-gray-700"; // default for null status
+            }
+            
+            switch (status) {
+                case "completed": 
+                    return "bg-slate-200 text-slate-700";
+                case "cancelled": 
+                    return "bg-red-200 text-red-700 x-circle";
+                case "confirmed": 
+                    return "bg-green-200 text-green-700 check-cricle";
+                case "pending-reschedule": 
+                    return "bg-yellow-200 text-yellow-700";
+                default: // scheduled and any other status
+                    return "bg-blue-200 text-blue-700";
+            }
+        }
+
+        public String getStatusIcon() {
+            if (status == null) {
+                return "help-circle";
+            }
+            
+            switch (status) {
+                case "completed": 
+                    return "check-circle";
+                case "cancelled": 
+                    return "x-circle";
+                case "confirmed": 
+                    return "check-circle";
+                case "pending-reschedule": 
+                    return "clock";
+                default: // scheduled
+                    return "calendar";
             }
         }
     }
