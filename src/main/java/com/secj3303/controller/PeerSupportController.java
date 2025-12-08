@@ -100,7 +100,14 @@ public class PeerSupportController {
 
     // --- Create New Post Handler ---
     @PostMapping("/create")
-    public String handleCreatePost(@ModelAttribute Post newPostFormData, HttpSession session, RedirectAttributes redirect) {
+    public String handleCreatePost(@ModelAttribute("newPostFormData") Post newPostFormData, HttpSession session, RedirectAttributes redirect) {
+        
+        // --- STEP 3: PASTE THESE LINES HERE ---
+        System.out.println("--- NEW POST DEBUG ---");
+        System.out.println("Title: " + newPostFormData.getTitle());
+        System.out.println("Category: " + newPostFormData.getCategory());
+        System.out.println("Content: " + newPostFormData.getContent());
+        // --------------------------------------
         
         ContentCheckResult titleCheck = PeerSupportModels.checkContentForHarmfulText(newPostFormData.getTitle());
         ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(newPostFormData.getContent());
