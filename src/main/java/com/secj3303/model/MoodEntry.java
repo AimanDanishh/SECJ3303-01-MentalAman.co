@@ -116,10 +116,26 @@ public class MoodEntry {
             moodCounts.put(moodDef.get("id"), 0);
         }
         
-        // Count moods
+        // Get entries from last 7 days
+        LocalDate today = LocalDate.now();
+        LocalDate sevenDaysAgo = today.minusDays(6); // Last 7 days inclusive
+        
+        List<MoodEntry> last7DaysEntries = new ArrayList<>();
+        
+        // Count moods from last 7 days only
         for (MoodEntry entry : entries) {
-            if (entry.getMood() != null && moodCounts.containsKey(entry.getMood())) {
-                moodCounts.put(entry.getMood(), moodCounts.get(entry.getMood()) + 1);
+            try {
+                LocalDate entryDate = LocalDate.parse(entry.getDate());
+                // Check if entry is within last 7 days (inclusive)
+                if (!entryDate.isBefore(sevenDaysAgo) && !entryDate.isAfter(today)) {
+                    last7DaysEntries.add(entry);
+                    
+                    if (entry.getMood() != null && moodCounts.containsKey(entry.getMood())) {
+                        moodCounts.put(entry.getMood(), moodCounts.get(entry.getMood()) + 1);
+                    }
+                }
+            } catch (Exception e) {
+                // Skip invalid dates
             }
         }
         
@@ -152,10 +168,10 @@ public class MoodEntry {
             );
         }
         
-        stats.put("last7Days", entries);
+        stats.put("last7Days", last7DaysEntries);
         stats.put("moodCounts", moodCounts);
         stats.put("mostFrequentMoodId", mostFrequentMoodId);
-        stats.put("totalEntriesLast7Days", entries.size());
+        stats.put("totalEntriesLast7Days", last7DaysEntries.size()); // FIXED: Use last7DaysEntries.size()
         stats.put("mostFrequentCount", mostFrequentCount);
         stats.put("mostFrequentMoodData", mostFrequentMoodData);
         

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Mood Trends Fragment -->
+    <div th:fragment="trends">
+        <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-6">
+                <i data-lucide="bar-chart" class="w-5 h-5 text-blue-600"></i>
+                Mood Trends
+            </h2>
+            
+            <div class="space-y-6">
+                <!-- Last 7 Days Breakdown -->
+                <div>
+                    <h3 class="font-semibold text-slate-900 mb-4">Last 7 Days</h3>
+                    <div class="space-y-3">
+                        <!-- Loop through each mood definition -->
+                        <div th:each="moodDef : ${moodDefinitions}">
+                            <!-- Get mood data for this definition -->
+                            <div th:with="
+                                moodId=${moodDef.get('id')},
+                                moodCount=${moodCounts.get(moodId) != null ? moodCounts.get(moodId) : 0},
+                                moodPercentage=${totalEntriesLast7Days > 0 ? (moodCount * 100.0 / totalEntriesLast7Days) : 0}"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <!-- Mood Icon -->
+                                        <i th:attr="data-lucide=${moodId == 'happy' ? 'smile' : 
+                                                        moodId == 'sad' ? 'frown' : 
+                                                        moodId == 'stressed' ? 'angry' : 
+                                                        moodId == 'excited' ? 'laugh' : 
+                                                        moodId == 'anxious' ? 'heart' : 'meh'}"
+                                           th:class="${moodDef.get('color')} + ' w-5 h-5'"></i>
+                                        <span class="text-sm font-medium text-slate-900" 
+                                              th:text="${moodDef.get('label')}"></span>
+                                    </div>
+                                    <span class="text-sm text-slate-600" 
+                                          th:text="${moodCount} + ' ' + ${moodCount == 1 ? 'day' : 'days'}"></span>
+                                </div>
+                                <!-- Progress Bar -->
+                                <div class="w-full bg-slate-200 rounded-full h-2 mt-2">
+                                    <div th:class="${moodDef.get('bg-bar')} + ' h-2 rounded-full'" 
+                                         th:style="'width: ' + ${moodPercentage} + '%;'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mood Calendar -->
+                <div>
+                    <h3 class="font-semibold text-slate-900 mb-4">Recent Mood Calendar</h3>
+                    <div class="grid grid-cols-7 gap-2">
+                        <!-- Show only existing entries (no empty slots) -->
+                        <div th:each="entry, iterStat : ${moodEntries}"
+                            th:if="${iterStat.index < 14}">
+                            <div class="p-3 rounded-lg text-center h-full flex flex-col items-center justify-center"
+                                th:classappend="${entry.mood == 'happy' ? 'bg-green-100' : 
+                                            entry.mood == 'sad' ? 'bg-blue-100' : 
+                                            entry.mood == 'stressed' ? 'bg-red-100' : 
+                                            entry.mood == 'excited' ? 'bg-yellow-100' : 
+                                            entry.mood == 'anxious' ? 'bg-purple-100' : 
+                                            'bg-gray-100'}"
+                                th:title="${entry.date} + ' - ' + ${entry.mood}">
+                                
+                                <!-- Centered day number with matching text color -->
+                                <p class="text-xs font-medium mb-1"
+                                th:classappend="${entry.mood == 'happy' ? 'text-green-600' : 
+                                            entry.mood == 'sad' ? 'text-blue-600' : 
+                                            entry.mood == 'stressed' ? 'text-red-600' : 
+                                            entry.mood == 'excited' ? 'text-yellow-600' : 
+                                            entry.mood == 'anxious' ? 'text-purple-600' : 
+                                            'text-gray-600'}">
+                                    <span th:text="${#strings.substring(entry.date, 8, 10)}"></span>
+                                </p>
+                                
+                                <!-- Mood icon with matching color -->
+                                <i th:attr="data-lucide=${entry.mood == 'happy' ? 'smile' : 
+                                                entry.mood == 'sad' ? 'frown' : 
+                                                entry.mood == 'stressed' ? 'angry' : 
+                                                entry.mood == 'excited' ? 'laugh' : 
+                                                entry.mood == 'anxious' ? 'heart' : 'meh'}"
+                                th:class="${entry.mood == 'happy' ? 'text-green-600' : 
+                                            entry.mood == 'sad' ? 'text-blue-600' : 
+                                            entry.mood == 'stressed' ? 'text-red-600' : 
+                                            entry.mood == 'excited' ? 'text-yellow-600' : 
+                                            entry.mood == 'anxious' ? 'text-purple-600' : 
+                                            'text-gray-600'} + ' w-6 h-6'"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights -->
+                <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p class="font-medium text-purple-900 mb-2">Insights</p>
+                    <ul class="text-purple-800 text-sm space-y-1 list-disc list-inside">
+                        <li th:if="${currentStreak > 0}">
+                            You're on a <span th:text="${currentStreak}"></span>-day tracking streak! Keep it up! 🎉
+                        </li>
+                        <li th:if="${mostFrequentCount >= 3}">
+                            You've been feeling mostly <span th:text="${mostFrequentMoodId}"></span> this week
+                        </li>
+                        <li th:if="${totalEntries >= 7}">
+                            Great job tracking your mood for <span th:text="${totalEntries}"></span> days total!
+                        </li>
+                        <li th:if="${totalEntriesLast7Days < 7}">
+                            Try to log your mood every day for better insights
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Counselor Access Note -->
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i data-lucide="bar-chart" class="w-5 h-5 text-blue-600 inline-block mr-2"></i>
+                        Your mood trends are accessible to authorized counsellors who can provide personalized support based on your emotional patterns.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

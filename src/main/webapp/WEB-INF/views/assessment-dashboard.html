@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Dashboard Content Fragment -->
+    <div th:fragment="dashboard">
+        <h1 class="text-xl font-bold text-slate-900 mb-2">Self-Assessment Tools</h1>
+        <p class="text-slate-600 mb-6">Complete confidential assessments to evaluate your mental health status</p>
+
+        <!-- Tab Navigation -->
+        <div th:unless="${selectedAssessment != null or showResults}" class="flex items-center gap-2 mb-6">
+            <button th:onclick="|window.location.href='@{/assessment(tab='assessments')}'|"
+                    th:classappend="${activeTab == 'assessments'} ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                    class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                Assessments
+            </button>
+            <button th:onclick="|window.location.href='@{/mood}'|"
+                    th:classappend="${activeTab == 'mood'} ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                    class="px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                <i data-lucide="heart" class="w-4 h-4"></i>
+                Daily Mood Tracker
+            </button>
+        </div>
+
+        <!-- Assessment List & History -->
+        <div th:if="${activeTab == 'assessments' and selectedAssessment == null and !showResults}">
+            <div class="space-y-6">
+                <!-- Available Assessments -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-900 mb-4">Available Assessments</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div th:each="assess : ${assessments}" 
+                             th:onclick="|window.location.href='@{/assessment/start/{id}(id=${assess.id})}'|"
+                             class="bg-slate-50 p-4 rounded-xl border border-slate-200 hover:shadow-md transition-shadow cursor-pointer">
+                            <div class="flex items-start justify-between mb-3">
+                                <div th:class="'w-12 h-12 rounded-lg bg-' + ${assess.color} + '-100 flex items-center justify-center'">
+                                    <i data-lucide="clipboard-list" th:class="'w-6 h-6 text-' + ${assess.color} + '-600'"></i>
+                                </div>
+                                <span th:if="${savedProgress != null and savedProgress.containsKey(assess.id)}" 
+                                      class="inline-flex items-center rounded-full bg-blue-100 px-3 py-0.5 text-sm font-medium text-blue-800">
+                                    <i data-lucide="save" class="w-3 h-3 mr-1"></i>
+                                    Saved
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-slate-900 mb-2" th:text="${assess.title}"></h3>
+                            <p class="text-slate-600 text-sm mb-4" th:text="${assess.description}"></p>
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-0.5 text-xs font-medium text-slate-800" 
+                                      th:text="${assess.category}"></span>
+                                <span class="text-sm text-slate-600" th:text="${assess.duration}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assessment History -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-blue-600"></i>
+                        Your Assessment History
+                    </h2>
+                    <div th:if="${pastResults != null and !pastResults.isEmpty()}" class="space-y-3">
+                        <div th:each="result : ${pastResults}" class="p-4 bg-slate-50 rounded-lg flex items-center justify-between">
+                            <div class="flex-1">
+                                <p class="font-medium text-slate-900" th:text="${result.assessmentTitle}"></p>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="text-sm text-slate-600 flex items-center gap-1">
+                                        <i data-lucide="calendar" class="w-3 h-3"></i>
+                                        <span th:text="${result.date}"></span>
+                                    </span>
+                                    <span th:classappend="${result.severity == 'Mild' ? 'bg-green-100 text-green-800' : 
+                                                    result.severity == 'Moderate' ? 'bg-yellow-100 text-yellow-800' : 
+                                                    'bg-red-100 text-red-800'}"
+                                          class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase"
+                                          th:text="${result.severity}">
+                                    </span>
+                                    <span class="text-sm text-slate-700">Score: <span th:text="${result.score} + '%'"></span></span>
+                                </div>
+                            </div>
+                            <a th:if="${result.reportAvailable}" 
+                               th:href="@{'/assessment/results/' + ${result.id}}"
+                               class="ml-4 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                                View Result
+                            </a>
+                        </div>
+                    </div>
+                    <div th:if="${pastResults == null or pastResults.isEmpty()}" class="text-center py-8 text-slate-500">
+                        <p>No assessment history yet. Complete your first assessment above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

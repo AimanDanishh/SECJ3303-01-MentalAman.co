@@ -2,6 +2,7 @@ package com.secj3303.controller;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -83,10 +84,10 @@ public class MoodTrackerController {
             model.addAttribute("mostFrequentMoodData", moodStats.get("mostFrequentMoodData"));
         } else {
             // Provide default values if stats calculation fails
-            model.addAttribute("last7Days", entries);
+            model.addAttribute("last7Days", new ArrayList<MoodEntry>());  // Empty list
             model.addAttribute("moodCounts", new HashMap<String, Integer>());
             model.addAttribute("mostFrequentMoodId", "neutral");
-            model.addAttribute("totalEntriesLast7Days", entries.size());
+            model.addAttribute("totalEntriesLast7Days", 0);  // Set to 0, not entries.size()
             model.addAttribute("mostFrequentCount", 0);
             model.addAttribute("mostFrequentMoodData", new HashMap<String, String>());
         }
@@ -117,6 +118,14 @@ public class MoodTrackerController {
         
         // Add user to model
         model.addAttribute("user", userObj);
+
+        // Debug: Print what's being passed to template
+System.out.println("DEBUG - totalEntriesLast7Days: " + model.getAttribute("totalEntriesLast7Days"));
+System.out.println("DEBUG - moodCounts: " + model.getAttribute("moodCounts"));
+System.out.println("DEBUG - view: " + view);
+
+// Make sure the view attribute is set
+model.addAttribute("view", view);
 
         return "mood-tracker";
     }
