@@ -1,6 +1,10 @@
 package com.secj3303.model;
 
 import java.io.Serializable;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -144,9 +148,42 @@ public class CounsellingSessionModels implements Serializable {
     public static class TimeSlot implements Serializable {
         public String date;
         public String time;
+        public LocalDate localDate; // Add for sorting
+        public LocalTime localTime; // Add for sorting
+        
+        public TimeSlot(String date, String time, LocalDate localDate, LocalTime localTime) {
+            this.date = date;
+            this.time = time;
+            this.localDate = localDate;
+            this.localTime = localTime;
+        }
+        
+        // For backward compatibility
         public TimeSlot(String date, String time) {
             this.date = date;
             this.time = time;
+            this.localDate = parseDate(date);
+            this.localTime = parseTime(time);
+        }
+        
+        private LocalDate parseDate(String dateStr) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
+                return LocalDate.parse(dateStr, formatter);
+            } catch (Exception e) {
+                return LocalDate.now();
+            }
+        }
+        
+        private LocalTime parseTime(String timeStr) {
+            try {
+                // Parse "10:00 AM - 11:00 AM" to get start time
+                String startTime = timeStr.split(" - ")[0];
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+                return LocalTime.parse(startTime.toUpperCase(), formatter);
+            } catch (Exception e) {
+                return LocalTime.now();
+            }
         }
     }
     
@@ -161,14 +198,94 @@ public class CounsellingSessionModels implements Serializable {
         }
     }
 
-    public static final List<TimeSlot> AVAILABLE_SLOTS = Arrays.asList(
-        new TimeSlot("Nov 20, 2025", "10:00 AM - 11:00 AM"),
-        new TimeSlot("Nov 20, 2025", "2:00 PM - 3:00 PM"),
-        new TimeSlot("Nov 21, 2025", "11:00 AM - 12:00 PM"),
-        new TimeSlot("Nov 21, 2025", "3:00 PM - 4:00 PM"),
-        new TimeSlot("Nov 22, 2025", "9:00 AM - 10:00 AM"),
-        new TimeSlot("Nov 22, 2025", "1:00 PM - 2:00 PM")
-    );
+     // Generate dynamic time slots (next 14 days, excluding weekends)
+    public static List<TimeSlot> getAvailableTimeSlots() {
+        List<TimeSlot> slots = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
+        
+        // Define available time slots per day
+        LocalTime[] morningSlots = {
+            LocalTime.of(9, 0),  // 9:00 AM
+            LocalTime.of(11, 0)  // 11:00 AM
+        };
+        
+        LocalTime[] afternoonSlots = {
+            LocalTime.of(14, 0), // 2:00 PM
+            LocalTime.of(16, 0)  // 4:00 PM
+        };
+        
+        // Generate slots for next 14 days
+        for (int i = 1; i <= 3; i++) {
+            LocalDate slotDate = today.plusDays(i);
+            
+            // Skip weekends (optional - remove if you want weekend slots)
+            DayOfWeek dayOfWeek = slotDate.getDayOfWeek();
+            if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
+                continue;
+            }
+            
+            String formattedDate = slotDate.format(dateFormatter);
+            
+            // Add morning slots
+            for (LocalTime time : morningSlots) {
+                String timeSlot = formatTimeSlot(time, 60); // 60-minute sessions
+                slots.add(new TimeSlot(formattedDate, timeSlot, slotDate, time));
+            }
+            
+            // Add afternoon slots
+            for (LocalTime time : afternoonSlots) {
+                String timeSlot = formatTimeSlot(time, 60); // 60-minute sessions
+                slots.add(new TimeSlot(formattedDate, timeSlot, slotDate, time));
+            }
+        }
+        
+        // Sort slots by date and time
+        slots.sort((s1, s2) -> {
+            int dateCompare = s1.localDate.compareTo(s2.localDate);
+            if (dateCompare != 0) {
+                return dateCompare;
+            }
+            return s1.localTime.compareTo(s2.localTime);
+        });
+        
+        return slots;
+    }
+    
+    // Format time slot string (e.g., "10:00 AM - 11:00 AM")
+    private static String formatTimeSlot(LocalTime startTime, int durationMinutes) {
+        LocalTime endTime = startTime.plusMinutes(durationMinutes);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+        return startTime.format(timeFormatter) + " - " + endTime.format(timeFormatter);
+    }
+    
+    // Filter out already booked time slots
+    public static List<TimeSlot> getAvailableTimeSlots(List<Session> existingSessions) {
+        List<TimeSlot> allSlots = getAvailableTimeSlots();
+        List<TimeSlot> availableSlots = new ArrayList<>();
+        
+        // Create a set of booked time slots for quick lookup
+        for (TimeSlot slot : allSlots) {
+            boolean isBooked = false;
+            
+            // Check if this slot overlaps with any existing session
+            for (Session session : existingSessions) {
+                if (session.getDate().equals(slot.date) && session.getTime().equals(slot.time)) {
+                    isBooked = true;
+                    break;
+                }
+            }
+            
+            if (!isBooked) {
+                availableSlots.add(slot);
+            }
+        }
+        
+        return availableSlots;
+    }
+    
+    // For backward compatibility
+    public static final List<TimeSlot> AVAILABLE_SLOTS = getAvailableTimeSlots();
     
     public static final List<Counsellor> COUNSELLOR_LIST = Arrays.asList(
         new Counsellor("Dr. Sarah Johnson", "SJ", "Anxiety & Stress"),
@@ -178,10 +295,35 @@ public class CounsellingSessionModels implements Serializable {
     );
 
     public static List<Session> getInitialSessions() {
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
+        
+        // Create sessions with future dates
         return new ArrayList<>(Arrays.asList(
-            new Session(1, "Dr. Sarah Johnson", "SJ", "Anxiety & Stress", "Nov 15, 2025", "2:00 PM - 3:00 PM", "Video Call", "scheduled", false, "First session - General consultation", null, false, null),
-            new Session(2, "Dr. Michael Chen", "MC", "Academic Stress", "Nov 18, 2025", "4:00 PM - 5:00 PM", "Video Call", "confirmed", true, "Follow-up session", null, false, null),
-            new Session(3, "Dr. Emily Williams", "EW", "Depression & Anxiety", "Nov 6, 2025", "3:00 PM - 4:00 PM", "Video Call", "completed", true, null, null, true, "Student showed good progress in managing exam stress. Discussed coping strategies including time management and breathing exercises. Recommended follow-up in 2 weeks.")
+            new Session(1, "Dr. Sarah Johnson", "SJ", "Anxiety & Stress", 
+                       today.plusDays(3).format(dateFormatter), 
+                       "2:00 PM - 3:00 PM", 
+                       "Video Call", "scheduled", false, 
+                       "First session - General consultation", null, false, null),
+            
+            new Session(2, "Dr. Michael Chen", "MC", "Academic Stress", 
+                       today.plusDays(5).format(dateFormatter), 
+                       "4:00 PM - 5:00 PM", 
+                       "Video Call", "confirmed", true, 
+                       "Follow-up session", null, false, null),
+            
+            new Session(3, "Dr. Emily Williams", "EW", "Depression & Anxiety", 
+                       today.minusDays(7).format(dateFormatter), // Past session
+                       "3:00 PM - 4:00 PM", 
+                       "Video Call", "completed", true, 
+                       null, null, true, 
+                       "Student showed good progress in managing exam stress. Discussed coping strategies including time management and breathing exercises. Recommended follow-up in 2 weeks."),
+            
+            new Session(4, "Dr. David Lee", "DL", "Career Counselling", 
+                       today.plusDays(10).format(dateFormatter), 
+                       "11:00 AM - 12:00 PM", 
+                       "Video Call", "scheduled", false, 
+                       "Career guidance session", null, false, null)
         ));
     }
 }
