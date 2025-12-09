@@ -105,9 +105,9 @@ public class AssessmentModels implements Serializable {
         public String lastAssessment;
         public String riskLevel;
         public List<AssessmentResult> assessmentHistory;
-        public Optional<Map<String, String>> upcomingSession;
+        public Map<String, String> upcomingSession;
 
-        public StudentData(int id, String name, String email, String studentId, String department, String year, String initials, int assessmentCount, String lastAssessment, String riskLevel, List<AssessmentResult> history, Optional<Map<String, String>> session) {
+        public StudentData(int id, String name, String email, String studentId, String department, String year, String initials, int assessmentCount, String lastAssessment, String riskLevel, List<AssessmentResult> history, Map<String, String> session) {
             this.id = id;
             this.name = name;
             this.email = email;
@@ -131,6 +131,15 @@ public class AssessmentModels implements Serializable {
                 default: return "bg-slate-600";
             }
         }
+
+        public String getBadgeColor() {
+        switch (riskLevel) {
+            case "low": return "bg-green-100 text-green-700";
+            case "moderate": return "bg-yellow-100 text-yellow-700";
+            case "high": return "bg-red-100 text-red-700";
+            default: return "bg-slate-100 text-slate-700";
+        }
+    }
     }
     
     public static class AssessmentAnswers implements Serializable {
@@ -160,13 +169,13 @@ public class AssessmentModels implements Serializable {
     public static final List<StudentData> ASSIGNED_STUDENTS = Arrays.asList(
         new StudentData(1, "Emma Wilson", "emma.wilson@university.edu", "S2021001", "Computer Science", "Year 3", "EW", 5, "Nov 8, 2025", "moderate",
             Arrays.asList(new AssessmentResult(1, "Depression Screening (PHQ-9)", "Nov 8, 2025", 58, "Moderate", true), new AssessmentResult(2, "Anxiety Screening (GAD-7)", "Nov 1, 2025", 45, "Moderate", true)),
-            Optional.of(Map.of("date", "Nov 15, 2025", "time", "2:00 PM - 3:00 PM", "type", "Video Call", "status", "confirmed"))),
+            Map.of("date", "Nov 15, 2025", "time", "2:00 PM - 3:00 PM", "type", "Video Call", "status", "confirmed")),
         new StudentData(2, "Michael Chen", "michael.chen@university.edu", "S2021002", "Engineering", "Year 2", "MC", 3, "Nov 10, 2025", "high",
             Arrays.asList(new AssessmentResult(1, "Depression Screening (PHQ-9)", "Nov 10, 2025", 78, "Severe", true), new AssessmentResult(2, "Anxiety Screening (GAD-7)", "Nov 5, 2025", 82, "Severe", true)),
-            Optional.of(Map.of("date", "Nov 14, 2025", "time", "10:00 AM - 11:00 AM", "type", "Video Call", "status", "confirmed"))),
+            Map.of("date", "Nov 14, 2025", "time", "10:00 AM - 11:00 AM", "type", "Video Call", "status", "confirmed")),
         new StudentData(3, "Sarah Johnson", "sarah.johnson@university.edu", "S2021003", "Psychology", "Year 4", "SJ", 7, "Nov 12, 2025", "low",
             Arrays.asList(new AssessmentResult(1, "Well-being Assessment", "Nov 12, 2025", 25, "Mild", true), new AssessmentResult(2, "Stress Assessment (PSS-10)", "Nov 7, 2025", 30, "Mild", true)),
-            Optional.empty())
+            null)
     );
 
     // Utility mapping for labels (needed in view)

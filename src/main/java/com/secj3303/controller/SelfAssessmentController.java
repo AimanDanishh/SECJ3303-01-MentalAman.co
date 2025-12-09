@@ -112,11 +112,37 @@ public class SelfAssessmentController {
         // --- FACULTY/COUNSELLOR VIEW ---
         if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
             List<StudentData> students = getAssignedStudents(session);
+
+            List<StudentData> filteredStudents = assessmentService.filterStudents(searchQuery, filterRisk);
+        
+            // Calculate statistics server-side
+            long highRiskCount = students.stream()
+                .filter(s -> "high".equalsIgnoreCase(s.riskLevel))
+                .count();
+            long moderateRiskCount = students.stream()
+                .filter(s -> "moderate".equalsIgnoreCase(s.riskLevel))
+                .count();
+            long lowRiskCount = students.stream()
+                .filter(s -> "low".equalsIgnoreCase(s.riskLevel))
+                .count();
+
+
+            // Add all required model attributes
             model.addAttribute("assignedStudents", students);
-            model.addAttribute("filteredStudents", assessmentService.filterStudents(searchQuery, filterRisk));
+            model.addAttribute("filteredStudents", filteredStudents);
             model.addAttribute("searchQuery", searchQuery == null ? "" : searchQuery);
             model.addAttribute("filterRisk", filterRisk);
-            
+            model.addAttribute("filteredCount", filteredStudents.size());
+            model.addAttribute("totalCount", students.size()); // Total from all students
+            model.addAttribute("highRiskCount", highRiskCount); // From all students
+            model.addAttribute("moderateRiskCount", moderateRiskCount); // From all students
+            model.addAttribute("lowRiskCount", lowRiskCount); // From all students
+
+            // Initialize these to avoid null in Thymeleaf
+            model.addAttribute("showReportModal", false);
+            model.addAttribute("selectedReport", null);
+            model.addAttribute("selectedStudent", null);
+                        
             if (selectStudentId != null) {
                 students.stream()
                     .filter(s -> s.id == selectStudentId)
@@ -127,7 +153,8 @@ public class SelfAssessmentController {
                         session.setAttribute(SELECTED_STUDENT_KEY, student);
                     });
             }
-            return "self-assessment";
+
+            return "faculty-assessment";
         }
         
         // --- STUDENT VIEW (Default) ---
@@ -509,6 +536,6 @@ public class SelfAssessmentController {
         model.addAttribute("showReportModal", true);
         model.addAttribute("userRole", "counsellor");
 
-        return "app-layout";
+        return "faculty-report";
     }
 }
