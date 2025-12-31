@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Assessment List</title>
+</head>
+<body>
+    <!-- WRAP ALL CONTENT IN th:block WITH FRAGMENT NAME -->
+    <th:block th:fragment="assessment-list">
+        <!-- Search and Filter -->
+        <form method="get" action="" class="bg-white rounded-xl shadow border border-slate-200 mb-6">
+            <div class="p-6 pt-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+                        <input
+                            type="text"
+                            name="searchQuery"
+                            id="searchInput"
+                            placeholder="Search by name, student ID, or email..."
+                            th:value="${searchQuery}"
+                            class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="filter" class="w-5 h-5 text-slate-600"></i>
+                        <select name="filterRisk" id="riskFilter"
+                            class="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all" th:selected="${filterRisk == 'all' or filterRisk == null}">All Risk Levels</option>
+                            <option value="low" th:selected="${filterRisk == 'low'}">Low Risk</option>
+                            <option value="moderate" th:selected="${filterRisk == 'moderate'}">Moderate Risk</option>
+                            <option value="high" th:selected="${filterRisk == 'high'}">High Risk</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="hidden">Search</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Statistics - Use server-side calculated values -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow border border-slate-200">
+                <div class="p-6 pt-6">
+                    <p class="text-slate-600 mb-2">Total Students</p>
+                    <p class="text-3xl font-bold text-slate-900" id="totalStudents">
+                        <span th:text="${totalCount}">0</span>
+                    </p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow border border-slate-200">
+                <div class="p-6 pt-6">
+                    <p class="text-slate-600 mb-2">High Risk</p>
+                    <p class="text-3xl font-bold text-red-600" id="highRiskCount">
+                        <span th:text="${highRiskCount}">0</span>
+                    </p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow border border-slate-200">
+                <div class="p-6 pt-6">
+                    <p class="text-slate-600 mb-2">Moderate Risk</p>
+                    <p class="text-3xl font-bold text-yellow-600" id="moderateRiskCount">
+                        <span th:text="${moderateRiskCount}">0</span>
+                    </p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow border border-slate-200">
+                <div class="p-6 pt-6">
+                    <p class="text-slate-600 mb-2">Low Risk</p>
+                    <p class="text-3xl font-bold text-green-600" id="lowRiskCount">
+                        <span th:text="${lowRiskCount}">0</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student List -->
+        <div class="bg-white rounded-xl shadow border border-slate-200">
+            <div class="p-6 pb-2 border-slate-200">
+                <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
+                    Assigned Students
+                </h3>
+            </div>
+            <div class="p-6 pt-2">
+                <div class="space-y-3" id="studentList">
+                    <div th:each="student : ${filteredStudents != null ? filteredStudents : assignedStudents}" 
+                         th:data-risk="${student.riskLevel}"
+                         th:data-id="${student.id}"
+                         class="p-4 border border-slate-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer student-card"
+                         onclick="selectStudent(this)">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
+                                     th:classappend="${student.getInitialsColor()}">
+                                    <span th:text="${student.initials}"></span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-semibold text-slate-900" th:text="${student.name}"></h3>
+                                        <div class="px-2 py-1 rounded-full text-xs font-semibold uppercase"
+                                            th:classappend="${student.badgeColor}">
+                                            <span th:text="${student.riskLevel}"></span>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-slate-600" th:text="${student.email}"></p>
+                                    <div class="flex items-center gap-4 mt-2 text-sm text-slate-600">
+                                        <span>ID: <span th:text="${student.studentId}"></span></span>
+                                        <span>•</span>
+                                        <span th:text="${student.department}"></span>
+                                        <span>•</span>
+                                        <span th:text="${student.year}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-slate-600 mb-1">Assessments</p>
+                                <p class="text-2xl font-bold text-blue-600" th:text="${student.assessmentCount}"></p>
+                                <p class="text-xs text-slate-500 mt-1">Last: <span th:text="${student.lastAssessment}"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+</body>
+</html>

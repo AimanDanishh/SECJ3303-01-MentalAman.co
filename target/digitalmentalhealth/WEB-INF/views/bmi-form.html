@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>HealthHub@UTM : BMI Form</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f6f8fb;
+    margin: 0;
+    padding: 40px;
+  }
+  .card {
+    max-width: 500px;
+    margin: auto;
+    background: #fff;
+    padding: 20px 24px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.4em;
+    color: #333;
+  }
+  label {
+    display: block;
+    margin: 10px 0 4px;
+    font-weight: bold;
+  }
+  input[type=text],
+  input[type=number] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .gender, .interests {
+    margin: 8px 0 16px;
+  }
+  .gender label,
+  .interests label {
+    font-weight: normal;
+    display: inline-block;
+    margin-right: 10px;
+  }
+  button {
+    display: block;
+    width: 100%;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .optional {
+    font-weight: normal;
+    color: #666;
+    font-size: 0.9em;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>HealthHub@UTM - BMI Calculator</h1>
+  <form th:action="@{/bmi/result}" method="post">
+    
+    <!-- ID field - STRING, OPTIONAL -->
+    <label for="id">ID <span class="optional">(optional - alphanumeric)</span></label>
+    <input type="text" name="id" placeholder="e.g., P001, EMP123, or leave empty">
+    
+    <!-- Name field - REQUIRED -->
+    <label for="name">Name</label>
+    <input type="text" name="name" required placeholder="Enter full name">
+
+    <!-- Year of Birth - REQUIRED -->
+    <label for="yob">Year of Birth</label>
+    <input type="number" name="yob" min="1900" max="2035" required placeholder="e.g., 1990">
+
+    <div class="row">
+      <div>
+        <label for="height">Height (m)</label>
+        <input type="number" name="height" step="0.01" min="0.5" max="2.5" required placeholder="e.g., 1.75">
+      </div>
+      <div>
+        <label for="weight">Weight (kg)</label>
+        <input type="number" name="weight" step="0.1" min="20" max="300" required placeholder="e.g., 65.5">
+      </div>
+    </div>
+
+    <div class="gender">
+      <label>Gender</label>
+      <label><input type="radio" name="gender" value="Male" checked> Male</label>
+      <label><input type="radio" name="gender" value="Female"> Female</label>
+    </div>
+
+    <div class="interests">
+      <label>Interests <span class="optional">(optional)</span></label><br>
+      <label><input type="checkbox" name="interest" value="Entertainment"> Entertainment</label><br>
+      <label><input type="checkbox" name="interest" value="Sports"> Sports</label><br>
+      <label><input type="checkbox" name="interest" value="Travel"> Travel</label><br>
+      <label><input type="checkbox" name="interest" value="Business"> Business</label><br>
+      <label><input type="checkbox" name="interest" value="Technology"> Technology</label><br>
+    </div>
+
+    <button type="submit">Calculate BMI</button>
+  </form>
+  
+  <div style="text-align: center; margin-top: 15px;">
+    <a th:href="@{/person/list}" style="color: #007bff; text-decoration: none;">← Back to Person List</a>
+  </div>
+</div>
+
+<!-- Simple form validation -->
+<script>
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const idField = document.querySelector('input[name="id"]');
+    const idValue = idField.value.trim();
+    
+    // If ID is provided, validate format (optional alphanumeric)
+    if (idValue !== '') {
+      // Allow alphanumeric IDs: letters, numbers, hyphens, underscores
+      const idPattern = /^[A-Za-z0-9_-]+$/;
+      if (!idPattern.test(idValue)) {
+        alert('ID can only contain letters, numbers, hyphens (-), and underscores (_).\nExamples: P001, EMP-123, User_456');
+        e.preventDefault();
+        idField.focus();
+        return;
+      }
+    }
+    
+    // Ensure at least one gender is checked (but we have default)
+    const genderSelected = document.querySelector('input[name="gender"]:checked');
+    if (!genderSelected) {
+      alert('Please select a gender.');
+      e.preventDefault();
+    }
+  });
+</script>
+
+</body>
+</html>

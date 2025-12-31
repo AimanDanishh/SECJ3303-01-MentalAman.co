@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Person List</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .header { margin-bottom: 20px; }
+        .btn { 
+            padding: 8px 16px; 
+            margin: 5px; 
+            text-decoration: none; 
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .add-btn { background: #4CAF50; color: white; }
+        .bmi-btn { background: #9C27B0; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f0f0f0; }
+        .edit-btn { color: #2196F3; margin-right: 10px; }
+        .delete-btn { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Person List</h1>
+        <div>
+            <a th:href="@{/person/form}" class="btn add-btn">Add Person</a>
+            <a th:href="@{/bmi/form}" class="btn bmi-btn">BMI Calculator</a>
+        </div>
+    </div>
+    
+    <div th:if="${not #lists.isEmpty(persons)}">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Name</th><th>YOB</th><th>Age</th><th>Weight</th><th>Height</th><th>BMI</th><th>Category</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="person : ${persons}">
+                    <td th:text="${person.id}"></td>
+                    <td th:text="${person.name}"></td>
+                    <td th:text="${person.yob}"></td>
+                    <td th:text="${person.age}"></td>
+                    <td th:text="${person.weight}"></td>
+                    <td th:text="${person.height}"></td>
+                    <td th:text="${person.bmi}"></td>
+                    <td th:text="${person.category}"></td>
+                    <td>
+                        <a th:href="@{/person/edit/{id}(id=${person.id})}" class="edit-btn">Edit</a>
+                        <a th:href="@{/person/delete/{id}(id=${person.id})}" 
+                           class="delete-btn"
+                           onclick="return confirm('Delete?')">Delete</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Total: <span th:text="${persons.size()}"></span> persons</p>
+    </div>
+    
+    <div th:if="${#lists.isEmpty(persons)}">
+        <p>No persons found. <a th:href="@{/person/form}">Add the first person</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="|Mental Health Hub - ${currentView}|">Mental Health Hub</title>
+
+    <!-- Tailwind & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Colors -->
+    <style>
+        :root {
+            --color-primary: #1f50ff;
+            --color-secondary: #8b5cf6;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .bg-blue-600 { background-color: var(--color-primary); }
+        .hover\:bg-blue-700:hover { background-color: #173dff; }
+        .text-blue-600 { color: var(--color-primary); }
+        .ring-blue-500:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(31, 80, 255, 0.5); }
+    </style>
+</head>
+<body>
+
+    <div class="flex min-h-screen">
+
+        <!-- Sidebar Fragment -->
+        <nav th:replace="~{sidebar :: sidebar(user=${user}, currentView=${currentView})}"></nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto">
+
+            <!-- Mobile Header -->
+            <div class="lg:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+                <button onclick="toggleSidebar('open')" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                    <script>document.write('<i data-lucide="menu" class="w-6 h-6 text-slate-600"></i>');</script>
+                </button>
+                <h2 class="font-semibold text-slate-900">Mental Health Hub</h2>
+            </div>
+
+            <!-- Dynamic Content Area -->
+            <div class="flex-1 p-6">
+                <!-- Dynamically include the fragment for the current view -->
+                <div th:replace="~{${currentView} :: content(user=${user})}"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Lucide Icons Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
+    <script>
+        function toggleSidebar(action) {
+            const sidebar = document.querySelector('nav'); // Assuming your sidebar <nav> is the target
+            const backdrop = document.getElementById('sidebar-backdrop'); // If you have a backdrop
+            
+            // Simple logic to toggle a 'hidden' or 'translate' class
+            // You'll need to ensure your sidebar fragment handles these classes
+            if (action === 'open') {
+                sidebar.classList.remove('-translate-x-full');
+                // Show backdrop if it exists
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                // Hide backdrop
+            }
+        }
+    </script>
+
+</body>
+</html>

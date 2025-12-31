@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Mental Health Hub - ' + ${currentView}">Self Assessment</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        // Function to handle radio button selection
+        function handleRadioChange(radio) {
+            console.log('Radio changed:', radio.name, radio.value);
+            
+            // Update visual state
+            const labels = document.querySelectorAll('label');
+            labels.forEach(label => {
+                label.classList.remove('border-blue-500', 'bg-blue-50');
+                label.classList.add('border-slate-200');
+            });
+            
+            // Highlight selected option
+            const selectedLabel = radio.closest('label');
+            if (selectedLabel) {
+                selectedLabel.classList.add('border-blue-500', 'bg-blue-50');
+                selectedLabel.classList.remove('border-slate-200');
+            }
+        }
+
+        // Function to set nextStep value before form submission
+        function setNextStep(step) {
+            const input = document.getElementById('nextStepInput');
+            if (input) {
+                input.value = step;
+            }
+            return true; // Allow form submission
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Highlight initially selected radio button
+            const checkedRadios = document.querySelectorAll('input[type="radio"]:checked');
+            checkedRadios.forEach(radio => {
+                const selectedLabel = radio.closest('label');
+                if (selectedLabel) {
+                    selectedLabel.classList.add('border-blue-500', 'bg-blue-50');
+                    selectedLabel.classList.remove('border-slate-200');
+                }
+            });
+            
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+    
+    <!-- Custom Style Injection (Simulating the provided CSS theme) -->
+    <style>
+        :root {
+            /* Using a subset of your provided colors for Tailwind classes */
+            --color-primary: #1f50ff; /* Blue for primary actions */
+            --color-secondary: #8b5cf6; /* Purple for secondary accents */
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        h1 { font-size: 1.5rem; font-weight: 700; }
+        h2 { font-size: 1.25rem; font-weight: 600; }
+        /* Style adjustments for better blending with the provided color scheme */
+        .bg-blue-600 { background-color: var(--color-primary); }
+        .hover\:bg-blue-700:hover { background-color: #173dff; }
+        .text-blue-600 { color: var(--color-primary); }
+        .ring-blue-500:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(31, 80, 255, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- Main Container -->
+    <div class="min-h-screen">
+
+        <div class="flex min-h-screen">
+
+        <!-- Sidebar Fragment -->
+        <nav th:replace="~{sidebar :: sidebar(user=${user}, currentView=${currentView})}"></nav>
+
+        <main class="flex-1 overflow-auto">
+            
+        <!-- Mobile Header with Menu Button (Replicates TSX mobile header) -->
+        <div class="lg:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+            <button
+                onclick="toggleSidebar('open')"
+                class="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+                <script>document.write('<i data-lucide="menu" class="w-6 h-6 text-slate-600"></i>');</script>
+            </button>
+            <h2 class="font-semibold text-slate-900">Mental Health Hub</h2>
+        </div>
+
+        <!-- Main Content -->
+        <main class="p-6">
+            <!-- Flash Alert Message -->
+            <div th:if="${alert}" 
+                 th:classappend="${alertType == 'success'} ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
+                 class="mb-6 p-4 border rounded-lg flex items-start gap-3 fade-in">
+                <i data-lucide="check-circle" th:if="${alertType == 'success'}" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>
+                <i data-lucide="alert-circle" th:unless="${alertType == 'success'}" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>
+                <span th:text="${alert}"></span>
+            </div>
+
+            <!-- Error Alert -->
+            <div th:if="${showError}" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 fade-in">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="font-medium text-red-900 mb-1">Error</p>
+                    <p class="text-red-700 text-sm" th:text="${errorMessage}"></p>
+                </div>
+            </div>
+
+            <!-- Dynamic Content Inclusion -->
+                    <div th:if="${userRole == 'student'}">
+                        <!-- Student Dashboard -->
+                        <div th:if="${selectedAssessment == null and !showResults}">
+                            <th:block th:replace="~{assessment-dashboard :: dashboard}"></th:block>
+                        </div>
+                        
+                        <!-- Question View -->
+                        <div th:if="${selectedAssessment != null and !showResults}">
+                            <th:block th:replace="~{assessment-question :: question}"></th:block>
+                        </div>
+                        
+                        <!-- Results View -->
+                        <div th:if="${showResults}">
+                            <th:block th:replace="~{assessment-results :: results}"></th:block>
+                        </div>
+                    </div>
+                    
+                    <!-- Faculty/Counsellor View -->
+                    <div th:if="${userRole == 'faculty' or userRole == 'counsellor'}">
+                        <th:block th:replace="~{assessment-faculty :: faculty}"></th:block>
+                    </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Auto-hide alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('[th\\:if*="alert"]');
+                alerts.forEach(alert => {
+                    alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.5s';
+                    setTimeout(() => alert.remove(), 500);
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

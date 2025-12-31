@@ -1,0 +1,98 @@
+<!-- Session List Component -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-white rounded-xl shadow-lg border border-slate-200 lg:col-span-2">
+        <div class="p-6 border-slate-200">
+            <h2 class="text-l text-slate-600 flex items-center gap-2">
+                <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+                Your Sessions
+            </h2>
+        </div>
+        
+        <div class="p-6 pt-2 space-y-4">
+            <!-- Session Cards -->
+            <div th:each="counsellingsession : ${sessions}" 
+                 th:if="${sessions != null and !sessions.isEmpty()}"
+                 th:class="'p-4 border-2 rounded-lg ' + ${counsellingsession.cardClass}"
+                 class="p-4 border-2 rounded-lg session-card">
+                    
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                             th:classappend="${counsellingsession.avatarClass}">
+                            <span th:text="${counsellingsession.counsellorId}"></span>
+                        </div>
+                        <div>
+                            <p class="text-slate-900 font-medium" th:text="${counsellingsession.counsellor}"></p>
+                            <p class="text-slate-600 text-sm" th:text="${counsellingsession.specialty}"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    <div class="text-xs font-semibold px-3 py-1 rounded-lg inline-flex items-center gap-2"
+                         th:classappend="${counsellingsession.statusBadgeClass}">
+                        <i th:attr="data-lucide=${counsellingsession.statusIcon}" class="w-3.5 h-3.5"></i>
+                        <span th:if="${counsellingsession.status == 'pending-reschedule'}">Pending Reschedule</span>
+                        <span th:unless="${counsellingsession.status == 'pending-reschedule'}" 
+                              th:text="${#strings.capitalize(counsellingsession.status)}">
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Session Details Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div class="flex items-center gap-2 text-slate-700">
+                        <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
+                        <span class="text-sm" th:text="${counsellingsession.date}"></span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-700">
+                        <i data-lucide="clock" class="w-4 h-4 text-slate-500"></i>
+                        <span class="text-sm" th:text="${counsellingsession.time}"></span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-700">
+                        <i data-lucide="video" class="w-4 h-4 text-slate-500"></i>
+                        <span class="text-sm" th:text="${counsellingsession.type}"></span>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div th:if="${counsellingsession.notes != null and !counsellingsession.notes.isEmpty()}" 
+                     class="text-slate-600 text-sm mb-3 p-2 bg-white rounded border border-slate-100">
+                    <i data-lucide="notebook-pen" class="w-4 h-4 inline mr-1 text-slate-400"></i>
+                    <span th:text="${counsellingsession.notes}"></span>
+                </div>
+
+                <!-- Cancellation Reason -->
+                <div th:if="${counsellingsession.cancellationReason != null and !counsellingsession.cancellationReason.isEmpty()}" 
+                     class="text-red-700 text-sm mb-3 p-2 bg-red-100 rounded border border-red-200">
+                    <i data-lucide="x-circle" class="w-4 h-4 inline mr-1 text-red-600"></i>
+                    <span th:text="'Cancelled: ' + ${counsellingsession.cancellationReason}"></span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2">
+                    <a th:href="@{'/counselling?detailId=' + ${counsellingsession.id}}"
+                       class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm text-center">
+                        View Details
+                    </a>
+                    
+                    <a th:if="${counsellingsession.reportAvailable}"
+                       th:href="@{'/counselling?detailId=' + ${counsellingsession.id} + '&modal=report'}"
+                       class="py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Report
+                    </a>
+                </div>
+            </div>
+            
+            <!-- No Sessions Message -->
+            <div th:unless="${sessions != null and !sessions.isEmpty()}" class="text-center py-12">
+                <i data-lucide="calendar" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
+                <p class="text-slate-600 mb-4">No sessions scheduled</p>
+                <a th:href="@{/counselling?modal=book}"
+                   class="inline-block py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Book Your First Session
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
