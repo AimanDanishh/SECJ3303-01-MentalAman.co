@@ -42,6 +42,7 @@ com\secj3303\controller\BmiController.class
 com\secj3303\model\PeerSupportModels$ContentCheckResult.class
 com\secj3303\dao\PersonDaoJdbc.class
 com\secj3303\model\GamificationData$PointsActivity.class
+com\secj3303\controller\DashboardController.class
 com\secj3303\controller\ReferralController.class
 com\secj3303\model\MoodEntry.class
 com\secj3303\model\PeerSupportModels$ReportForm.class
