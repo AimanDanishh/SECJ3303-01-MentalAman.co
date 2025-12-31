@@ -2,7 +2,9 @@ package com.secj3303.controller;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +30,7 @@ import com.secj3303.model.MoodEntry;
 public class MoodTrackerController {
 
     private static final String HISTORY_KEY = "moodEntries";
-    private static final String DEFAULT_VIEW = "mood";
+    private static final String DEFAULT_VIEW = "assessment";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private List<MoodEntry> getMoodEntries(HttpSession session) {
@@ -41,24 +43,55 @@ public class MoodTrackerController {
     }
     
     // --- Main View Handler ---
-
     @GetMapping
     public String moodTrackerDashboard(
         @RequestParam(defaultValue = "entry") String view,
         @RequestParam(required = false) Integer editId,
         Model model, HttpSession session
     ) {
+        // Get user from session
+        Object userObj = session.getAttribute("user");
+        if (userObj == null) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("activeTab", "mood");
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        
         List<MoodEntry> entries = getMoodEntries(session);
         
         // Sort entries by date descending for history and streak calculation
-        entries.sort(Comparator.comparing(MoodEntry::getDate).reversed());
+        entries.sort((e1, e2) -> {
+            try {
+                return e2.getDate().compareTo(e1.getDate());
+            } catch (Exception ex) {
+                return 0;
+            }
+        });
 
         // --- Calculate Stats ---
         Map<String, Object> moodStats = MoodEntry.getMoodStats(entries);
         model.addAttribute("currentStreak", MoodEntry.calculateStreak(entries));
         model.addAttribute("totalEntries", entries.size());
-        model.addAllAttributes(moodStats);
         
+        // Add all stats to model
+        if (moodStats != null) {
+            model.addAttribute("last7Days", moodStats.get("last7Days"));
+            model.addAttribute("moodCounts", moodStats.get("moodCounts"));
+            model.addAttribute("mostFrequentMoodId", moodStats.get("mostFrequentMoodId"));
+            model.addAttribute("totalEntriesLast7Days", moodStats.get("totalEntriesLast7Days"));
+            model.addAttribute("mostFrequentCount", moodStats.get("mostFrequentCount"));
+            model.addAttribute("mostFrequentMoodData", moodStats.get("mostFrequentMoodData"));
+        } else {
+            // Provide default values if stats calculation fails
+            model.addAttribute("last7Days", new ArrayList<MoodEntry>());  // Empty list
+            model.addAttribute("moodCounts", new HashMap<String, Integer>());
+            model.addAttribute("mostFrequentMoodId", "neutral");
+            model.addAttribute("totalEntriesLast7Days", 0);  // Set to 0, not entries.size()
+            model.addAttribute("mostFrequentCount", 0);
+            model.addAttribute("mostFrequentMoodData", new HashMap<String, String>());
+        }
+
         // --- View State ---
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("view", view);
@@ -66,112 +99,129 @@ public class MoodTrackerController {
         model.addAttribute("moodDefinitions", MoodEntry.MOOD_DEFINITIONS);
         
         // --- Handle Edit/Create Form State ---
-        model.addAttribute("isEditing", false);
-        model.addAttribute("editingEntry", null);
-        model.addAttribute("formData", new MoodEntry());
+        boolean isEditing = false;
+        MoodEntry editingEntry = null;
+        MoodEntry formData = new MoodEntry();
         
         if (editId != null) {
             Optional<MoodEntry> entryOpt = entries.stream().filter(e -> e.getId() == editId).findFirst();
             if (entryOpt.isPresent()) {
-                model.addAttribute("isEditing", true);
-                model.addAttribute("editingEntry", entryOpt.get());
-                model.addAttribute("formData", entryOpt.get());
-                model.addAttribute("view", "entry");
+                isEditing = true;
+                editingEntry = entryOpt.get();
+                formData = editingEntry;
             }
         }
         
-        // If formData was added by redirect (error case), use it
-        if (!model.containsAttribute("formData")) {
-            model.addAttribute("formData", new MoodEntry());
-        } else if (model.getAttribute("isEditing") != null && (Boolean) model.getAttribute("isEditing")) {
-            // If editing mode was intended but failed validation, ensure entry is set
-            model.addAttribute("editingEntry", entries.stream().filter(e -> e.getId() == editId).findFirst().orElse(null));
-        }
+        model.addAttribute("isEditing", isEditing);
+        model.addAttribute("editingEntry", editingEntry);
+        model.addAttribute("formData", formData);
+        
+        // Add user to model
+        model.addAttribute("user", userObj);
 
-        return "app-layout";
+        // Debug: Print what's being passed to template
+System.out.println("DEBUG - totalEntriesLast7Days: " + model.getAttribute("totalEntriesLast7Days"));
+System.out.println("DEBUG - moodCounts: " + model.getAttribute("moodCounts"));
+System.out.println("DEBUG - view: " + view);
+
+// Make sure the view attribute is set
+model.addAttribute("view", view);
+
+        return "mood-tracker";
     }
 
     // --- Form Submission Handler ---
-
     @PostMapping("/submit")
     public String handleSubmit(@ModelAttribute MoodEntry formData, HttpSession session, RedirectAttributes redirect) {
         List<MoodEntry> entries = getMoodEntries(session);
         
         // --- Validation ---
+        String errorMessage = null;
+        
         if (formData.getMood() == null || formData.getMood().isEmpty()) {
-            redirect.addFlashAttribute("errorMessage", "Please select a mood.");
+            errorMessage = "Please select a mood.";
         } else if (formData.getDate() == null || formData.getDate().isEmpty()) {
-            redirect.addFlashAttribute("errorMessage", "Please select a date.");
-        } else if (formData.getNotes() == null || formData.getNotes().length() > 500) {
-            redirect.addFlashAttribute("errorMessage", "Notes are too long (max 500 chars).");
+            errorMessage = "Please select a date.";
+        } else if (formData.getNotes() != null && formData.getNotes().length() > 500) {
+            errorMessage = "Notes are too long (max 500 chars).";
         }
         
         // Check for existing entry on this date if not editing
-        if (formData.getId() == 0) {
-             boolean exists = entries.stream().anyMatch(e -> e.getDate().equals(formData.getDate()));
-             if (exists) {
-                 redirect.addFlashAttribute("errorMessage", "You already have a mood entry for this date. Please edit the existing entry or choose a different date.");
-             }
+        if (formData.getId() == 0 && entries.stream().anyMatch(e -> e.getDate().equals(formData.getDate()))) {
+            errorMessage = "You already have a mood entry for this date. Please edit the existing entry or choose a different date.";
         }
 
-        if (redirect.getFlashAttributes().containsKey("errorMessage")) {
+        if (errorMessage != null) {
+            redirect.addFlashAttribute("errorMessage", errorMessage);
             redirect.addFlashAttribute("showError", true);
             redirect.addFlashAttribute("formData", formData);
             if (formData.getId() != 0) {
-                 redirect.addAttribute("editId", formData.getId());
+                redirect.addAttribute("editId", formData.getId());
             }
             return "redirect:/mood";
         }
         
         // Simulate database error (10% chance)
         if (ThreadLocalRandom.current().nextDouble() < 0.1) {
-             redirect.addFlashAttribute("errorMessage", "Your mood entry couldn't be saved. Please try again later.");
-             redirect.addFlashAttribute("showError", true);
-             redirect.addFlashAttribute("formData", formData);
-             if (formData.getId() != 0) {
-                 redirect.addAttribute("editId", formData.getId());
-             }
-             return "redirect:/mood";
+            redirect.addFlashAttribute("errorMessage", "Your mood entry couldn't be saved. Please try again later.");
+            redirect.addFlashAttribute("showError", true);
+            redirect.addFlashAttribute("formData", formData);
+            if (formData.getId() != 0) {
+                redirect.addAttribute("editId", formData.getId());
+            }
+            return "redirect:/mood";
         }
         
         // --- Save/Update Logic ---
+        String successMessage;
         
         if (formData.getId() != 0) {
             // Update existing entry
-            entries.stream().filter(e -> e.getId() == formData.getId()).findFirst().ifPresent(entry -> {
-                entry.setMood(formData.getMood());
-                entry.setNotes(formData.getNotes());
-                entry.setDate(formData.getDate());
-                entry.setTimestamp(LocalDateTime.now().toString());
-            });
-            redirect.addFlashAttribute("successMessage", "Mood entry updated successfully!");
+            entries.stream()
+                .filter(e -> e.getId() == formData.getId())
+                .findFirst()
+                .ifPresent(entry -> {
+                    entry.setMood(formData.getMood());
+                    entry.setNotes(formData.getNotes());
+                    entry.setDate(formData.getDate());
+                    entry.setTimestamp(LocalDateTime.now().toString());
+                });
+            successMessage = "Mood entry updated successfully!";
         } else {
             // Create new entry
-            AtomicInteger maxId = new AtomicInteger(entries.stream().mapToInt(MoodEntry::getId).max().orElse(0));
+            AtomicInteger maxId = new AtomicInteger(entries.stream()
+                .mapToInt(MoodEntry::getId)
+                .max()
+                .orElse(0));
             formData.setId(maxId.incrementAndGet());
             formData.setTimestamp(LocalDateTime.now().toString());
             entries.add(0, formData);
-            redirect.addFlashAttribute("successMessage", "Mood entry saved successfully!");
+            successMessage = "Mood entry saved successfully!";
         }
 
         session.setAttribute(HISTORY_KEY, entries);
+        redirect.addFlashAttribute("successMessage", successMessage);
         redirect.addFlashAttribute("showSuccess", true);
         return "redirect:/mood";
     }
     
     // --- Delete Handler ---
-
     @PostMapping("/delete/{id}")
     public String handleDelete(@PathVariable int id, HttpSession session, RedirectAttributes redirect) {
         List<MoodEntry> entries = getMoodEntries(session);
         
-        entries.removeIf(e -> e.getId() == id);
-        session.setAttribute(HISTORY_KEY, entries);
+        boolean removed = entries.removeIf(e -> e.getId() == id);
         
-        redirect.addFlashAttribute("successMessage", "Mood entry deleted successfully.");
-        redirect.addFlashAttribute("showSuccess", true);
-        redirect.addAttribute("view", "history"); // Return to history view
+        if (removed) {
+            session.setAttribute(HISTORY_KEY, entries);
+            redirect.addFlashAttribute("successMessage", "Mood entry deleted successfully.");
+            redirect.addFlashAttribute("showSuccess", true);
+        } else {
+            redirect.addFlashAttribute("errorMessage", "Entry not found or could not be deleted.");
+            redirect.addFlashAttribute("showError", true);
+        }
         
+        redirect.addAttribute("view", "history");
         return "redirect:/mood";
     }
 }

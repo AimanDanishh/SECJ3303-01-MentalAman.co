@@ -1,160 +1,215 @@
 package com.secj3303.model;
 
-import java.io.Serializable;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-public class MoodEntry implements Serializable {
+public class MoodEntry {
     private int id;
-    private String date; // YYYY-MM-DD
-    private String mood; // 'happy' | 'sad' | 'stressed' | 'neutral' | 'excited' | 'anxious'
+    private String date;
+    private String mood;
     private String notes;
-    private String timestamp; // ISO 8601 string for precise time
-
-    // Constructor for initial mock data
-    public MoodEntry(int id, String date, String mood, String notes, String timestamp) {
-        this.id = id;
-        this.date = date;
-        this.mood = mood;
-        this.notes = notes;
-        this.timestamp = timestamp;
-    }
+    private String timestamp;
     
-    // Default constructor for form binding
+    // Default constructor
     public MoodEntry() {}
-
-    // --- Getters and Setters (Necessary for Thymeleaf and data modification) ---
-
+    
+    // Getters and setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+    
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
+    
     public String getMood() { return mood; }
     public void setMood(String mood) { this.mood = mood; }
+    
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
     
-    // --- Static Data and Utilities (Replicating TSX logic) ---
-
-    public static final List<Map<String, String>> MOOD_DEFINITIONS = Arrays.asList(
-        Map.of("id", "happy", "label", "Happy", "color", "text-yellow-500", "bg", "bg-yellow-100", "border", "border-yellow-500", "bg-bar", "bg-yellow-500"),
-        Map.of("id", "sad", "label", "Sad", "color", "text-blue-500", "bg", "bg-blue-100", "border", "border-blue-500", "bg-bar", "bg-blue-500"),
-        Map.of("id", "stressed", "label", "Stressed", "color", "text-red-500", "bg", "bg-red-100", "border", "border-red-500", "bg-bar", "bg-red-500"),
-        Map.of("id", "neutral", "label", "Neutral", "color", "text-gray-500", "bg", "bg-gray-100", "border", "border-gray-500", "bg-bar", "bg-gray-500"),
-        Map.of("id", "excited", "label", "Excited", "color", "text-purple-500", "bg", "bg-purple-100", "border", "border-purple-500", "bg-bar", "bg-purple-500"),
-        Map.of("id", "anxious", "label", "Anxious", "color", "text-orange-500", "bg", "bg-orange-100", "border", "border-orange-500", "bg-bar", "bg-orange-500")
-    );
-
-    public static Map<String, String> getMoodData(String moodId) {
-        return MOOD_DEFINITIONS.stream()
-            .filter(m -> m.get("id").equals(moodId))
-            .findFirst()
-            .orElse(Map.of("id", "unknown", "label", "Unknown", "color", "text-slate-500", "bg", "bg-slate-100", "border", "border-slate-500", "bg-bar", "bg-slate-500"));
-    }
+    // Mood definitions
+    public static final List<Map<String, String>> MOOD_DEFINITIONS = new ArrayList<>();
     
-    public static List<MoodEntry> getInitialMoodEntries() {
-        return new ArrayList<>(Arrays.asList(
-            new MoodEntry(1, "2025-11-13", "happy", "Had a good study session with friends", "2025-11-13T10:30:00Z"),
-            new MoodEntry(2, "2025-11-12", "stressed", "Feeling anxious about upcoming exams", "2025-11-12T14:20:00Z"),
-            new MoodEntry(3, "2025-11-11", "neutral", "Regular day, nothing special", "2025-11-11T16:45:00Z"),
-            new MoodEntry(4, "2025-11-10", "happy", "Got good feedback on my project", "2025-11-10T11:00:00Z"),
-            new MoodEntry(5, "2025-11-09", "anxious", "Worried about assignment deadlines", "2025-11-09T09:15:00Z")
+    static {
+        // Initialize mood definitions
+        MOOD_DEFINITIONS.add(Map.of(
+            "id", "happy",
+            "label", "Happy",
+            "color", "text-green-600",
+            "bg", "bg-green-100",
+            "border", "border-green-400",
+            "bg-bar", "bg-green-500"
+        ));
+        MOOD_DEFINITIONS.add(Map.of(
+            "id", "sad",
+            "label", "Sad",
+            "color", "text-blue-600",
+            "bg", "bg-blue-100",
+            "border", "border-blue-400",
+            "bg-bar", "bg-blue-500"
+        ));
+        MOOD_DEFINITIONS.add(Map.of(
+            "id", "stressed",
+            "label", "Stressed",
+            "color", "text-red-600",
+            "bg", "bg-red-100",
+            "border", "border-red-400",
+            "bg-bar", "bg-red-500"
+        ));
+        MOOD_DEFINITIONS.add(Map.of(
+            "id", "neutral",
+            "label", "Neutral",
+            "color", "text-gray-600",
+            "bg", "bg-gray-100",
+            "border", "border-gray-400",
+            "bg-bar", "bg-gray-500"
+        ));
+        MOOD_DEFINITIONS.add(Map.of(
+            "id", "excited",
+            "label", "Excited",
+            "color", "text-yellow-600",
+            "bg", "bg-yellow-100",
+            "border", "border-yellow-400",
+            "bg-bar", "bg-yellow-500"
+        ));
+        MOOD_DEFINITIONS.add(Map.of(
+            "id", "anxious",
+            "label", "Anxious",
+            "color", "text-purple-600",
+            "bg", "bg-purple-100",
+            "border", "border-purple-400",
+            "bg-bar", "bg-purple-500"
         ));
     }
     
-    // --- Complex Calculation Logic ---
-
-    // Replicates calculateStreak()
-    public static int calculateStreak(List<MoodEntry> entries) {
-        if (entries.isEmpty()) return 0;
-
-        List<MoodEntry> sortedEntries = entries.stream()
-            .sorted(Comparator.comparing(MoodEntry::getDate).reversed())
-            .collect(Collectors.toList());
-
-        int streak = 0;
-        LocalDate currentDate = LocalDate.now();
-        boolean todayLogged = false;
-
-        // Check if today is logged
-        if (sortedEntries.get(0).getDate().equals(currentDate.toString())) {
-            todayLogged = true;
-            streak = 1;
-        }
-
-        // Check if yesterday was logged, if today is not, or continue streak
-        LocalDate lastDate = todayLogged ? currentDate : currentDate.minusDays(1);
+    // Get initial mood entries
+    public static List<MoodEntry> getInitialMoodEntries() {
+        List<MoodEntry> entries = new ArrayList<>();
         
-        for (int i = 0; i < sortedEntries.size(); i++) {
-            LocalDate entryDate = LocalDate.parse(sortedEntries.get(i).getDate());
-            
-            if (entryDate.isEqual(lastDate)) {
-                if (!todayLogged && entryDate.isEqual(currentDate.minusDays(1))) {
-                    // Start streak from yesterday if today is missed
-                    streak = 1;
-                } else if (i > 0) {
-                    LocalDate prevEntryDate = LocalDate.parse(sortedEntries.get(i - 1).getDate());
-                    if (ChronoUnit.DAYS.between(entryDate, prevEntryDate) == 1) {
-                        streak++;
-                    } else if (ChronoUnit.DAYS.between(entryDate, prevEntryDate) > 1) {
-                        // Gap found, streak broken
-                        break;
+        // Add sample entries for the last 5 days
+        for (int i = 0; i < 5; i++) {
+            MoodEntry entry = new MoodEntry();
+            entry.setId(i + 1);
+            entry.setDate(LocalDate.now().minusDays(i).toString());
+            entry.setMood(i % 2 == 0 ? "happy" : "neutral");
+            entry.setNotes("Sample mood entry " + (i + 1));
+            entry.setTimestamp(LocalDateTime.now().minusDays(i).toString());
+            entries.add(entry);
+        }
+        
+        return entries;
+    }
+    
+    // Calculate mood statistics
+    public static Map<String, Object> getMoodStats(List<MoodEntry> entries) {
+        Map<String, Object> stats = new HashMap<>();
+        Map<String, Integer> moodCounts = new HashMap<>();
+        
+        // Initialize mood counts
+        for (Map<String, String> moodDef : MOOD_DEFINITIONS) {
+            moodCounts.put(moodDef.get("id"), 0);
+        }
+        
+        // Get entries from last 7 days
+        LocalDate today = LocalDate.now();
+        LocalDate sevenDaysAgo = today.minusDays(6); // Last 7 days inclusive
+        
+        List<MoodEntry> last7DaysEntries = new ArrayList<>();
+        
+        // Count moods from last 7 days only
+        for (MoodEntry entry : entries) {
+            try {
+                LocalDate entryDate = LocalDate.parse(entry.getDate());
+                // Check if entry is within last 7 days (inclusive)
+                if (!entryDate.isBefore(sevenDaysAgo) && !entryDate.isAfter(today)) {
+                    last7DaysEntries.add(entry);
+                    
+                    if (entry.getMood() != null && moodCounts.containsKey(entry.getMood())) {
+                        moodCounts.put(entry.getMood(), moodCounts.get(entry.getMood()) + 1);
                     }
-                    // Handle same day entry (should be filtered out by date check)
                 }
-                lastDate = entryDate.minusDays(1);
-            } else if (entryDate.isBefore(lastDate)) {
-                break; // Streak broken by a gap
+            } catch (Exception e) {
+                // Skip invalid dates
             }
         }
-        return streak;
-    }
-
-    // Replicates last7Days filtering and moodCounts calculation
-    public static Map<String, Object> getMoodStats(List<MoodEntry> entries) {
-        LocalDate today = LocalDate.now();
-        LocalDate sevenDaysAgo = today.minusDays(6);
-
-        List<MoodEntry> last7Days = entries.stream()
-            .filter(entry -> {
-                LocalDate entryDate = LocalDate.parse(entry.getDate());
-                return !entryDate.isBefore(sevenDaysAgo) && !entryDate.isAfter(today);
-            })
-            .collect(Collectors.toList());
-
-        Map<String, Long> moodCounts = last7Days.stream()
-            .collect(Collectors.groupingBy(MoodEntry::getMood, Collectors.counting()));
         
         // Find most frequent mood
-        String mostFrequentMoodId = moodCounts.entrySet().stream()
-            .max(Map.Entry.comparingByValue())
-            .map(Map.Entry::getKey)
-            .orElse(null);
-
-        Long mostFrequentCount = Optional.ofNullable(mostFrequentMoodId)
-            .map(moodCounts::get)
-            .orElse(0L);
-
-        Map<String, String> mostFrequentMoodData = Optional.ofNullable(mostFrequentMoodId)
-            .map(MoodEntry::getMoodData)
-            .orElse(null);
-
-        return Map.of(
-            "last7Days", last7Days,
-            "moodCounts", moodCounts,
-            "mostFrequentMoodId", mostFrequentMoodId != null ? mostFrequentMoodId : "",
-            "mostFrequentCount", mostFrequentCount,
-            "mostFrequentMoodData", mostFrequentMoodData != null ? mostFrequentMoodData : Map.of(),
-            "totalEntriesLast7Days", last7Days.size()
-        );
+        String mostFrequentMoodId = "neutral";
+        int mostFrequentCount = 0;
+        
+        for (Map.Entry<String, Integer> count : moodCounts.entrySet()) {
+            if (count.getValue() > mostFrequentCount) {
+                mostFrequentCount = count.getValue();
+                mostFrequentMoodId = count.getKey();
+            }
+        }
+        
+        // Get mood data for most frequent mood
+        Map<String, String> mostFrequentMoodData = new HashMap<>();
+        for (Map<String, String> moodDef : MOOD_DEFINITIONS) {
+            if (moodDef.get("id").equals(mostFrequentMoodId)) {
+                mostFrequentMoodData = moodDef;
+                break;
+            }
+        }
+        
+        // If no mood data found, use neutral as default
+        if (mostFrequentMoodData.isEmpty()) {
+            mostFrequentMoodData = Map.of(
+                "id", "neutral",
+                "color", "text-gray-600",
+                "bg", "bg-gray-100"
+            );
+        }
+        
+        stats.put("last7Days", last7DaysEntries);
+        stats.put("moodCounts", moodCounts);
+        stats.put("mostFrequentMoodId", mostFrequentMoodId);
+        stats.put("totalEntriesLast7Days", last7DaysEntries.size()); // FIXED: Use last7DaysEntries.size()
+        stats.put("mostFrequentCount", mostFrequentCount);
+        stats.put("mostFrequentMoodData", mostFrequentMoodData);
+        
+        return stats;
+    }
+    
+    // Calculate current streak
+    public static int calculateStreak(List<MoodEntry> entries) {
+        if (entries.isEmpty()) return 0;
+        
+        int streak = 0;
+        LocalDate currentDate = LocalDate.now();
+        
+        // Sort by date descending
+        entries.sort((e1, e2) -> {
+            try {
+                LocalDate date1 = LocalDate.parse(e1.getDate());
+                LocalDate date2 = LocalDate.parse(e2.getDate());
+                return date2.compareTo(date1);
+            } catch (Exception e) {
+                return 0;
+            }
+        });
+        
+        for (MoodEntry entry : entries) {
+            try {
+                LocalDate entryDate = LocalDate.parse(entry.getDate());
+                
+                if (entryDate.equals(currentDate.minusDays(streak))) {
+                    streak++;
+                } else {
+                    break;
+                }
+            } catch (Exception e) {
+                // Skip invalid dates
+            }
+        }
+        
+        return streak;
     }
 }

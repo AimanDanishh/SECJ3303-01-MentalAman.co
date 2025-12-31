@@ -24,6 +24,7 @@ import com.secj3303.model.AssessmentModels.Assessment;
 import com.secj3303.model.AssessmentModels.AssessmentResult;
 import com.secj3303.model.AssessmentModels.Question;
 import com.secj3303.model.AssessmentModels.StudentData;
+import com.secj3303.model.User;
 import com.secj3303.service.AssessmentService;
 
 @Controller
@@ -74,7 +75,6 @@ public class SelfAssessmentController {
 
 
     // --- Main Dashboard/List View ---
-
     @GetMapping
     public String dashboard(
         @RequestParam(required = false) String userRole, // MOCK role
@@ -84,43 +84,94 @@ public class SelfAssessmentController {
         @RequestParam(defaultValue = "all") String filterRisk,
         Model model, HttpSession session
     ) {
-        // MOCK role setting (use authenticated user role in real app)
-        model.addAttribute("userRole", userRole != null ? userRole : "student"); 
+        // Get user from session FIRST
+        User user = (User) session.getAttribute("user");
+        
+        // If no user, redirect to login
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        // Add user to model
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole()); // Use actual user role, not mock
         
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("activeTab", tab);
         
+        // FIX: Check session attributes directly and pass to model
+        Assessment selectedAssessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
+        String showResultsFlag = (String) session.getAttribute("showResultsFlag");
+        boolean showResults = "true".equals(showResultsFlag);
+        
+        // Add the actual objects to model
+        model.addAttribute("selectedAssessment", selectedAssessment); // This is the Assessment object or null
+        model.addAttribute("showResultsFlag", showResultsFlag); // This is the flag
+        model.addAttribute("showResults", showResults); // This is boolean
+        
         // --- FACULTY/COUNSELLOR VIEW ---
-        if ("faculty".equals(userRole) || "counsellor".equals(userRole)) {
-            
+        if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
             List<StudentData> students = getAssignedStudents(session);
+
+            List<StudentData> filteredStudents = assessmentService.filterStudents(searchQuery, filterRisk);
+        
+            // Calculate statistics server-side
+            long highRiskCount = students.stream()
+                .filter(s -> "high".equalsIgnoreCase(s.riskLevel))
+                .count();
+            long moderateRiskCount = students.stream()
+                .filter(s -> "moderate".equalsIgnoreCase(s.riskLevel))
+                .count();
+            long lowRiskCount = students.stream()
+                .filter(s -> "low".equalsIgnoreCase(s.riskLevel))
+                .count();
+
+
+            // Add all required model attributes
             model.addAttribute("assignedStudents", students);
-            model.addAttribute("filteredStudents", assessmentService.filterStudents(searchQuery, filterRisk));
+            model.addAttribute("filteredStudents", filteredStudents);
             model.addAttribute("searchQuery", searchQuery == null ? "" : searchQuery);
             model.addAttribute("filterRisk", filterRisk);
-            
+            model.addAttribute("filteredCount", filteredStudents.size());
+            model.addAttribute("totalCount", students.size()); // Total from all students
+            model.addAttribute("highRiskCount", highRiskCount); // From all students
+            model.addAttribute("moderateRiskCount", moderateRiskCount); // From all students
+            model.addAttribute("lowRiskCount", lowRiskCount); // From all students
+
+            // Initialize these to avoid null in Thymeleaf
+            model.addAttribute("showReportModal", false);
+            model.addAttribute("selectedReport", null);
+            model.addAttribute("selectedStudent", null);
+                        
             if (selectStudentId != null) {
-                students.stream().filter(s -> s.id == selectStudentId).findFirst().ifPresent(student -> {
-                    model.addAttribute("selectedStudent", student);
-                });
+                students.stream()
+                    .filter(s -> s.id == selectStudentId)
+                    .findFirst()
+                    .ifPresent(student -> {
+                        model.addAttribute("selectedStudent", student);
+                        // Store in session for later use
+                        session.setAttribute(SELECTED_STUDENT_KEY, student);
+                    });
             }
-            return "app-layout";
+
+            return "faculty-assessment";
         }
         
         // --- STUDENT VIEW (Default) ---
         
-        // Reset assessment flow variables
-        session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-        session.removeAttribute(ANSWERS_KEY);
-        session.removeAttribute(SELECTED_STUDENT_KEY);
-
+        // Only reset assessment flow variables if NOT in assessment mode
+        if (selectedAssessment == null && !showResults) {
+            session.removeAttribute(SELECTED_ASSESSMENT_KEY);
+            session.removeAttribute(ANSWERS_KEY);
+            session.removeAttribute(SELECTED_STUDENT_KEY);
+        }
         model.addAttribute("assessments", assessmentService.getAllAssessments());
         model.addAttribute("pastResults", getStudentHistory(session));
         model.addAttribute("savedProgress", session.getAttribute(SAVED_PROGRESS_KEY));
         
-        return "app-layout";
+        return "self-assessment";
     }
-    
+        
     // --- Assessment Selection and Navigation ---
     
     @GetMapping("/start/{id}")
@@ -158,9 +209,15 @@ public class SelfAssessmentController {
     
     @GetMapping("/question")
     public String displayQuestion(
-        @RequestParam(defaultValue = "0") int q, // current question index
+        @RequestParam(defaultValue = "0") int q,
         Model model, HttpSession session, RedirectAttributes redirect
     ) {
+        // Get user from session
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
         Assessment assessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
         AssessmentModels.AssessmentAnswers answersObject = (AssessmentModels.AssessmentAnswers) session.getAttribute(ANSWERS_KEY);
 
@@ -170,22 +227,33 @@ public class SelfAssessmentController {
         
         Question currentQuestion = assessment.questions.get(q);
         
+        // CRITICAL: Add ALL required model attributes
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
         model.addAttribute("currentView", DEFAULT_VIEW);
+        
+        // These are needed for the template's conditional rendering
+        model.addAttribute("selectedAssessment", assessment);  
+        model.addAttribute("showResults", false);             
+        model.addAttribute("showResultsFlag", "false");        
+        
         model.addAttribute("assessment", assessment);
         model.addAttribute("currentQuestion", currentQuestion);
         model.addAttribute("currentQuestionIndex", q);
         
         // Pass the raw map to the view for access
-        model.addAttribute("answers", answersObject.answers); 
+        model.addAttribute("answers", answersObject.answers != null ? answersObject.answers : new HashMap<>()); 
         
         model.addAttribute("progress", ((q + 1) / (double) assessment.questions.size()) * 100);
         
         // Provide scale labels dynamically
         if ("scale".equals(currentQuestion.type)) {
-             model.addAttribute("scaleLabels", assessmentService.getScaleLabels(currentQuestion.scaleMax));
+            model.addAttribute("scaleLabels", assessmentService.getScaleLabels(currentQuestion.scaleMax));
+        } else {
+            model.addAttribute("scaleLabels", new ArrayList<>()); // Empty list
         }
 
-        return "app-layout";
+        return "self-assessment";
     }
     
     // --- Assessment Submission/Navigation Handlers ---
@@ -212,7 +280,8 @@ public class SelfAssessmentController {
         
         if (formData.containsKey(answerKey)) {
             try {
-                 int answerValue = Integer.parseInt(formData.get(answerKey));
+                 String answerValueStr = formData.get(answerKey);
+                 int answerValue = Integer.parseInt(answerValueStr);
                  // FIX: Insert String key and Integer value into the map
                  sessionAnswers.put(answerKey, answerValue); 
                  session.setAttribute(ANSWERS_KEY, answersObject); // Save the updated object back
@@ -222,7 +291,7 @@ public class SelfAssessmentController {
         }
         
         // 2. Check if answer is required for navigation
-        boolean answered = sessionAnswers.containsKey(currentQuestion.id);
+        boolean answered = sessionAnswers.containsKey(answerKey);
 
         if (nextStep == 1 && !answered) {
             redirect.addFlashAttribute("errorMessage", "Please answer the current question before moving forward.");
@@ -248,7 +317,7 @@ public class SelfAssessmentController {
             }
 
             AssessmentResult result = assessmentService.calculateScore(assessment, answersObject);
-            
+
             // Save result to student history
             List<AssessmentResult> history = getStudentHistory(session);
             history.add(0, result);
@@ -257,7 +326,7 @@ public class SelfAssessmentController {
             // Clean up session state and show results
             session.removeAttribute(SELECTED_ASSESSMENT_KEY);
             session.removeAttribute(ANSWERS_KEY);
-            
+
             // Remove from saved progress
             Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
             if (savedProgress != null) {
@@ -265,56 +334,177 @@ public class SelfAssessmentController {
                 session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
             }
 
-            redirect.addFlashAttribute("assessmentScore", result.score);
-            return "redirect:/assessment/results";
-        } 
+            // Redirect to view the specific result
+            return "redirect:/assessment/results/" + result.id;
+                    } 
         
-        else if (nextStep == 3) { 
-            // SAVE PROGRESS
-            Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
-            if (savedProgress == null) {
-                 savedProgress = new HashMap<>();
+            else if (nextStep == 3) { 
+                // SAVE PROGRESS
+                Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
+                if (savedProgress == null) {
+                    savedProgress = new HashMap<>();
+                }
+                
+                AssessmentModels.AssessmentAnswers progress = new AssessmentModels.AssessmentAnswers();
+                progress.answers = new HashMap<>(sessionAnswers);
+                progress.assessmentId = assessment.id;
+                progress.currentQuestionIndex = currentQuestionIndex;
+
+                savedProgress.put(assessment.id, progress);
+                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+
+                session.removeAttribute(SELECTED_ASSESSMENT_KEY);
+                session.removeAttribute(ANSWERS_KEY);
+                
+                redirect.addFlashAttribute("alert", "✓ Progress saved! You can resume this assessment later.");
+                redirect.addFlashAttribute("alertType", "success");
+                return "redirect:/assessment";
             }
             
-            AssessmentModels.AssessmentAnswers progress = new AssessmentModels.AssessmentAnswers();
-            progress.answers = sessionAnswers;
-            progress.assessmentId = assessment.id;
-            progress.currentQuestionIndex = currentQuestionIndex;
-
-            savedProgress.put(assessment.id, progress);
-            session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
-            
-            redirect.addFlashAttribute("alert", "✓ Progress saved! You can resume this assessment later.");
-            redirect.addFlashAttribute("alertType", "success");
-            return "redirect:/assessment";
+            else {
+                // NEXT/PREVIOUS NAVIGATION
+                int newIndex = currentQuestionIndex + nextStep;
+                return "redirect:/assessment/question?q=" + newIndex;
+            }
         }
-        
-        else {
-            // NEXT/PREVIOUS NAVIGATION
-            int newIndex = currentQuestionIndex + nextStep;
-            return "redirect:/assessment/question?q=" + newIndex;
-        }
-    }
 
     // --- Results View (Redirect target after submission) ---
 
     @GetMapping("/results")
-    public String displayResults(Model model, HttpSession session, @ModelAttribute("assessmentScore") Integer assessmentScore) {
-        if (assessmentScore == null) {
-             return "redirect:/assessment";
+    public String displayResults(Model model, HttpSession session, 
+                           @RequestParam(required = false) Integer resultId) {
+    
+    // Get user from session
+    User user = (User) session.getAttribute("user");
+    if (user == null) {
+        return "redirect:/login";
+    }
+    
+    // Check if user is a student
+    if (!"student".equals(user.getRole())) {
+        return "redirect:/assessment";
+    }
+    
+    AssessmentResult result;
+    List<AssessmentResult> history = getStudentHistory(session);
+    
+    if (resultId != null) {
+        // View specific result by ID
+        result = history.stream()
+            .filter(r -> r.id == resultId)
+            .findFirst()
+            .orElse(null);
+    } else {
+        // View the most recent result (for submission flow)
+        result = !history.isEmpty() ? history.get(0) : null;
+    }
+    
+    if (result == null) {
+        return "redirect:/assessment";
+    }
+    
+    // Set showResults flag
+    session.setAttribute("showResultsFlag", "true");
+    
+    model.addAttribute("currentView", DEFAULT_VIEW);
+    model.addAttribute("showResults", true);
+    model.addAttribute("assessmentScore", result.score);
+    model.addAttribute("selectedReport", result);
+    model.addAttribute("user", user);
+    model.addAttribute("userRole", user.getRole());
+    
+    return "self-assessment";
+    }
+
+    // --- View Specific Assessment Result ---
+    @GetMapping("/results/{resultId}")
+    public String viewSpecificResult(@PathVariable int resultId, Model model, HttpSession session) {
+        // Get user from session
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
         }
         
-        // Retrieve the newest result from the session history
+        // Check if user is a student
+        if (!"student".equals(user.getRole())) {
+            return "redirect:/assessment";
+        }
+        
+        // Find the result in student's history
         List<AssessmentResult> history = getStudentHistory(session);
-        AssessmentResult newestResult = history.get(0);
-
+        AssessmentResult result = history.stream()
+            .filter(r -> r.id == resultId)
+            .findFirst()
+            .orElse(null);
+        
+        if (result == null) {
+            return "redirect:/assessment";
+        }
+        
+        // Set showResults flag
+        session.setAttribute("showResultsFlag", "true");
+        
+        // Add to model
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("showResults", true);
-        model.addAttribute("assessmentScore", newestResult.score);
-        model.addAttribute("selectedReport", newestResult);
-        model.addAttribute("userRole", "student");
+        model.addAttribute("assessmentScore", result.score);
+        model.addAttribute("selectedReport", result);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        
+        return "self-assessment";
+    }
 
-        return "app-layout";
+    // --- View Full Assessment Report ---
+    @GetMapping("/report/{resultId}")
+    public String viewFullReport(@PathVariable int resultId, Model model, HttpSession session) {
+        // Get user from session
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        // Check if user is a student
+        if (!"student".equals(user.getRole())) {
+            return "redirect:/assessment";
+        }
+        
+        // Find the result in student's history
+        List<AssessmentResult> history = getStudentHistory(session);
+        AssessmentResult result = history.stream()
+            .filter(r -> r.id == resultId)
+            .findFirst()
+            .orElse(null);
+        
+        if (result == null) {
+            return "redirect:/assessment";
+        }
+        
+        // Set showResults flag
+        session.setAttribute("showResultsFlag", "true");
+        
+        // Add to model
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        model.addAttribute("showResults", true);
+        model.addAttribute("assessmentScore", result.score);
+        model.addAttribute("selectedReport", result);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        
+        return "self-assessment";
+    }
+
+        // --- Clear Assessment State and Return to Dashboard ---
+    @GetMapping("/clear")
+    public String clearAssessmentState(HttpSession session) {
+        // Clear all assessment-related session attributes
+        session.removeAttribute(SELECTED_ASSESSMENT_KEY);
+        session.removeAttribute(ANSWERS_KEY);
+        session.removeAttribute("showResultsFlag");
+        session.removeAttribute("currentResultId");
+        
+        // Keep user and other session data
+        return "redirect:/assessment";
     }
 
     // --- Faculty/Counsellor Report View ---
@@ -346,6 +536,6 @@ public class SelfAssessmentController {
         model.addAttribute("showReportModal", true);
         model.addAttribute("userRole", "counsellor");
 
-        return "app-layout";
+        return "faculty-report";
     }
 }

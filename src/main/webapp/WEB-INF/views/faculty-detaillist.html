@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Detail List</title>
+</head>
+<body>
+    <!-- NOTE: "detail-list" here -->
+    <th:block th:fragment="detail-list">
+        <!-- Back button -->
+        <div class="mb-6">
+            <a th:href="@{/assessment}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Back to Students
+            </a>
+            <!-- Student Information Card -->
+                            <div class="bg-white rounded-xl shadow border border-slate-200 mb-6">
+                                <div class="p-6">
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                                             th:classappend="${selectedStudent.getInitialsColor()}">
+                                            <span th:text="${selectedStudent.initials}"></span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <h2 class="text-2xl font-bold text-slate-900" th:text="${selectedStudent.name}"></h2>
+                                                <div class="px-2 py-1 rounded-full text-xs font-semibold uppercase"
+                                                    th:classappend="${selectedStudent.badgeColor}">
+                                                    <span th:text="${selectedStudent.riskLevel}"></span>
+                                                </div>
+                                            </div>
+                                            <p class="text-slate-600 mb-3" th:text="${selectedStudent.email}"></p>
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div>
+                                                    <p class="text-sm text-slate-600">Student ID</p>
+                                                    <p class="font-semibold text-slate-900" th:text="${selectedStudent.studentId}"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm text-slate-600">Department</p>
+                                                    <p class="font-semibold text-slate-900" th:text="${selectedStudent.department}"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm text-slate-600">Year</p>
+                                                    <p class="font-semibold text-slate-900" th:text="${selectedStudent.year}"></p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm text-slate-600">Total Assessments</p>
+                                                    <p class="font-semibold text-slate-900" th:text="${selectedStudent.assessmentCount}"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Counsellor-specific: Show session details -->
+                                    <div th:if="${user.role == 'counsellor' and selectedStudent.upcomingSession != null}"
+                                        class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                                        <h3 class="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                                            Scheduled Counselling Session
+                                        </h3>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div th:if="${selectedStudent.upcomingSession['date'] != null}">
+                                                <p class="text-sm text-blue-700">Date</p>
+                                                <p class="font-semibold text-blue-900" th:text="${selectedStudent.upcomingSession['date']}"></p>
+                                            </div>
+                                            <div th:if="${selectedStudent.upcomingSession['time'] != null}">
+                                                <p class="text-sm text-blue-700">Time</p>
+                                                <p class="font-semibold text-blue-900" th:text="${selectedStudent.upcomingSession['time']}"></p>
+                                            </div>
+                                            <div th:if="${selectedStudent.upcomingSession['type'] != null}">
+                                                <p class="text-sm text-blue-700">Type</p>
+                                                <p class="font-semibold text-blue-900" th:text="${selectedStudent.upcomingSession['type']}"></p>
+                                            </div>
+                                            <div th:if="${selectedStudent.upcomingSession['status'] != null}">
+                                                <p class="text-sm text-blue-700">Status</p>
+                                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 uppercase">
+                                                    <span th:text="${selectedStudent.upcomingSession['status']}"></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 p-3 bg-white rounded border border-blue-100">
+                                            <p class="text-sm text-blue-800">
+                                                💡 Review the student's assessment reports below to prepare for the upcoming session. 
+                                                This will help provide personalized support and guidance.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+            <!-- Assessment History -->
+                            <div class="bg-white rounded-xl shadow border border-slate-200">
+                                <div class="p-6 border-b border-slate-200">
+                                    <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+                                        <i data-lucide="clipboard-list" class="w-5 h-5 text-blue-600"></i>
+                                        Assessment History
+                                    </h3>
+                                </div>
+                                <div class="p-6">
+                                    <div th:if="${selectedStudent.assessmentHistory != null and !selectedStudent.assessmentHistory.isEmpty()}" 
+                                         class="space-y-3">
+                                        <div th:each="result : ${selectedStudent.assessmentHistory}" 
+                                             class="p-4 bg-slate-50 rounded-lg">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <div class="flex-1">
+                                                    <p class="font-medium text-slate-900" th:text="${result.assessmentTitle}"></p>
+                                                    <div class="flex items-center gap-3 mt-1">
+                                                        <span class="text-sm text-slate-600 flex items-center gap-1">
+                                                            <i data-lucide="calendar" class="w-3 h-3"></i>
+                                                            <span th:text="${result.date}"></span>
+                                                        </span>
+                                                        <span th:classappend="${result.severity == 'Severe'} ? 
+                                                                        'bg-red-100 text-red-700' : 
+                                                                        (${result.severity == 'Moderate'} ? 
+                                                                            'bg-yellow-100 text-yellow-700' : 
+                                                                            'bg-green-100 text-green-700')"
+                                                                class="px-2 py-1 rounded-full text-xs font-semibold uppercase">
+                                                            <span th:text="${result.severity}">Severity</span>
+                                                        </span>
+                                                        <span class="text-sm text-slate-700">Score: <span th:text="${result.score}">0</span>%</span>
+                                                    </div>
+                                                </div>
+                                                <a th:href="@{/assessment/report/view/{studentId}/{reportId}(studentId=${selectedStudent.id}, reportId=${result.id})}"
+                                                   class="ml-4 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm flex items-center gap-2">
+                                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                                    View Report
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div th:unless="${selectedStudent.assessmentHistory != null and !selectedStudent.assessmentHistory.isEmpty()}" 
+                                         class="text-center text-slate-500 py-8">
+                                        No assessment history available
+                                    </div>
+                                </div>
+                            </div>
+        </div>
+    </th:block>
+</body>
+</html>
+                        

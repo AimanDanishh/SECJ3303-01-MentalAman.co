@@ -1,22 +1,43 @@
 <th:block th:fragment="sidebar(user, currentView)">
-
-    <!-- Mobile Overlay -->
+    <!-- JavaScript for Mobile Sidebar Toggle -->
+    <script>
+        function toggleSidebar(action) {
+            const sidebar = document.getElementById('sidebar-aside');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar && overlay) {
+                if (action === 'open') {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    overlay.classList.remove('hidden');
+                } else if (action === 'close') {
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            }
+        }
+    </script>
+    
+    <!-- Overlay for mobile (hidden by default) -->
     <div id="sidebar-overlay"
-         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden transition-opacity duration-300"
-         onclick="toggleSidebar('close')">
-    </div>
+        class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden transition-opacity duration-300"
+        onclick="toggleSidebar('close')"
+    ></div>
 
-    <!-- Sidebar -->
-    <aside id="sidebar-aside"
-           class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0">
-
-        <!-- Close Button (Mobile) -->
-        <button onclick="toggleSidebar('close')"
-                class="absolute top-4 right-4 lg:hidden text-slate-400 hover:text-slate-600 transition-colors z-50 p-1">
+    <!-- Sidebar Aside -->
+    <aside id="sidebar-aside" 
+        class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0"
+    >
+        
+        <!-- Close button for mobile -->
+        <button
+            onclick="toggleSidebar('close')"
+            class="absolute top-4 right-4 lg:hidden text-slate-400 hover:text-slate-600 transition-colors z-50 p-1"
+        >
             <script>document.write('<i data-lucide="x" class="w-6 h-6"></i>');</script>
         </button>
 
-        <!-- Logo & Role -->
         <div class="p-6 border-b border-slate-200">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
@@ -24,6 +45,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-slate-900">Health Hub</h1>
+                    <!-- Displaying the role from the session User object -->
                     <p class="text-slate-500 text-sm capitalize" th:text="${user.role}">student</p>
                 </div>
             </div>
@@ -31,158 +53,159 @@
 
         <!-- Navigation Menu -->
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            
+            <!-- List of Nav Items (Replaces filteredNavItems logic) -->
+            
             <!-- Dashboard (All Roles) -->
             <a th:href="@{/dashboard}"
-               th:classappend="${currentView == 'dashboard'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'dashboard'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="home" class="w-5 h-5"></i>');</script>
                 <span>Dashboard</span>
             </a>
-
-            <!-- Learning Modules -->
+            
+            <!-- Learning Modules (Student, Faculty) -->
             <a th:if="${user.role == 'student' or user.role == 'faculty'}" th:href="@{/learning}"
-               th:classappend="${currentView == 'learning'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'learning'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="book-open" class="w-5 h-5"></i>');</script>
                 <span>Learning Modules</span>
             </a>
-
-            <!-- AI Mental Coach -->
+            
+            <!-- AI Mental Coach (Student, Counsellor) -->
             <a th:if="${user.role == 'student' or user.role == 'counsellor'}" th:href="@{/coach}"
-               th:classappend="${currentView == 'coach'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'coach'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="bot" class="w-5 h-5"></i>');</script>
                 <span>AI Mental Coach</span>
             </a>
-
-            <!-- Care Plan -->
+            
+            <!-- Care Plan (Student, Counsellor) -->
             <a th:if="${user.role == 'student' or user.role == 'counsellor'}" th:href="@{/careplan}"
-               th:classappend="${currentView == 'careplan'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'careplan'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="sparkles" class="w-5 h-5"></i>');</script>
                 <span>Care Plan</span>
             </a>
-
-            <!-- Peer Support -->
+            
+            <!-- Peer Support (Student, Faculty) -->
             <a th:if="${user.role == 'student' or user.role == 'faculty'}" th:href="@{/forum}"
-               th:classappend="${currentView == 'forum'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'forum'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="users" class="w-5 h-5"></i>');</script>
                 <span>Peer Support</span>
             </a>
-
-            <!-- Self-Assessment -->
+            
+            <!-- Self-Assessment (All Roles) -->
             <a th:href="@{/assessment}"
-               th:classappend="${currentView == 'assessment'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'assessment'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="activity" class="w-5 h-5"></i>');</script>
                 <span>Self-Assessment</span>
             </a>
-
-            <!-- Rewards -->
+            
+            <!-- Rewards (Student Only) -->
             <a th:if="${user.role == 'student'}" th:href="@{/gamification}"
-               th:classappend="${currentView == 'gamification'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'gamification'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="trophy" class="w-5 h-5"></i>');</script>
                 <span>Rewards</span>
             </a>
-
-            <!-- Counselling -->
+            
+            <!-- Counselling Session (Student, Counsellor) -->
             <a th:if="${user.role == 'student' or user.role == 'counsellor'}" th:href="@{/counselling}"
-               th:classappend="${currentView == 'counselling'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'counselling'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="video" class="w-5 h-5"></i>');</script>
                 <span>Counselling Session</span>
             </a>
-
-            <!-- Student Analytics -->
+            
+            <!-- Student Analytics (Counsellor, Admin) -->
             <a th:if="${user.role == 'counsellor' or user.role == 'administrator'}" th:href="@{/analytics}"
-               th:classappend="${currentView == 'analytics'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'analytics'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="trending-up" class="w-5 h-5"></i>');</script>
                 <span>Student Analytics</span>
             </a>
-
-            <!-- Content Management -->
+            
+            <!-- Content Management (Faculty, Admin) -->
             <a th:if="${user.role == 'faculty' or user.role == 'administrator'}" th:href="@{/content}"
-               th:classappend="${currentView == 'content'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'content'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="file-edit" class="w-5 h-5"></i>');</script>
                 <span>Content Management</span>
             </a>
-
-            <!-- API Settings -->
+            
+            <!-- API Settings (Admin Only) -->
             <a th:if="${user.role == 'administrator'}" th:href="@{/api}"
-               th:classappend="${currentView == 'api'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'api'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="settings" class="w-5 h-5"></i>');</script>
                 <span>API Settings</span>
             </a>
-
-            <!-- At-Risk Referral -->
+            
+            <!-- At-Risk Referral (Faculty Only) -->
             <a th:if="${user.role == 'faculty'}" th:href="@{/referral}"
-               th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="alert-triangle" class="w-5 h-5"></i>');</script>
                 <span>At-Risk Referral</span>
             </a>
-
-            <!-- Admin Panel -->
+            
+            <!-- Admin Panel (Admin Only) -->
             <a th:if="${user.role == 'administrator'}" th:href="@{/admin}"
-               th:classappend="${currentView == 'admin'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'admin'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="bar-chart-3" class="w-5 h-5"></i>');</script>
                 <span>Admin Panel</span>
             </a>
 
         </nav>
 
-        <!-- Bottom User Info -->
         <div class="p-4 border-t border-slate-200">
             <div class="mb-3 px-4 py-2 bg-slate-50 rounded-lg">
                 <p class="text-sm text-slate-600">Signed in as</p>
                 <p class="font-semibold text-slate-900" th:text="${user.name}">John Doe</p>
             </div>
-
-            <!-- Profile -->
+            
+            <!-- Profile Link -->
             <a th:href="@{/profile}"
-               th:classappend="${currentView == 'profile'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors">
+                th:classappend="${currentView == 'profile'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
                 <script>document.write('<i data-lucide="user" class="w-5 h-5"></i>');</script>
                 <span>Profile</span>
             </a>
-
-            <!-- Logout -->
+            
+            <!-- Logout Link -->
             <a th:href="@{/logout}"
-               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+            >
                 <script>document.write('<i data-lucide="log-out" class="w-5 h-5"></i>');</script>
                 <span>Logout</span>
             </a>
         </div>
     </aside>
-
-    <!-- Lucide Icons -->
+    
+    <!-- Final Lucide initialization after all HTML is rendered -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+             if (typeof lucide !== 'undefined') {
+                 lucide.createIcons();
+             }
         });
-
-        function toggleSidebar(action) {
-            const sidebar = document.getElementById('sidebar-aside');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (!sidebar || !overlay) return;
-            if (action === 'open') {
-                sidebar.classList.remove('-translate-x-full');
-                sidebar.classList.add('translate-x-0');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.remove('translate-x-0');
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
     </script>
-
 </th:block>

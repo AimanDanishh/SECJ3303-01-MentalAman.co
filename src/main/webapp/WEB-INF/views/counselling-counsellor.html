@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="counsellor-content">
+    
+    <!-- Stats Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Pending Approvals -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-slate-900">Pending Approvals</h3>
+                <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="clock" class="w-5 h-5 text-amber-600"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900 mb-2" th:text="${pendingSessionsCount}">0</p>
+            <p class="text-sm text-slate-600">Sessions awaiting your approval</p>
+        </div>
+        
+        <!-- Upcoming Sessions -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-slate-900">Upcoming</h3>
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900 mb-2" th:text="${upcomingSessionsCount}">0</p>
+            <p class="text-sm text-slate-600">Sessions in next 7 days</p>
+        </div>
+        
+        <!-- Reports Pending -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-slate-900">Reports Due</h3>
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
+                </div>
+            </div>
+            <p class="text-3xl font-bold text-slate-900 mb-2" th:text="${reportsDueCount}">0</p>
+            <p class="text-sm text-slate-600">Sessions needing reports</p>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-4 mb-8">
+        <a href="/counselling?modal=approvals" 
+           class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            Review Pending Approvals
+            <span th:if="${pendingSessionsCount > 0}" 
+                  class="bg-white text-amber-600 text-xs font-bold px-2 py-0.5 rounded-full"
+                  th:text="${pendingSessionsCount}"></span>
+        </a>
+        
+        <a href="/counselling?modal=upload-report" 
+           class="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">
+            <i data-lucide="upload" class="w-5 h-5"></i>
+            Upload Session Reports
+        </a>
+        
+        <button onclick="location.href='/counselling?modal=schedule'" 
+                class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            View Full Schedule
+        </button>
+    </div>
+    
+    <!-- Tabs for Session Management -->
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8">
+        <div class="border-b border-slate-200">
+            <div class="flex overflow-x-auto">
+                <button id="tab-upcoming" onclick="switchTab('upcoming')" 
+                        class="tab-button px-6 py-4 font-medium border-b-2 border-transparent hover:bg-slate-50 transition-colors whitespace-nowrap active">
+                    <i data-lucide="calendar-clock" class="w-4 h-4 inline-block mr-2"></i>
+                    Upcoming Sessions
+                </button>
+                <button id="tab-pending" onclick="switchTab('pending')" 
+                        class="tab-button px-6 py-4 font-medium border-b-2 border-transparent hover:bg-slate-50 transition-colors whitespace-nowrap">
+                    <i data-lucide="clock" class="w-4 h-4 inline-block mr-2"></i>
+                    Pending Approval
+                </button>
+                <button id="tab-past" onclick="switchTab('past')" 
+                        class="tab-button px-6 py-4 font-medium border-b-2 border-transparent hover:bg-slate-50 transition-colors whitespace-nowrap">
+                    <i data-lucide="history" class="w-4 h-4 inline-block mr-2"></i>
+                    Past Sessions
+                </button>
+                <button id="tab-reports" onclick="switchTab('reports')" 
+                        class="tab-button px-6 py-4 font-medium border-b-2 border-transparent hover:bg-slate-50 transition-colors whitespace-nowrap">
+                    <i data-lucide="file-text" class="w-4 h-4 inline-block mr-2"></i>
+                    Reports
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="p-6">
+            <!-- Upcoming Sessions Tab -->
+            <div id="content-upcoming" class="tab-content">
+                <div class="space-y-4">
+                    <div th:each="session : ${upcomingSessions}" 
+                         th:if="${session.status != 'pending' and session.status != 'cancelled'}">
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 hover:bg-slate-100 transition-colors">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full" 
+                                              th:text="${session.status}"></span>
+                                        <span class="text-sm text-slate-600" th:text="${session.date} + ' at ' + ${session.time}"></span>
+                                    </div>
+                                    <h4 class="font-semibold text-slate-900 mb-1" th:text="${session.type + ' Session'}"></h4>
+                                    <p class="text-slate-600 text-sm mb-2" th:text="'Student: ' + ${#strings.defaultString(session.studentName, 'Anonymous')}"></p>
+                                    <p class="text-slate-600 text-sm" th:text="${session.notes}"></p>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <a th:href="@{/counselling(detailId=${session.id}, modal='details')}" 
+                                       class="inline-flex items-center gap-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        View
+                                    </a>
+                                    <a th:href="@{/counselling(detailId=${session.id}, modal='upload')}" 
+                                       class="inline-flex items-center gap-1 px-4 py-2 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600 transition-colors">
+                                        <i data-lucide="upload" class="w-4 h-4"></i>
+                                        Upload Report
+                                    </a>
+                                    <form th:action="@{/counselling/cancel/{id}(id=${session.id})}" method="post" class="inline">
+                                        <button type="button" 
+                                                onclick="showCancelModal(@{${session.id}})" 
+                                                class="inline-flex items-center gap-1 px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors">
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(upcomingSessions)}" class="text-center py-12">
+                        <i data-lucide="calendar" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+                        <p class="text-slate-500">No upcoming sessions scheduled</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Approval Tab -->
+            <div id="content-pending" class="tab-content hidden">
+                <div class="space-y-4">
+                    <div th:each="session : ${pendingSessions}">
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-5">
+                            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                                            Awaiting Approval
+                                        </span>
+                                        <span class="text-sm text-slate-600" th:text="${session.date} + ' at ' + ${session.time}"></span>
+                                    </div>
+                                    <h4 class="font-semibold text-slate-900 mb-1" th:text="${session.type + ' Session'}"></h4>
+                                    <p class="text-slate-600 text-sm mb-2" th:text="'Student: ' + ${#strings.defaultString(session.studentName, 'Anonymous')}"></p>
+                                    <p class="text-slate-600 text-sm mb-3" th:text="${session.notes}"></p>
+                                    
+                                    <div class="text-sm text-slate-500">
+                                        <p><strong>Preferred Time:</strong> <span th:text="${session.date} + ' at ' + ${session.time}"></span></p>
+                                        <p><strong>Requested:</strong> <span th:text="${#temporals.format(session.createdAt, 'MMM dd, yyyy')}"></span></p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2 min-w-[200px]">
+                                    <form th:action="@{/counselling/approve/{id}(id=${session.id})}" method="post" class="w-full">
+                                        <button type="submit" 
+                                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors">
+                                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                            Approve Session
+                                        </button>
+                                    </form>
+                                    
+                                    <form th:action="@{/counselling/reject/{id}(id=${session.id})}" method="post" class="w-full">
+                                        <button type="button" 
+                                                onclick="showRejectModal(@{${session.id}})" 
+                                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors">
+                                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                                            Reject Request
+                                        </button>
+                                    </form>
+                                    
+                                    <a th:href="@{/counselling(detailId=${session.id}, modal='reschedule')}" 
+                                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors">
+                                        <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+                                        Suggest New Time
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(pendingSessions)}" class="text-center py-12">
+                        <i data-lucide="check-circle" class="w-12 h-12 text-green-300 mx-auto mb-4"></i>
+                        <p class="text-slate-500">No pending session requests</p>
+                        <p class="text-sm text-slate-400 mt-1">All session requests have been reviewed</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Past Sessions Tab -->
+            <div id="content-past" class="tab-content hidden">
+                <div class="space-y-4">
+                    <div th:each="session : ${pastSessions}">
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-5">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span th:class="${session.status == 'completed' ? 'bg-green-100 text-green-700' : 
+                                                         session.status == 'cancelled' ? 'bg-red-100 text-red-700' : 
+                                                         'bg-slate-100 text-slate-700'}"
+                                              class="px-3 py-1 text-xs font-medium rounded-full"
+                                              th:text="${session.status}"></span>
+                                        <span class="text-sm text-slate-600" th:text="${session.date} + ' at ' + ${session.time}"></span>
+                                    </div>
+                                    <h4 class="font-semibold text-slate-900 mb-1" th:text="${session.type + ' Session'}"></h4>
+                                    <p class="text-slate-600 text-sm mb-2" th:text="'Student: ' + ${#strings.defaultString(session.studentName, 'Anonymous')}"></p>
+                                    <p class="text-slate-600 text-sm" th:text="${session.notes}"></p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a th:href="@{/counselling(detailId=${session.id}, modal='details')}" 
+                                       class="inline-flex items-center gap-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        View Details
+                                    </a>
+                                    <a th:if="${!session.reportAvailable}" 
+                                       th:href="@{/counselling(detailId=${session.id}, modal='upload')}" 
+                                       class="inline-flex items-center gap-1 px-4 py-2 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600 transition-colors">
+                                        <i data-lucide="file-plus" class="w-4 h-4"></i>
+                                        Add Report
+                                    </a>
+                                </div>
+                            </div>
+                            <div th:if="${session.reportAvailable}" class="mt-4 pt-4 border-t border-slate-200">
+                                <div class="flex items-center gap-2 text-sm text-slate-600">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-green-500"></i>
+                                    <span>Report uploaded on <span th:text="${#temporals.format(session.reportDate, 'MMM dd, yyyy')}"></span></span>
+                                    <a th:href="@{/counselling(detailId=${session.id}, modal='report')}" 
+                                       class="ml-auto text-blue-500 hover:text-blue-600 font-medium">
+                                        View Report →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(pastSessions)}" class="text-center py-12">
+                        <i data-lucide="archive" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+                        <p class="text-slate-500">No past sessions found</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="content-reports" class="tab-content hidden">
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-semibold text-slate-900">Session Reports</h3>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50">
+                                <i data-lucide="download" class="w-4 h-4 inline-block mr-2"></i>
+                                Export All
+                            </button>
+                            <button class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600">
+                                <i data-lucide="filter" class="w-4 h-4 inline-block mr-2"></i>
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-slate-200">
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-slate-700">Date</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-slate-700">Student</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-slate-700">Session Type</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-slate-700">Status</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-slate-700">Report</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-slate-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="session : ${allSessions}" class="border-b border-slate-100 hover:bg-white">
+                                    <td class="py-3 px-4 text-sm" th:text="${session.date}"></td>
+                                    <td class="py-3 px-4 text-sm" th:text="${#strings.defaultString(session.studentName, 'Anonymous')}"></td>
+                                    <td class="py-3 px-4 text-sm" th:text="${session.type}"></td>
+                                    <td class="py-3 px-4">
+                                        <span th:class="${session.status == 'completed' ? 'bg-green-100 text-green-700' : 
+                                                         session.status == 'scheduled' ? 'bg-blue-100 text-blue-700' : 
+                                                         session.status == 'cancelled' ? 'bg-red-100 text-red-700' : 
+                                                         'bg-slate-100 text-slate-700'}"
+                                              class="px-2 py-1 text-xs font-medium rounded-full"
+                                              th:text="${session.status}"></span>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <span th:if="${session.reportAvailable}" 
+                                              class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                            <i data-lucide="check" class="w-3 h-3"></i>
+                                            Submitted
+                                        </span>
+                                        <span th:unless="${session.reportAvailable}" 
+                                              class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                                            <i data-lucide="clock" class="w-3 h-3"></i>
+                                            Pending
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex gap-2">
+                                            <a th:href="@{/counselling(detailId=${session.id}, modal='details')}" 
+                                               class="text-blue-500 hover:text-blue-600 p-1">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </a>
+                                            <a th:href="@{/counselling(detailId=${session.id}, modal='report')}" 
+                                               th:if="${session.reportAvailable}"
+                                               class="text-purple-500 hover:text-purple-600 p-1">
+                                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                                            </a>
+                                            <a th:href="@{/counselling(detailId=${session.id}, modal='upload')}" 
+                                               th:unless="${session.reportAvailable}"
+                                               class="text-amber-500 hover:text-amber-600 p-1">
+                                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Session Approval/Rejection -->
+    <div th:if="${showApproveModal}" id="approveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                </div>
+                <h3 class="font-semibold text-slate-900">Approve Session Request</h3>
+            </div>
+            <p class="text-slate-600 mb-6">Are you sure you want to approve this session request? The student will be notified.</p>
+            <form th:action="@{/counselling/approve/{id}(id=${selectedSession.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Add optional message:</label>
+                    <textarea name="approvalMessage" rows="3" 
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Add a welcome message or instructions for the student..."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" 
+                            class="px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600">
+                        Approve Session
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal for Rejection -->
+    <div th:if="${showRejectModal}" id="rejectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>
+                </div>
+                <h3 class="font-semibold text-slate-900">Reject Session Request</h3>
+            </div>
+            <p class="text-slate-600 mb-6">Please provide a reason for rejecting this session request.</p>
+            <form th:action="@{/counselling/reject/{id}(id=${selectedSession.id})}" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Reason for rejection *</label>
+                    <textarea name="rejectionReason" rows="3" required
+                              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Explain why this session cannot be scheduled..."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" 
+                            class="px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600">
+                        Reject Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal for Bulk Report Upload -->
+    <div th:if="${showUploadModal}" id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i data-lucide="upload" class="w-6 h-6 text-purple-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-slate-900">Upload Session Report</h3>
+                            <p class="text-sm text-slate-600" th:text="'Session: ' + ${selectedSession.date} + ' at ' + ${selectedSession.time}"></p>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="p-2 hover:bg-slate-100 rounded-lg">
+                        <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form th:action="@{/counselling/report/upload/{id}(id=${selectedSession.id})}" method="post" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Report Template</label>
+                        <select class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="loadTemplate(this.value)">
+                            <option value="">Select a template...</option>
+                            <option value="initial_assessment">Initial Assessment Template</option>
+                            <option value="progress_report">Progress Report Template</option>
+                            <option value="closure_report">Closure Report Template</option>
+                            <option value="crisis_intervention">Crisis Intervention Report</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Session Date *</label>
+                            <input type="date" name="reportDate" required
+                                   th:value="${selectedSession.date}"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Duration (minutes) *</label>
+                            <input type="number" name="sessionDuration" required min="15" max="120" value="50"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Main Concerns Discussed *</label>
+                        <textarea name="concerns" rows="3" required
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="List the main issues discussed during the session..."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Interventions Used *</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="interventions" value="CBT" class="mr-2">
+                                <span>Cognitive Behavioral Therapy (CBT)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="interventions" value="Motivational" class="mr-2">
+                                <span>Motivational Interviewing</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="interventions" value="Mindfulness" class="mr-2">
+                                <span>Mindfulness Techniques</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="interventions" value="Solution" class="mr-2">
+                                <span>Solution-Focused Therapy</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Progress Assessment *</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <label class="border border-slate-200 rounded-lg p-4 cursor-pointer hover:bg-slate-50">
+                                <input type="radio" name="progress" value="improved" class="mr-2">
+                                <span class="font-medium">Significant Improvement</span>
+                            </label>
+                            <label class="border border-slate-200 rounded-lg p-4 cursor-pointer hover:bg-slate-50">
+                                <input type="radio" name="progress" value="some" class="mr-2">
+                                <span class="font-medium">Some Progress</span>
+                            </label>
+                            <label class="border border-slate-200 rounded-lg p-4 cursor-pointer hover:bg-slate-50">
+                                <input type="radio" name="progress" value="no_change" class="mr-2">
+                                <span class="font-medium">No Significant Change</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Recommendations & Next Steps *</label>
+                        <textarea name="recommendations" rows="4" required
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Recommendations for follow-up sessions, exercises, or referrals..."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Additional Notes</label>
+                        <textarea name="reportContent" rows="6" required
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Detailed session notes and observations..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                        <button type="button" onclick="closeModal()" 
+                                class="px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600">
+                            Upload Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Tab switching functionality
+    function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+            button.classList.add('border-transparent', 'text-slate-600');
+        });
+        
+        // Show selected tab content
+        const content = document.getElementById('content-' + tabName);
+        if (content) {
+            content.classList.remove('hidden');
+        }
+        
+        // Activate selected tab button
+        const button = document.getElementById('tab-' + tabName);
+        if (button) {
+            button.classList.add('active', 'border-blue-500', 'text-blue-600');
+            button.classList.remove('border-transparent', 'text-slate-600');
+        }
+    }
+    
+    // Modal functions
+    function showApproveModal(sessionId) {
+        window.location.href = '/counselling?detailId=' + sessionId + '&modal=approve';
+    }
+    
+    function showRejectModal(sessionId) {
+        window.location.href = '/counselling?detailId=' + sessionId + '&modal=reject';
+    }
+    
+    function closeModal() {
+        window.location.href = '/counselling';
+    }
+    
+    // Load report template
+    function loadTemplate(template) {
+        const templates = {
+            'initial_assessment': `Client presented with concerns about [specific issues]. Assessment focused on [assessment areas]. Initial impressions suggest [impressions]. Recommended approach: [approach].`,
+            'progress_report': `Session focused on [topics]. Client demonstrated [observed changes]. Progress noted in [specific areas]. Continued work needed on [areas for improvement].`,
+            'closure_report': `Client has made significant progress in [areas]. Goals [met/partially met]. Final session reviewed [review topics]. Recommendations for continued growth: [recommendations].`,
+            'crisis_intervention': `Client presented in [state]. Immediate interventions: [interventions]. Safety assessment: [assessment]. Follow-up plan: [plan].`
+        };
+        
+        if (template && templates[template]) {
+            document.querySelector('textarea[name="reportContent"]').value = templates[template];
+        }
+    }
+    
+    // Initialize first tab as active
+    document.addEventListener('DOMContentLoaded', function() {
+        switchTab('upcoming');
+        lucide.createIcons();
+    });
+</script>
+</div>
+</html>
