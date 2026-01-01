@@ -9,18 +9,18 @@ import java.util.concurrent.ThreadLocalRandom; // Added missing Question import
 
 import javax.servlet.http.HttpSession;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping; // Import HashMap for map initialization
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam; // Import HashMap for map initialization
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.secj3303.model.AssessmentModels; // Import Map
-import com.secj3303.model.AssessmentModels.Assessment;
+import com.secj3303.model.AssessmentModels;
+import com.secj3303.model.AssessmentModels.Assessment; // Import Map
 import com.secj3303.model.AssessmentModels.AssessmentResult;
 import com.secj3303.model.AssessmentModels.Question;
 import com.secj3303.model.AssessmentModels.StudentData;
@@ -77,25 +77,19 @@ public class SelfAssessmentController {
     // --- Main Dashboard/List View ---
     @GetMapping
     public String dashboard(
-        @RequestParam(required = false) String userRole, // MOCK role
-        @RequestParam(required = false) Integer selectStudentId, // Faculty/Counsellor flow
-        @RequestParam(defaultValue = "assessments") String tab, // Student flow
+        @RequestParam(required = false) Integer selectStudentId,
+        @RequestParam(defaultValue = "assessments") String tab,
         @RequestParam(required = false) String searchQuery,
         @RequestParam(defaultValue = "all") String filterRisk,
-        Model model, HttpSession session
+        Model model,
+        HttpSession session,
+        Authentication authentication
     ) {
-        // Get user from session FIRST
-        User user = (User) session.getAttribute("user");
-        
-        // If no user, redirect to login
-        if (user == null) {
-            return "redirect:/login";
-        }
-        
-        // Add user to model
+
+        User user = buildUser(authentication);
+
         model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole()); // Use actual user role, not mock
-        
+        model.addAttribute("userRole", user.getRole());
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("activeTab", tab);
         
@@ -210,13 +204,18 @@ public class SelfAssessmentController {
     @GetMapping("/question")
     public String displayQuestion(
         @RequestParam(defaultValue = "0") int q,
-        Model model, HttpSession session, RedirectAttributes redirect
+        Model model, 
+        HttpSession session, 
+        RedirectAttributes redirect,
+        Authentication authentication
     ) {
         // Get user from session
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
+
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        model.addAttribute("currentView", DEFAULT_VIEW);
+
         
         Assessment assessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
         AssessmentModels.AssessmentAnswers answersObject = (AssessmentModels.AssessmentAnswers) session.getAttribute(ANSWERS_KEY);
@@ -371,14 +370,14 @@ public class SelfAssessmentController {
     // --- Results View (Redirect target after submission) ---
 
     @GetMapping("/results")
-    public String displayResults(Model model, HttpSession session, 
-                           @RequestParam(required = false) Integer resultId) {
+    public String displayResults(
+        Model model, 
+        HttpSession session, 
+        Authentication authentication,
+        @RequestParam(required = false) Integer resultId) {
     
     // Get user from session
-    User user = (User) session.getAttribute("user");
-    if (user == null) {
-        return "redirect:/login";
-    }
+    User user = buildUser(authentication);
     
     // Check if user is a student
     if (!"student".equals(user.getRole())) {
@@ -418,12 +417,13 @@ public class SelfAssessmentController {
 
     // --- View Specific Assessment Result ---
     @GetMapping("/results/{resultId}")
-    public String viewSpecificResult(@PathVariable int resultId, Model model, HttpSession session) {
+    public String viewSpecificResult(
+        @PathVariable int resultId, 
+        Model model, 
+        HttpSession session,
+        Authentication authentication) {
         // Get user from session
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         // Check if user is a student
         if (!"student".equals(user.getRole())) {
@@ -457,12 +457,9 @@ public class SelfAssessmentController {
 
     // --- View Full Assessment Report ---
     @GetMapping("/report/{resultId}")
-    public String viewFullReport(@PathVariable int resultId, Model model, HttpSession session) {
+    public String viewFullReport(@PathVariable int resultId, Model model, HttpSession session, Authentication authentication) {
         // Get user from session
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         // Check if user is a student
         if (!"student".equals(user.getRole())) {
@@ -537,5 +534,21 @@ public class SelfAssessmentController {
         model.addAttribute("userRole", "counsellor");
 
         return "faculty-report";
+    }
+
+    // Helper
+    private User buildUser(Authentication authentication) {
+        User user = new User();
+        user.setEmail(authentication.getName());
+        user.setName(authentication.getName().split("@")[0]);
+        user.setRole(
+            authentication.getAuthorities()
+                .iterator()
+                .next()
+                .getAuthority()
+                .replace("ROLE_", "")
+                .toLowerCase()
+        );
+        return user;
     }
 }

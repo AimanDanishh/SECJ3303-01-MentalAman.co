@@ -191,12 +191,14 @@
             </a>
             
             <!-- Logout Link -->
-            <a th:href="@{/logout}"
-                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-                <script>document.write('<i data-lucide="log-out" class="w-5 h-5"></i>');</script>
-                <span>Logout</span>
-            </a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit"
+                    class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                    <script>document.write('<i data-lucide="log-out" class="w-5 h-5"></i>');</script>
+                    <span>Logout</span>
+                </button>
+            </form>
         </div>
     </aside>
     

@@ -2,8 +2,7 @@ package com.secj3303.controller;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpSession;
-
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,18 +16,19 @@ import com.secj3303.model.UserProfile;
 @Controller
 public class ProfileController {
 
+    // =========================
+    // View Profile
+    // =========================
     @GetMapping("/profile")
     public String viewProfile(
             @RequestParam(name = "edit", required = false) Boolean edit,
-            HttpSession session,
+            Authentication authentication,
             Model model) {
 
-        User user = (User) session.getAttribute("currentUser");
-        UserProfile profile = (UserProfile) session.getAttribute("userProfile");
+        User user = buildUser(authentication);
 
-        if (user == null) {
-            return "redirect:/login";
-        }
+        // Dummy profile (since DB-backed user profile is not implemented yet)
+        UserProfile profile = new UserProfile(user.getName(), user.getEmail());
 
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
@@ -38,15 +38,18 @@ public class ProfileController {
         return "app-layout";
     }
 
+    // =========================
+    // Update Profile (UI-only)
+    // =========================
     @PostMapping("/profile/update")
-    public String updateProfile(@ModelAttribute User updatedUser, HttpSession session, Model model) {
+    public String updateProfile(
+            @ModelAttribute User updatedUser,
+            Authentication authentication,
+            Model model) {
 
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
 
-        // Copy updated fields into the existing session user
+        // Apply updates (UI-only, no DB persistence)
         user.setName(updatedUser.getName());
         user.setEmail(updatedUser.getEmail());
         user.setPhone(updatedUser.getPhone());
@@ -55,36 +58,7 @@ public class ProfileController {
         user.setEmergencyContact(updatedUser.getEmergencyContact());
         user.setBio(updatedUser.getBio());
 
-        // Save back to session
-        session.setAttribute("currentUser", user);
-
-        model.addAttribute("user", user);
-        model.addAttribute("currentView", "profile");
-        model.addAttribute("isEditing", false);
-
-        return "app-layout";
-    }
-
-
-    @PostMapping("/profile/preferences")
-    public String updatePreferences(
-            @RequestParam Map<String, String> params,
-            HttpSession session,
-            Model model) {
-
-        User user = (User) session.getAttribute("currentUser");
-        UserProfile profile = (UserProfile) session.getAttribute("userProfile");
-
-        if (user == null) {
-            return "redirect:/login";
-        }
-
-        profile.setEmailNotifications(params.containsKey("emailNotifications"));
-        profile.setPushNotifications(params.containsKey("pushNotifications"));
-        profile.setWeeklyReport(params.containsKey("weeklyReport"));
-        profile.setAnonymousMode(params.containsKey("anonymousMode"));
-
-        session.setAttribute("userProfile", profile);
+        UserProfile profile = new UserProfile(user.getName(), user.getEmail());
 
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
@@ -92,5 +66,49 @@ public class ProfileController {
         model.addAttribute("isEditing", false);
 
         return "app-layout";
+    }
+
+    // =========================
+    // Update Preferences (UI-only)
+    // =========================
+    @PostMapping("/profile/preferences")
+    public String updatePreferences(
+            @RequestParam Map<String, String> params,
+            Authentication authentication,
+            Model model) {
+
+        User user = buildUser(authentication);
+
+        UserProfile profile = new UserProfile(user.getName(), user.getEmail());
+
+        profile.setEmailNotifications(params.containsKey("emailNotifications"));
+        profile.setPushNotifications(params.containsKey("pushNotifications"));
+        profile.setWeeklyReport(params.containsKey("weeklyReport"));
+        profile.setAnonymousMode(params.containsKey("anonymousMode"));
+
+        model.addAttribute("user", user);
+        model.addAttribute("profile", profile);
+        model.addAttribute("currentView", "profile");
+        model.addAttribute("isEditing", false);
+
+        return "app-layout";
+    }
+
+    // =========================
+    // Helper
+    // =========================
+    private User buildUser(Authentication authentication) {
+        User user = new User();
+        user.setEmail(authentication.getName());
+        user.setName(authentication.getName().split("@")[0]);
+        user.setRole(
+                authentication.getAuthorities()
+                        .iterator()
+                        .next()
+                        .getAuthority()
+                        .replace("ROLE_", "")
+                        .toLowerCase()
+        );
+        return user;
     }
 }

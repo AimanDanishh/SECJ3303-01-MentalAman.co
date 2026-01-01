@@ -9,7 +9,6 @@ com\secj3303\controller\PersonController.class
 com\secj3303\controller\GamificationController.class
 com\secj3303\model\AssessmentModels$Question.class
 com\secj3303\model\DashboardData$EventItem.class
-com\secj3303\service\AuthenticationService.class
 com\secj3303\controller\CounsellingSessionController.class
 com\secj3303\controller\TestDBController.class
 com\secj3303\model\PeerSupportModels.class
@@ -40,10 +39,10 @@ com\secj3303\model\AssessmentModels.class
 com\secj3303\model\CounsellingSessionModels$Session.class
 com\secj3303\controller\BmiController.class
 com\secj3303\model\PeerSupportModels$ContentCheckResult.class
-com\secj3303\dao\PersonDaoJdbc.class
 com\secj3303\model\GamificationData$PointsActivity.class
 com\secj3303\controller\DashboardController.class
 com\secj3303\controller\ReferralController.class
+com\secj3303\config\SecurityConfig.class
 com\secj3303\model\MoodEntry.class
 com\secj3303\model\PeerSupportModels$ReportForm.class
 com\secj3303\controller\CarePlanController.class
@@ -74,4 +73,5 @@ com\secj3303\model\Person.class
 com\secj3303\model\AssessmentModels$StudentData.class
 com\secj3303\model\GamificationData$Badge.class
 com\secj3303\model\TeleCounsellingModels.class
+com\secj3303\dao\PersonDaoImpl.class
 com\secj3303\model\AssessmentModels$MoodEntry.class

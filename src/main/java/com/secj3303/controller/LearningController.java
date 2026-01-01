@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpSession;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.secj3303.model.LearningModuleData;
 import com.secj3303.model.LearningModuleData.Lesson;
 import com.secj3303.model.LearningModuleData.Module;
-import com.secj3303.service.AuthenticationService;
+import com.secj3303.model.User;
 
 @Controller
 @RequestMapping("/learning")
@@ -27,17 +28,15 @@ public class LearningController {
     private static final String MODULES_SESSION_KEY = "learningModules";
     private static final String DEFAULT_VIEW = "learning";
 
-    private final AuthenticationService authenticationService;
-
-    public LearningController(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
-    }
-
-    // --- Utility methods ---
+    // =========================
+    // Utility methods
+    // =========================
 
     private List<Module> getModules(HttpSession session) {
         @SuppressWarnings("unchecked")
-        List<Module> modules = (List<Module>) session.getAttribute(MODULES_SESSION_KEY);
+        List<Module> modules =
+                (List<Module>) session.getAttribute(MODULES_SESSION_KEY);
+
         if (modules == null) {
             modules = LearningModuleData.getInitialModules();
             session.setAttribute(MODULES_SESSION_KEY, modules);
@@ -46,117 +45,141 @@ public class LearningController {
     }
 
     private Optional<Module> findModule(List<Module> modules, int moduleId) {
-        return modules.stream().filter(m -> m.getId() == moduleId).findFirst();
+        return modules.stream()
+                .filter(m -> m.getId() == moduleId)
+                .findFirst();
     }
 
-    // --- Main Module Grid View ---
+    // =========================
+    // Main Module Grid View
+    // =========================
 
     @GetMapping
-    public String learningModules(HttpSession session, Model model) {
+    public String learningModules(HttpSession session,
+                                  Authentication authentication,
+                                  Model model) {
+
         List<Module> modules = getModules(session);
 
-        long completedCount = modules.stream().filter(m -> m.isQuizPassed() || m.getProgress() == 100).count();
-        long inProgressCount = modules.stream().filter(m -> m.getProgress() > 0 && m.getProgress() < 100).count();
+        long completedCount = modules.stream()
+                .filter(m -> m.isQuizPassed() || m.getProgress() == 100)
+                .count();
+
+        long inProgressCount = modules.stream()
+                .filter(m -> m.getProgress() > 0 && m.getProgress() < 100)
+                .count();
+
+        // Logged-in user (Spring Security)
+        User user = buildUser(authentication);
 
         model.addAttribute("modules", modules);
         model.addAttribute("completedCount", completedCount);
         model.addAttribute("inProgressCount", inProgressCount);
         model.addAttribute("totalModules", modules.size());
 
-        // ✅ Add current user for sidebar & fragment
-        model.addAttribute("user", authenticationService.getAuthenticatedUser(session));
-
+        model.addAttribute("user", user);
         model.addAttribute("currentView", DEFAULT_VIEW);
+
         return "app-layout";
     }
 
-    // --- Module Detail / Lesson Viewer ---
+    // =========================
+    // Module Detail / Lesson Viewer
+    // =========================
 
     @GetMapping("/module")
     public String viewModule(@RequestParam int moduleId,
                              @RequestParam(required = false) Integer lessonId,
                              @RequestParam(required = false) Boolean showQuiz,
-                             HttpSession session, Model model) {
+                             HttpSession session,
+                             Authentication authentication,
+                             Model model) {
 
         List<Module> modules = getModules(session);
         Optional<Module> moduleOpt = findModule(modules, moduleId);
 
-        if (moduleOpt.isEmpty()) {
+        if (moduleOpt.isEmpty() || moduleOpt.get().isLocked()) {
             return "redirect:/learning";
         }
 
         Module selectedModule = moduleOpt.get();
-        if (selectedModule.isLocked()) {
-            return "redirect:/learning"; // Prevent access to locked modules
-        }
 
         Lesson selectedLesson = null;
         if (lessonId != null) {
             selectedLesson = selectedModule.getLessons().stream()
                     .filter(l -> l.getId() == lessonId)
-                    .findFirst().orElse(null);
+                    .findFirst()
+                    .orElse(null);
         }
+
         if (selectedLesson == null && !selectedModule.getLessons().isEmpty()) {
-            selectedLesson = selectedModule.getLessons().get(0); // default to first lesson
+            selectedLesson = selectedModule.getLessons().get(0);
         }
+
+        User user = buildUser(authentication);
 
         model.addAttribute("modules", modules);
         model.addAttribute("selectedModule", selectedModule);
         model.addAttribute("selectedLesson", selectedLesson);
         model.addAttribute("showQuiz", showQuiz != null && showQuiz);
 
-        // ✅ Add current user for sidebar & fragment
-        model.addAttribute("user", authenticationService.getAuthenticatedUser(session));
-
+        model.addAttribute("user", user);
         model.addAttribute("currentView", DEFAULT_VIEW);
 
         return "app-layout";
     }
 
-    // --- Lesson Completion Logic ---
+    // =========================
+    // Lesson Completion
+    // =========================
 
     @PostMapping("/complete-lesson")
-    public String completeLesson(@RequestParam int moduleId, @RequestParam int lessonId,
-                                 HttpSession session, RedirectAttributes redirect) {
+    public String completeLesson(@RequestParam int moduleId,
+                                 @RequestParam int lessonId,
+                                 HttpSession session,
+                                 RedirectAttributes redirect) {
 
         List<Module> modules = getModules(session);
         AtomicReference<Lesson> completedLessonRef = new AtomicReference<>();
 
         modules.stream()
-            .filter(m -> m.getId() == moduleId)
-            .findFirst()
-            .ifPresent(module -> {
-                module.getLessons().stream()
-                        .filter(l -> l.getId() == lessonId)
-                        .findFirst()
-                        .ifPresent(lesson -> {
-                            lesson.setCompleted(true);
-                            completedLessonRef.set(lesson);
-                        });
-                module.updateProgress();
-            });
+                .filter(m -> m.getId() == moduleId)
+                .findFirst()
+                .ifPresent(module -> {
+                    module.getLessons().stream()
+                            .filter(l -> l.getId() == lessonId)
+                            .findFirst()
+                            .ifPresent(lesson -> {
+                                lesson.setCompleted(true);
+                                completedLessonRef.set(lesson);
+                            });
+                    module.updateProgress();
+                });
 
         redirect.addAttribute("moduleId", moduleId);
 
         if (completedLessonRef.get() != null) {
             Module module = findModule(modules, moduleId).orElse(null);
-            if (module != null) {
-                long totalLessons = module.getLessons().size();
-                long completedLessons = module.getLessons().stream().filter(Lesson::isCompleted).count();
-                if (totalLessons > 0 && completedLessons == totalLessons && !module.getQuiz().isEmpty()) {
-                    redirect.addAttribute("showQuiz", true);
-                }
+            if (module != null &&
+                module.getLessons().stream().allMatch(Lesson::isCompleted) &&
+                !module.getQuiz().isEmpty()) {
+
+                redirect.addAttribute("showQuiz", true);
             }
         }
 
         return "redirect:/learning/module";
     }
 
-    // --- Quiz Submission Logic ---
+    // =========================
+    // Quiz Submission
+    // =========================
 
     @PostMapping("/submit-quiz")
-    public String submitQuiz(@RequestParam int moduleId, @RequestParam Map<String, String> quizAnswers,
-                             HttpSession session, RedirectAttributes redirect) {
+    public String submitQuiz(@RequestParam int moduleId,
+                             @RequestParam Map<String, String> quizAnswers,
+                             HttpSession session,
+                             RedirectAttributes redirect) {
 
         List<Module> modules = getModules(session);
         Optional<Module> moduleOpt = findModule(modules, moduleId);
@@ -169,12 +192,11 @@ public class LearningController {
         long correct = 0;
 
         for (LearningModuleData.QuizQuestion question : module.getQuiz()) {
-            String answerKey = "question-" + question.getId();
-            String submittedAnswerIndex = quizAnswers.get(answerKey);
-            if (submittedAnswerIndex != null) {
+            String key = "question-" + question.getId();
+            if (quizAnswers.containsKey(key)) {
                 try {
-                    int submittedIndex = Integer.parseInt(submittedAnswerIndex);
-                    if (submittedIndex == question.getCorrectAnswer()) {
+                    int submitted = Integer.parseInt(quizAnswers.get(key));
+                    if (submitted == question.getCorrectAnswer()) {
                         correct++;
                     }
                 } catch (NumberFormatException ignored) {}
@@ -187,11 +209,34 @@ public class LearningController {
         if (score >= 70) {
             module.setQuizPassed(true);
             module.setProgress(100);
-            redirect.addFlashAttribute("achievement", "🏆 Module Completed: " + module.getTitle());
+            redirect.addFlashAttribute(
+                    "achievement",
+                    "🏆 Module Completed: " + module.getTitle()
+            );
         }
 
         redirect.addAttribute("moduleId", moduleId);
         redirect.addAttribute("showQuiz", true);
+
         return "redirect:/learning/module";
+    }
+
+    // =========================
+    // Helper
+    // =========================
+
+    private User buildUser(Authentication authentication) {
+        User user = new User();
+        user.setEmail(authentication.getName());
+        user.setName(authentication.getName().split("@")[0]);
+        user.setRole(
+                authentication.getAuthorities()
+                        .iterator()
+                        .next()
+                        .getAuthority()
+                        .replace("ROLE_", "")
+                        .toLowerCase()
+        );
+        return user;
     }
 }

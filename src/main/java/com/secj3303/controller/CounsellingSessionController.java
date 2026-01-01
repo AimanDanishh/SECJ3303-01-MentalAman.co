@@ -1,20 +1,25 @@
 package com.secj3303.controller;
 
-import com.secj3303.model.CounsellingSessionModels;
-import com.secj3303.model.CounsellingSessionModels.Session;
-import com.secj3303.model.CounsellingSessionModels.TimeSlot;
-import com.secj3303.model.CounsellingSessionModels.Counsellor;
-import com.secj3303.model.User;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.secj3303.model.CounsellingSessionModels;
+import com.secj3303.model.CounsellingSessionModels.Counsellor;
+import com.secj3303.model.CounsellingSessionModels.Session;
+import com.secj3303.model.User;
 
 @Controller
 @RequestMapping("/counselling")
@@ -42,16 +47,12 @@ public class CounsellingSessionController {
     public String sessionDashboard(
         @RequestParam(required = false) Integer detailId,
         @RequestParam(required = false) String modal,
-        Model model, 
+        Model model,
+        Authentication authentication,
         HttpSession httpSession // Renamed to avoid confusion with Session model
     ) {
         // Get user from session
-        User user = (User) httpSession.getAttribute("user");
-        
-        // Check authentication
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         // Add user to model (REQUIRED for app-layout)
         model.addAttribute("user", user);
@@ -107,14 +108,12 @@ public class CounsellingSessionController {
 
     @PostMapping("/confirm/{id}")
     public String handleConfirm(@PathVariable int id, 
-                              HttpSession httpSession, 
+                              HttpSession httpSession,
+                              Authentication authentication,
                               RedirectAttributes redirect) {
         
         // Check authentication
-        User user = (User) httpSession.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         findSession(getSessions(httpSession), id).ifPresent(s -> {
             s.setStudentConfirmed(true);
@@ -129,13 +128,11 @@ public class CounsellingSessionController {
     public String handleCancel(@PathVariable int id, 
                              @RequestParam String cancellationReason, 
                              HttpSession httpSession, 
+                             Authentication authentication,
                              RedirectAttributes redirect) {
         
         // Check authentication
-        User user = (User) httpSession.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         if (cancellationReason.trim().isEmpty()) {
             redirect.addFlashAttribute("alert", "Please provide a cancellation reason.");
@@ -159,13 +156,11 @@ public class CounsellingSessionController {
                                  @RequestParam String newDate, 
                                  @RequestParam String newTime, 
                                  HttpSession httpSession, 
+                                 Authentication authentication,
                                  RedirectAttributes redirect) {
         
         // Check authentication
-        User user = (User) httpSession.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         findSession(getSessions(httpSession), id).ifPresent(s -> {
             s.setStatus("pending-reschedule");
@@ -181,13 +176,11 @@ public class CounsellingSessionController {
     public String handleReportUpload(@PathVariable int id, 
                                    @RequestParam String reportContent, 
                                    HttpSession httpSession, 
+                                   Authentication authentication,
                                    RedirectAttributes redirect) {
         
         // Check authentication
-        User user = (User) httpSession.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         // Check if user is counsellor or admin
         if (!user.getRole().equals("counsellor") && !user.getRole().equals("administrator")) {
@@ -221,13 +214,11 @@ public class CounsellingSessionController {
                                      @RequestParam String sessionType,
                                      @RequestParam(required = false) String sessionLocation,
                                      HttpSession httpSession, 
+                                     Authentication authentication,
                                      RedirectAttributes redirect) {
 
         // Check authentication
-        User user = (User) httpSession.getAttribute("user");
-        if (user == null) {
-            return "redirect:/login";
-        }
+        User user = buildUser(authentication);
         
         // Check if user is student (only students can book sessions)
         if (!user.getRole().equals("student")) {
@@ -275,5 +266,21 @@ public class CounsellingSessionController {
         redirect.addFlashAttribute("alert", "✓ Session Booked Successfully! Counsellor: " + counsellor.name + " on " + selectedDate + " at " + selectedTime);
         redirect.addFlashAttribute("alertType", "success");
         return "redirect:/counselling";
+    }
+
+    // Helper
+    private User buildUser(Authentication authentication) {
+        User user = new User();
+        user.setEmail(authentication.getName());
+        user.setName(authentication.getName().split("@")[0]);
+        user.setRole(
+            authentication.getAuthorities()
+                .iterator()
+                .next()
+                .getAuthority()
+                .replace("ROLE_", "")
+                .toLowerCase()
+        );
+        return user;
     }
 }
