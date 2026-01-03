@@ -1,14 +1,10 @@
 package com.secj3303.controller;
 
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,41 +18,20 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.secj3303.model.PeerSupportModels;
 import com.secj3303.model.PeerSupportModels.ContentCheckResult;
-import com.secj3303.model.PeerSupportModels.Post;
-import com.secj3303.model.PeerSupportModels.Reply;
-import com.secj3303.model.PeerSupportModels.ReportForm;
+import com.secj3303.model.Post;
+import com.secj3303.model.Reply;
+import com.secj3303.model.Report;
 import com.secj3303.model.User;
+import com.secj3303.service.ForumService;
 
 @Controller
 @RequestMapping("/forum")
 public class PeerSupportController {
 
-    private static final String POSTS_KEY = "forumPosts";
+    @Autowired
+    private ForumService forumService;
 
-    // Matches peer-support.html for app-layout
     private static final String DEFAULT_VIEW = "peer-support";
-
-    private static final DateTimeFormatter TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("h:mm a");
-
-    // =========================
-    // Session-backed forum data
-    // =========================
-
-    private List<Post> getPosts(HttpSession session) {
-        @SuppressWarnings("unchecked")
-        List<Post> posts = (List<Post>) session.getAttribute(POSTS_KEY);
-
-        if (posts == null) {
-            posts = new ArrayList<>(PeerSupportModels.getInitialPosts());
-            session.setAttribute(POSTS_KEY, posts);
-        }
-        return posts;
-    }
-
-    // =========================
-    // Forum Dashboard
-    // =========================
 
     @GetMapping
     public String forumDashboard(
@@ -65,24 +40,25 @@ public class PeerSupportController {
             @RequestParam(required = false) String modal,
             @RequestParam(required = false) Integer reportId,
             Model model,
-            HttpSession session,
-            Authentication authentication
+            Authentication authentication,
+            HttpSession session
     ) {
+        List<Post> filteredPosts = forumService.getPostsByCategory(category);
+        
+        // Load replies for each post if expanded
+        if (expandedId != null) {
+            for (Post post : filteredPosts) {
+                if (post.getId() == expandedId) {
+                    // Replies are loaded when accessing getReplies()
+                    break;
+                }
+            }
+        }
 
-        List<Post> allPosts = getPosts(session);
-
-        List<Post> filteredPosts =
-                category.equals("all")
-                        ? allPosts
-                        : allPosts.stream()
-                                  .filter(p -> p.getCategory().equals(category))
-                                  .collect(Collectors.toList());
-
-        // Logged-in user (Spring Security)
         User user = buildUser(authentication);
 
         model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("categories", PeerSupportModels.CATEGORIES);
+        model.addAttribute("categories", forumService.getCategoriesWithCounts());
         model.addAttribute("reportReasons", PeerSupportModels.REPORT_REASONS);
         model.addAttribute("selectedCategory", category);
         model.addAttribute("filteredPosts", filteredPosts);
@@ -92,23 +68,12 @@ public class PeerSupportController {
         model.addAttribute("showReportModal", "report".equals(modal) && reportId != null);
 
         if ("report".equals(modal) && reportId != null) {
-            Optional<Post> postOpt =
-                    allPosts.stream().filter(p -> p.getId() == reportId).findFirst();
-
-            if (postOpt.isPresent()) {
-                model.addAttribute("reportPostId", reportId);
-
-                if (!model.containsAttribute("reportFormData")) {
-                    ReportForm form = new ReportForm();
-                    form.setPostId(reportId);
-                    model.addAttribute("reportFormData", form);
-                }
-            } else {
-                model.addAttribute("showReportModal", false);
-            }
+            Report report = new Report();
+            report.setPostId(reportId);
+            model.addAttribute("reportFormData", report);
         }
 
-        if ("create".equals(modal) && !model.containsAttribute("newPostFormData")) {
+        if ("create".equals(modal)) {
             model.addAttribute("newPostFormData", new Post());
         }
 
@@ -117,21 +82,13 @@ public class PeerSupportController {
         return "app-layout";
     }
 
-    // =========================
-    // Create New Post
-    // =========================
-
     @PostMapping("/create")
     public String handleCreatePost(
-            @ModelAttribute("newPostFormData") Post newPostFormData,
-            HttpSession session,
+            @ModelAttribute("newPostFormData") Post newPost,
             RedirectAttributes redirect
     ) {
-
-        ContentCheckResult titleCheck =
-                PeerSupportModels.checkContentForHarmfulText(newPostFormData.getTitle());
-        ContentCheckResult contentCheck =
-                PeerSupportModels.checkContentForHarmfulText(newPostFormData.getContent());
+        ContentCheckResult titleCheck = PeerSupportModels.checkContentForHarmfulText(newPost.getTitle());
+        ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(newPost.getContent());
 
         if (!titleCheck.isClean) {
             redirect.addFlashAttribute("contentWarning", titleCheck.warning);
@@ -139,56 +96,41 @@ public class PeerSupportController {
             redirect.addFlashAttribute("contentWarning", contentCheck.warning);
         }
 
-        if (newPostFormData.getTitle() == null ||
-            newPostFormData.getTitle().trim().isEmpty() ||
-            newPostFormData.getContent() == null ||
-            newPostFormData.getContent().trim().isEmpty() ||
+        if (newPost.getTitle() == null || newPost.getTitle().trim().isEmpty() ||
+            newPost.getContent() == null || newPost.getContent().trim().isEmpty() ||
             redirect.getFlashAttributes().containsKey("contentWarning")) {
-
+            
             redirect.addFlashAttribute("showError", true);
-            redirect.addFlashAttribute("newPostFormData", newPostFormData);
+            redirect.addFlashAttribute("newPostFormData", newPost);
             redirect.addAttribute("modal", "create");
-            redirect.addAttribute("category", newPostFormData.getCategory());
+            redirect.addAttribute("category", newPost.getCategory());
             return "redirect:/forum";
         }
 
-        List<Post> posts = getPosts(session);
-        List<Post> mutablePosts = new ArrayList<>(posts);
+        // Set default values
+        newPost.setAuthor("Anonymous User");
+        newPost.setAuthorInitials("AU");
+        newPost.setTime("Just now");
+        newPost.setLikes(0);
+        newPost.setTrending(false);
+        newPost.setHelpful(false);
 
-        AtomicInteger maxId =
-                new AtomicInteger(mutablePosts.stream().mapToInt(Post::getId).max().orElse(0));
-
-        newPostFormData.setId(maxId.incrementAndGet());
-        newPostFormData.setAuthor("Anonymous User");
-        newPostFormData.setAuthorInitials("AU");
-        newPostFormData.setTime("Just now");
-        newPostFormData.setLikes(0);
-        newPostFormData.setReplies(new ArrayList<>());
-        newPostFormData.setTrending(false);
-        newPostFormData.setHelpful(false);
-
-        mutablePosts.add(0, newPostFormData);
-        session.setAttribute(POSTS_KEY, mutablePosts);
+        // Save to database using DAO
+        forumService.createPost(newPost);
 
         redirect.addFlashAttribute("alert", "Your post has been published anonymously! ✓");
         redirect.addFlashAttribute("alertType", "success");
-        redirect.addAttribute("category", newPostFormData.getCategory());
+        redirect.addAttribute("category", newPost.getCategory());
 
         return "redirect:/forum";
     }
-
-    // =========================
-    // Reply Handler
-    // =========================
 
     @PostMapping("/reply/{postId}")
     public String handleSubmitReply(
             @PathVariable int postId,
             @RequestParam String replyText,
-            HttpSession session,
             RedirectAttributes redirect
     ) {
-
         if (replyText.trim().isEmpty()) {
             redirect.addFlashAttribute("alert", "Reply cannot be empty.");
             redirect.addFlashAttribute("alertType", "error");
@@ -196,8 +138,8 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        ContentCheckResult contentCheck =
-                PeerSupportModels.checkContentForHarmfulText(replyText);
+        // Note: Changed from ContentCheckResult to PeerSupportModels.ContentCheckResult
+        PeerSupportModels.ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(replyText);
 
         if (!contentCheck.isClean) {
             redirect.addFlashAttribute("alert", "Content Warning: " + contentCheck.warning);
@@ -206,68 +148,40 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        List<Post> posts = getPosts(session);
+        Post post = forumService.getPostById(postId);
+        if (post != null) {
+            Reply reply = new Reply();
+            reply.setPost(post);
+            reply.setAuthor("Anonymous User");
+            reply.setAuthorInitials("AU");
+            reply.setTime("Just now");
+            reply.setContent(replyText);
+            reply.setLikes(0);
 
-        posts.stream()
-             .filter(p -> p.getId() == postId)
-             .findFirst()
-             .ifPresent(post -> {
+            forumService.createReply(reply);
 
-                 List<Reply> mutableReplies = new ArrayList<>(post.getReplies());
-                 post.setReplies(mutableReplies);
-
-                 AtomicInteger maxReplyId =
-                         new AtomicInteger(mutableReplies.stream()
-                                                         .mapToInt(Reply::getId)
-                                                         .max()
-                                                         .orElse(0));
-
-                 Reply newReply = new Reply();
-                 newReply.setId(maxReplyId.incrementAndGet());
-                 newReply.setAuthor("Anonymous User");
-                 newReply.setAuthorInitials("AU");
-                 newReply.setTime("Just now");
-                 newReply.setContent(replyText);
-                 newReply.setLikes(0);
-
-                 mutableReplies.add(newReply);
-                 session.setAttribute(POSTS_KEY, posts);
-
-                 redirect.addFlashAttribute(
-                         "alert",
-                         "Your reply has been posted anonymously! ✓"
-                 );
-                 redirect.addFlashAttribute("alertType", "success");
-             });
+            redirect.addFlashAttribute("alert", "Your reply has been posted anonymously! ✓");
+            redirect.addFlashAttribute("alertType", "success");
+        }
 
         redirect.addAttribute("expandedId", postId);
         return "redirect:/forum";
     }
-
-    // =========================
-    // Likes & Reports
-    // =========================
 
     @PostMapping("/like/{postId}")
     public String handleLike(
             @PathVariable int postId,
             @RequestParam String currentCategory,
             @RequestParam(required = false) Integer expandedId,
-            HttpSession session
+            RedirectAttributes redirect
     ) {
-
-        List<Post> posts = getPosts(session);
-        posts.stream()
-             .filter(p -> p.getId() == postId)
-             .findFirst()
-             .ifPresent(post -> post.setLikes(post.getLikes() + 1));
-
-        session.setAttribute(POSTS_KEY, posts);
+        forumService.likePost(postId);
 
         if (expandedId != null) {
-            return "redirect:/forum?category=" + currentCategory + "&expandedId=" + expandedId;
+            redirect.addAttribute("expandedId", expandedId);
         }
-        return "redirect:/forum?category=" + currentCategory;
+        redirect.addAttribute("category", currentCategory);
+        return "redirect:/forum";
     }
 
     @PostMapping("/reply/like/{postId}/{replyId}")
@@ -275,60 +189,47 @@ public class PeerSupportController {
             @PathVariable int postId,
             @PathVariable int replyId,
             @RequestParam String currentCategory,
-            HttpSession session
+            RedirectAttributes redirect
     ) {
+        forumService.likeReply(replyId);
 
-        List<Post> posts = getPosts(session);
-
-        posts.stream()
-             .filter(p -> p.getId() == postId)
-             .findFirst()
-             .ifPresent(post ->
-                     post.getReplies().stream()
-                         .filter(r -> r.getId() == replyId)
-                         .findFirst()
-                         .ifPresent(reply ->
-                                 reply.setLikes(reply.getLikes() + 1)));
-
-        session.setAttribute(POSTS_KEY, posts);
-
-        return "redirect:/forum?category=" + currentCategory + "&expandedId=" + postId;
+        redirect.addAttribute("category", currentCategory);
+        redirect.addAttribute("expandedId", postId);
+        return "redirect:/forum";
     }
 
     @PostMapping("/report/submit")
     public String handleSubmitReport(
-            @ModelAttribute ReportForm reportFormData,
+            @ModelAttribute Report report,
             RedirectAttributes redirect
     ) {
-
-        if (reportFormData.getReason() == null ||
-            reportFormData.getReason().isEmpty()) {
-
-            redirect.addFlashAttribute(
-                    "alert",
-                    "Please select a reason for reporting."
-            );
+        if (report.getReason() == null || report.getReason().isEmpty()) {
+            redirect.addFlashAttribute("alert", "Please select a reason for reporting.");
             redirect.addFlashAttribute("alertType", "error");
-            redirect.addFlashAttribute("reportFormData", reportFormData);
+            redirect.addFlashAttribute("reportFormData", report);
             redirect.addAttribute("modal", "report");
-            redirect.addAttribute("reportId", reportFormData.getPostId());
-
+            redirect.addAttribute("reportId", report.getPostId());
             return "redirect:/forum";
         }
 
-        redirect.addFlashAttribute(
-                "alert",
-                "Report submitted successfully! Our moderation team will review this within 24 hours."
-        );
+        // Save report to database using DAO
+        forumService.createReport(report);
+
+        redirect.addFlashAttribute("alert", "Report submitted successfully! Our moderation team will review this within 24 hours.");
         redirect.addFlashAttribute("alertType", "success");
         redirect.addAttribute("category", "all");
 
         return "redirect:/forum";
     }
 
-    // =========================
-    // Helper
-    // =========================
+    // Helper method to initialize dummy data (optional endpoint)
+    @GetMapping("/init")
+    public String initializeDummyData(RedirectAttributes redirect) {
+        forumService.initializeDummyData();
+        redirect.addFlashAttribute("alert", "Dummy data initialized successfully!");
+        redirect.addFlashAttribute("alertType", "success");
+        return "redirect:/forum";
+    }
 
     private User buildUser(Authentication authentication) {
         User user = new User();
