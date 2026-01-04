@@ -4,6 +4,7 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:mvc="http://www.springframework.org/schema/mvc"
        xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"   
 
        xsi:schemaLocation="
          http://www.springframework.org/schema/beans
@@ -13,12 +14,17 @@
          http://www.springframework.org/schema/mvc
          https://www.springframework.org/schema/mvc/spring-mvc.xsd
          http://www.springframework.org/schema/tx
-         https://www.springframework.org/schema/tx/spring-tx.xsd">
+         https://www.springframework.org/schema/tx/spring-tx.xsd
+         http://www.springframework.org/schema/data/jpa
+         https://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
 
     <!-- ===================================================== -->
     <!-- 1. Component Scan -->
     <!-- ===================================================== -->
     <context:component-scan base-package="com.secj3303"/>
+
+    <!-- 🔥 ENABLE SPRING DATA JPA REPOSITORIES -->
+    <jpa:repositories base-package="com.secj3303.repository"/>
 
     <!-- ===================================================== -->
     <!-- 2. Spring MVC -->

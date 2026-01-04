@@ -1,37 +1,63 @@
 package com.secj3303.controller;
 
-import java.util.Map;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.secj3303.model.User;
-import com.secj3303.model.UserProfile;
+import com.secj3303.repository.UserRepository;
 
 @Controller
+@RequestMapping("/profile")
 public class ProfileController {
+
+    private final UserRepository userRepository;
+
+    public ProfileController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    // =========================
+    // Allow ONLY safe fields to bind
+    // =========================
+    @InitBinder("user")
+    protected void initBinder(WebDataBinder binder) {
+        binder.setAllowedFields(
+            "email",
+            "name",
+            "phone",
+            "location",
+            "dateOfBirth",
+            "emergencyContact",
+            "bio",
+            "emailNotifications",
+            "pushNotifications",
+            "weeklyReport",
+            "anonymousMode"
+        );
+    }
 
     // =========================
     // View Profile
     // =========================
-    @GetMapping("/profile")
+    @GetMapping
     public String viewProfile(
             @RequestParam(name = "edit", required = false) Boolean edit,
             Authentication authentication,
             Model model) {
 
-        User user = buildUser(authentication);
-
-        // Dummy profile (since DB-backed user profile is not implemented yet)
-        UserProfile profile = new UserProfile(user.getName(), user.getEmail());
+        String email = authentication.getName();
+        User user = userRepository.findById(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         model.addAttribute("user", user);
-        model.addAttribute("profile", profile);
         model.addAttribute("currentView", "profile");
         model.addAttribute("isEditing", edit != null && edit);
 
@@ -39,76 +65,48 @@ public class ProfileController {
     }
 
     // =========================
-    // Update Profile (UI-only)
+    // Update Profile
     // =========================
-    @PostMapping("/profile/update")
+    @PostMapping("/update")
     public String updateProfile(
-            @ModelAttribute User updatedUser,
-            Authentication authentication,
-            Model model) {
+            @ModelAttribute("user") User formUser,
+            Authentication authentication) {
 
-        User user = buildUser(authentication);
+        String email = authentication.getName();
+        User user = userRepository.findById(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Apply updates (UI-only, no DB persistence)
-        user.setName(updatedUser.getName());
-        user.setEmail(updatedUser.getEmail());
-        user.setPhone(updatedUser.getPhone());
-        user.setLocation(updatedUser.getLocation());
-        user.setDateOfBirth(updatedUser.getDateOfBirth());
-        user.setEmergencyContact(updatedUser.getEmergencyContact());
-        user.setBio(updatedUser.getBio());
+        user.setName(formUser.getName());
+        user.setPhone(formUser.getPhone());
+        user.setLocation(formUser.getLocation());
+        user.setDateOfBirth(formUser.getDateOfBirth());
+        user.setEmergencyContact(formUser.getEmergencyContact());
+        user.setBio(formUser.getBio());
 
-        UserProfile profile = new UserProfile(user.getName(), user.getEmail());
+        userRepository.save(user);
 
-        model.addAttribute("user", user);
-        model.addAttribute("profile", profile);
-        model.addAttribute("currentView", "profile");
-        model.addAttribute("isEditing", false);
-
-        return "app-layout";
+        return "redirect:/profile";
     }
 
     // =========================
-    // Update Preferences (UI-only)
+    // Update Preferences
     // =========================
-    @PostMapping("/profile/preferences")
+    @PostMapping("/preferences")
     public String updatePreferences(
-            @RequestParam Map<String, String> params,
-            Authentication authentication,
-            Model model) {
+            @ModelAttribute("user") User formUser,
+            Authentication authentication) {
 
-        User user = buildUser(authentication);
+        String email = authentication.getName();
+        User user = userRepository.findById(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        UserProfile profile = new UserProfile(user.getName(), user.getEmail());
+        user.setEmailNotifications(formUser.isEmailNotifications());
+        user.setPushNotifications(formUser.isPushNotifications());
+        user.setWeeklyReport(formUser.isWeeklyReport());
+        user.setAnonymousMode(formUser.isAnonymousMode());
 
-        profile.setEmailNotifications(params.containsKey("emailNotifications"));
-        profile.setPushNotifications(params.containsKey("pushNotifications"));
-        profile.setWeeklyReport(params.containsKey("weeklyReport"));
-        profile.setAnonymousMode(params.containsKey("anonymousMode"));
+        userRepository.save(user);
 
-        model.addAttribute("user", user);
-        model.addAttribute("profile", profile);
-        model.addAttribute("currentView", "profile");
-        model.addAttribute("isEditing", false);
-
-        return "app-layout";
-    }
-
-    // =========================
-    // Helper
-    // =========================
-    private User buildUser(Authentication authentication) {
-        User user = new User();
-        user.setEmail(authentication.getName());
-        user.setName(authentication.getName().split("@")[0]);
-        user.setRole(
-                authentication.getAuthorities()
-                        .iterator()
-                        .next()
-                        .getAuthority()
-                        .replace("ROLE_", "")
-                        .toLowerCase()
-        );
-        return user;
+        return "redirect:/profile";
     }
 }

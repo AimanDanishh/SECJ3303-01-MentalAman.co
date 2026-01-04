@@ -3,61 +3,75 @@ package com.secj3303.model;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-public class User implements Serializable {
-    private String email;
-    private String name;
-    private String role;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-    // Additional profile fields
+import org.springframework.format.annotation.DateTimeFormat;
+
+@Entity
+@Table(name = "users")
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    // ================= AUTH =================
+    @Id
+    @Column(length = 100, nullable = false)
+    private String email;   // used as username
+
+    @Column(nullable = false)
+    private String password;
+
+    private boolean enabled = true;
+
+    @Column(nullable = false)
+    private String role; // STUDENT, FACULTY, COUNSELLOR, ADMINISTRATOR
+
+    // ================= PROFILE =================
+    private String name;
     private String phone;
     private String location;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dateOfBirth;
     private String emergencyContact;
+
+    @Column(length = 500)
     private String bio;
 
-    // Notification preferences
-    private boolean emailNotifications;
-    private boolean pushNotifications;
-    private boolean weeklyReport;
-    private boolean anonymousMode;
+    // ================= PREFERENCES =================
+    private boolean emailNotifications = true;
+    private boolean pushNotifications = true;
+    private boolean weeklyReport = true;
+    private boolean anonymousMode = false;
 
-    // Default constructor
+    // ================= CONSTRUCTORS =================
     public User() {}
 
-    // Constructor with essential fields
     public User(String email, String name, String role) {
         this.email = email;
         this.name = name;
         this.role = role;
+        this.enabled = true;
     }
 
-    // Full constructor
-    public User(String email, String name, String role, String phone, String location,
-                LocalDate dateOfBirth, String emergencyContact, String bio,
-                boolean emailNotifications, boolean pushNotifications, boolean weeklyReport, boolean anonymousMode) {
-        this.email = email;
-        this.name = name;
-        this.role = role;
-        this.phone = phone;
-        this.location = location;
-        this.dateOfBirth = dateOfBirth;
-        this.emergencyContact = emergencyContact;
-        this.bio = bio;
-        this.emailNotifications = emailNotifications;
-        this.pushNotifications = pushNotifications;
-        this.weeklyReport = weeklyReport;
-        this.anonymousMode = anonymousMode;
-    }
-
-    // Getters and setters
+    // ================= GETTERS / SETTERS =================
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
@@ -75,28 +89,36 @@ public class User implements Serializable {
     public void setBio(String bio) { this.bio = bio; }
 
     public boolean isEmailNotifications() { return emailNotifications; }
-    public void setEmailNotifications(boolean emailNotifications) { this.emailNotifications = emailNotifications; }
+    public void setEmailNotifications(boolean emailNotifications) {
+        this.emailNotifications = emailNotifications;
+    }
 
     public boolean isPushNotifications() { return pushNotifications; }
-    public void setPushNotifications(boolean pushNotifications) { this.pushNotifications = pushNotifications; }
+    public void setPushNotifications(boolean pushNotifications) {
+        this.pushNotifications = pushNotifications;
+    }
 
     public boolean isWeeklyReport() { return weeklyReport; }
-    public void setWeeklyReport(boolean weeklyReport) { this.weeklyReport = weeklyReport; }
+    public void setWeeklyReport(boolean weeklyReport) {
+        this.weeklyReport = weeklyReport;
+    }
 
     public boolean isAnonymousMode() { return anonymousMode; }
-    public void setAnonymousMode(boolean anonymousMode) { this.anonymousMode = anonymousMode; }
+    public void setAnonymousMode(boolean anonymousMode) {
+        this.anonymousMode = anonymousMode;
+    }
 
-    // Helper methods for Thymeleaf
-    public boolean isStudent() { return "student".equals(role); }
-    public boolean isFaculty() { return "faculty".equals(role); }
-    public boolean isCounsellor() { return "counsellor".equals(role); }
-    public boolean isAdministrator() { return "administrator".equals(role); }
+    // ================= HELPERS =================
+    public boolean isStudent() { return "STUDENT".equals(role); }
+    public boolean isFaculty() { return "FACULTY".equals(role); }
+    public boolean isCounsellor() { return "COUNSELLOR".equals(role); }
+    public boolean isAdministrator() { return "ADMINISTRATOR".equals(role); }
 
     public String getInitials() {
         if (name == null || name.trim().isEmpty()) return "U";
-        String[] parts = name.split(" ");
+        String[] parts = name.trim().split(" ");
         if (parts.length >= 2) {
-            return (parts[0].charAt(0) + "" + parts[1].charAt(0)).toUpperCase();
+            return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
         }
         return name.substring(0, Math.min(2, name.length())).toUpperCase();
     }
