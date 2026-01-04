@@ -39,59 +39,51 @@ public class AICoachController {
 
     // --- Main Chat View (Replaces initial render and useEffect) ---
     
-    @GetMapping
-    public String coachView(HttpSession session, Model model) {
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("messages", getChatHistory(session));
-        
-        // Pass the user role if needed for context, though not directly used in this view logic
-        // model.addAttribute("userRole", session.getAttribute("currentUser").getRole());
+@GetMapping
+public String coachView(HttpSession session, Model model) {
+    model.addAttribute("currentView", "coach");
+    
+    // 1. Get Chat History (Greeting is added automatically here)
+    List<Message> history = getChatHistory(session);
+    model.addAttribute("messages", history);
 
-        // Ensure the main app-layout renders this fragment
-        return "app-layout";
+    // 2. DEMO: Create a mock user so sidebar.html doesn't crash
+    Object user = session.getAttribute("currentUser");
+    if (user == null) {
+        java.util.Map<String, String> demoUser = new java.util.HashMap<>();
+        demoUser.put("name", "Demo Student");
+        demoUser.put("role", "student"); // Matches sidebar logic
+        session.setAttribute("currentUser", demoUser);
+        user = demoUser;
     }
+    model.addAttribute("user", user);
+
+    return "app-layout";
+}
 
     // --- Message Sending (Replaces handleSendMessage) ---
     
     @PostMapping("/send")
-    public String sendMessage(@RequestParam String inputMessage, 
-                              HttpSession session, 
-                              RedirectAttributes redirect) {
-        
-        String cleanMessage = inputMessage.trim();
-        if (cleanMessage.isEmpty()) {
-            return "redirect:/coach";
-        }
+public String sendMessage(@RequestParam String inputMessage, HttpSession session, RedirectAttributes redirect) {
+    String cleanMessage = inputMessage.trim();
+    if (cleanMessage.isEmpty()) return "redirect:/coach";
 
-        // AF2: Simulate connection error (5% chance)
-        if (ThreadLocalRandom.current().nextDouble() < 0.05) {
-            redirect.addFlashAttribute("connectionError", true);
-            return "redirect:/coach";
-        }
-
-        List<Message> history = getChatHistory(session);
-        
-        // NF3: User sends message
-        history.add(new Message(cleanMessage, "user"));
-        session.setAttribute(HISTORY_KEY, history); // Save history before redirect
-
-        // Simulate AI thinking delay (1000ms + random 1500ms)
-        try {
-            TimeUnit.MILLISECONDS.sleep(1000 + ThreadLocalRandom.current().nextInt(1500));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        // NF4: AI responds with dummy logic
-        String aiResponse = generateAIResponse(cleanMessage);
-        
-        // Add AI response
-        history.add(new Message(aiResponse, "ai"));
-        session.setAttribute(HISTORY_KEY, history);
-
-        // Success: Redirect back to the GET view to display the new messages
-        return "redirect:/coach";
+    List<Message> history = getChatHistory(session);
+    history.add(new Message(cleanMessage, "user"));
+    
+    // Simulate AI thinking delay (1.5 to 2.5 seconds)
+    try {
+        TimeUnit.MILLISECONDS.sleep(1500 + ThreadLocalRandom.current().nextInt(1000));
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
     }
+
+    String aiResponse = generateAIResponse(cleanMessage);
+    history.add(new Message(aiResponse, "ai"));
+    session.setAttribute(HISTORY_KEY, history);
+
+    return "redirect:/coach";
+}
 
     // --- Clear Chat History (Replaces handleClearChat) ---
 
