@@ -63,7 +63,11 @@ com\secj3303\model\CounsellingSessionModels$TimeSlot.class
 com\secj3303\model\ContentManagementModels$ContentItem.class
 com\secj3303\controller\SelfAssessmentController.class
 com\secj3303\model\PeerSupportModels$Post.class
+<<<<<<< HEAD
 com\secj3303\config\LearningContentInitializer.class
+=======
+com\secj3303\controller\CarePlanController$UserDTO.class
+>>>>>>> eb6410324b726d4c673bbf38c8198b3fe45045a2
 com\secj3303\model\DashboardData.class
 com\secj3303\model\TeleCounsellingModels$Session.class
 com\secj3303\dao\PersonDao.class
