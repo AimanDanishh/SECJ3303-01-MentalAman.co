@@ -52,19 +52,14 @@ public class CounsellingSessionController {
         List<Counsellor> counsellors = sessionService.getAllCounsellors();
         model.addAttribute("counsellorList", counsellors);
 
-        // Get selected counsellor or default to first
+         // Get selected counsellor
         Counsellor selectedCounsellor = null;
         if (counsellorId != null) {
             selectedCounsellor = sessionService.getCounsellorById(counsellorId);
-        }
-        if (selectedCounsellor == null && !counsellors.isEmpty()) {
-            selectedCounsellor = counsellors.get(0);
+            model.addAttribute("selectedCounsellorId", counsellorId);
         }
         
-        model.addAttribute("selectedCounsellorId", 
-                          selectedCounsellor != null ? selectedCounsellor.getId() : null);
-
-        // Generate available time slots for selected counsellor
+        // Generate available time slots ONLY if counsellor is selected
         List<TimeSlot> slots = Collections.emptyList();
         if (selectedCounsellor != null) {
             slots = sessionService.generateAvailableSlotsForCounsellor(selectedCounsellor);

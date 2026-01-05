@@ -502,142 +502,160 @@
                             </a>
                         </div>
 
-                        <!-- REMOVE CSRF TOKEN - It's causing the error -->
-                        <form th:action="@{/counselling/book}" method="post" class="space-y-4">
-                            <!-- REMOVED: <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" /> -->
-
+                        <!-- Form for counsellor selection that auto-submits -->
+                        <form th:action="@{/counselling}" method="get" id="counsellorSelectForm" class="mb-6">
+                            <input type="hidden" name="modal" value="book">
+                            
                             <!-- Counsellor Selection -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">
                                     Select Counsellor <span class="text-red-500">*</span>
                                 </label>
                                 <select name="counsellorId" required
+                                        onchange="this.form.submit()"
                                         class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">-- Select Counsellor --</option>
                                     <option th:each="c : ${counsellorList}" 
                                             th:value="${c.id}" 
-                                            th:text="${c.name}">
+                                            th:text="${c.name}"
+                                            th:selected="${c.id == selectedCounsellorId}">
                                     </option>
                                 </select>
-                            </div>
-
-                            <!-- Session Type with button-style selection -->
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-3">
-                                    Session Type <span class="text-red-500">*</span>
-                                </label>
-                                
-                                <div class="grid grid-cols-2 gap-3">
-                                    <!-- Video Call Option -->
-                                    <label class="p-4 border-2 rounded-lg transition-all cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50">
-                                        <input type="radio" 
-                                            name="sessionType" 
-                                            value="Video Call" 
-                                            class="hidden session-type-radio" 
-                                            required
-                                            th:checked="${param.sessionType == 'Video Call' or (param.sessionType == null and counsellorId != null)}"
-                                            onchange="toggleLocationField(this)">
-                                        <div class="text-center">
-                                            <i data-lucide="monitor" class="w-6 h-6 mx-auto mb-2 text-slate-400"></i>
-                                            <p class="font-medium text-slate-700">Online</p>
-                                            <p class="text-xs text-slate-600 mt-1">Video Call</p>
-                                        </div>
-                                    </label>
-                                    
-                                    <!-- In-person Option -->
-                                    <label class="p-4 border-2 rounded-lg transition-all cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50">
-                                        <input type="radio" 
-                                            name="sessionType" 
-                                            value="In-person" 
-                                            class="hidden session-type-radio"
-                                            th:checked="${param.sessionType == 'In-person'}"
-                                            onchange="toggleLocationField(this)">
-                                        <div class="text-center">
-                                            <i data-lucide="map-pin" class="w-6 h-6 mx-auto mb-2 text-slate-400"></i>
-                                            <p class="font-medium text-slate-700">Physical</p>
-                                            <p class="text-xs text-slate-600 mt-1">In-Person</p>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Location Selection (initially hidden) -->
-                            <div id="locationField" class="hidden">
-                                <label class="block text-sm font-medium text-slate-700 mb-2">
-                                    Session Location <span class="text-red-500">*</span>
-                                </label>
-                                <select name="sessionLocation" 
-                                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">-- Select location --</option>
-                                    <option value="Counselling Center - Room 101">Counselling Center - Room 101</option>
-                                    <option value="Counselling Center - Room 102">Counselling Center - Room 102</option>
-                                    <option value="Counselling Center - Room 103">Counselling Center - Room 103</option>
-                                    <option value="Student Wellness Center - Office A">Student Wellness Center - Office A</option>
-                                    <option value="Student Wellness Center - Office B">Student Wellness Center - Office B</option>
-                                    <option value="Medical Building - Room 205">Medical Building - Room 205</option>
-                                </select>
-                                <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                                    <i data-lucide="map-pin" class="w-3 h-3"></i>
-                                    The selected location will be confirmed by the counsellor
+                                <p class="text-xs text-slate-500 mt-2">
+                                    Select a counsellor to see their available time slots
                                 </p>
                             </div>
+                        </form>
 
-                            <!-- Time Slot Selection (EXACTLY LIKE RESCHEDULE) -->
-                            <div th:if="${availableTimeSlots != null and !availableTimeSlots.isEmpty()}">
-                                <label class="block text-sm font-medium text-slate-700 mb-3">
-                                    Select Time Slot <span class="text-red-500">*</span>
-                                </label>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-2">
-                                    <div th:each="slot : ${availableTimeSlots}" 
-                                        class="p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-all duration-200">
-                                        
-                                        <label class="cursor-pointer flex items-center space-x-3">
+                        <div>
+                            <form th:action="@{/counselling/book}" method="post" class="space-y-4" id="bookingForm">
+                                <input type="hidden" name="counsellorId" th:value="${selectedCounsellorId}">
+
+                                <!-- Session Type with button-style selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-3">
+                                        Session Type <span class="text-red-500">*</span>
+                                    </label>
+                                    
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <!-- Video Call Option -->
+                                        <label class="p-4 border-2 rounded-lg transition-all cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50">
                                             <input type="radio" 
-                                                name="selectedSlot"
-                                                th:value="${slot.slotIdentifier}"
-                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
-                                                required>
-                                            <div>
-                                                <p class="font-medium text-slate-900" th:text="${slot.formattedDate}"></p>
-                                                <p class="text-sm text-slate-600" th:text="${slot.formattedTime}"></p>
+                                                name="sessionType" 
+                                                value="Video Call" 
+                                                class="hidden session-type-radio" 
+                                                required
+                                                onchange="toggleLocationField(this)">
+                                            <div class="text-center">
+                                                <i data-lucide="monitor" class="w-6 h-6 mx-auto mb-2 text-slate-400"></i>
+                                                <p class="font-medium text-slate-700">Online</p>
+                                                <p class="text-xs text-slate-600 mt-1">Video Call</p>
+                                            </div>
+                                        </label>
+                                        
+                                        <!-- In-person Option -->
+                                        <label class="p-4 border-2 rounded-lg transition-all cursor-pointer border-slate-200 hover:border-slate-300 hover:bg-slate-50">
+                                            <input type="radio" 
+                                                name="sessionType" 
+                                                value="In-person" 
+                                                class="hidden session-type-radio"
+                                                onchange="toggleLocationField(this)">
+                                            <div class="text-center">
+                                                <i data-lucide="map-pin" class="w-6 h-6 mx-auto mb-2 text-slate-400"></i>
+                                                <p class="font-medium text-slate-700">Physical</p>
+                                                <p class="text-xs text-slate-600 mt-1">In-Person</p>
                                             </div>
                                         </label>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div th:if="${availableTimeSlots == null or availableTimeSlots.isEmpty()}" 
-                                class="p-6 text-center border-2 border-dashed border-slate-300 rounded-lg">
-                                <i data-lucide="calendar-x" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
-                                <p class="text-slate-600">Please select a counsellor first.</p>
-                                <p class="text-sm text-slate-500 mt-1">Time slots will appear after selecting a counsellor.</p>
-                            </div>
 
-                            <!-- Booking Reason -->
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">
-                                    Reason for Booking <span class="text-red-500">*</span>
-                                </label>
-                                <textarea name="bookingReason" 
-                                        required 
-                                        placeholder="Please provide a reason for booking this session..."
-                                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                        rows="3"></textarea>
-                            </div>
+                                <!-- Location Selection (initially hidden) -->
+                                <div id="locationField" class="hidden">
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                                        Session Location <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="sessionLocation" 
+                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">-- Select location --</option>
+                                        <option value="Counselling Center - Room 101">Counselling Center - Room 101</option>
+                                        <option value="Counselling Center - Room 102">Counselling Center - Room 102</option>
+                                        <option value="Counselling Center - Room 103">Counselling Center - Room 103</option>
+                                        <option value="Student Wellness Center - Office A">Student Wellness Center - Office A</option>
+                                        <option value="Student Wellness Center - Office B">Student Wellness Center - Office B</option>
+                                        <option value="Medical Building - Room 205">Medical Building - Room 205</option>
+                                    </select>
+                                    <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                                        <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                        The selected location will be confirmed by the counsellor
+                                    </p>
+                                </div>
 
-                            <!-- Action Buttons -->
-                            <div class="flex gap-3 mt-6">
-                                <a th:href="@{/counselling}" 
-                                class="flex-1 py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center">
-                                    Cancel
-                                </a>
-                                <button type="submit" 
-                                        th:disabled="${availableTimeSlots == null or availableTimeSlots.isEmpty()}"
-                                        class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                    Book Session
-                                </button>
-                            </div>
-                        </form>
+                                <!-- Time Slot Selection -->
+                                <div th:if="${availableTimeSlots != null and !availableTimeSlots.isEmpty()}">
+                                    <label class="block text-sm font-medium text-slate-700 mb-3">
+                                        Select Time Slot <span class="text-red-500">*</span>
+                                    </label>
+                                    <div th:if="${selectedCounsellorId != null}">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-2">
+                                        <div th:each="slot : ${availableTimeSlots}" 
+                                            class="p-4 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-all duration-200 time-slot-option">
+                                            
+                                            <label class="cursor-pointer flex items-center space-x-3">
+                                                <input type="radio" 
+                                                    name="selectedSlot"
+                                                    th:value="${slot.slotIdentifier}"
+                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                                                    required>
+                                                <div>
+                                                    <p class="font-medium text-slate-900" th:text="${slot.formattedDate}"></p>
+                                                    <p class="text-sm text-slate-600" th:text="${slot.formattedTime}"></p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-2">
+                                        Showing available time slots for the next 7 days (excluding weekends)
+                                    </p>
+                                    </div>
+                                </div>
+                                
+                                <div th:if="${availableTimeSlots != null and availableTimeSlots.isEmpty()}">
+                                    <label class="block text-sm font-medium text-slate-700 mb-3">
+                                        Select Time Slot <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="p-6 text-center border-2 border-dashed border-slate-300 rounded-lg">
+                                        <i data-lucide="calendar-x" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
+                                        <p class="text-slate-600">No available time slots at thid moments.</p>
+                                        <p class="text-sm text-slate-500 mt-1">Please select another counsellor or check back later.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Booking Reason -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                                        Reason for Booking <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea name="bookingReason" 
+                                            required 
+                                            placeholder="Please provide a reason for booking this session..."
+                                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            rows="3"></textarea>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex gap-3 mt-6">
+                                    <a th:href="@{/counselling}" 
+                                    class="flex-1 py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" 
+                                            th:disabled="${availableTimeSlots == null or availableTimeSlots.isEmpty()}"
+                                            class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Book Session
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
 </div>

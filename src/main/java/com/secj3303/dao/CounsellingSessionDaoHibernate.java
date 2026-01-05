@@ -41,7 +41,21 @@ public class CounsellingSessionDaoHibernate implements CounsellingSessionDao {
     @Override
     public List<CounsellingSession> findAll() {
         TypedQuery<CounsellingSession> query = entityManager.createQuery(
-                "SELECT s FROM CounsellingSession s ORDER BY s.date DESC, s.startTime DESC", 
+                "SELECT s FROM CounsellingSession s " +
+                "ORDER BY " +
+                "CASE " +
+                "   WHEN s.status = 'CANCELLED' THEN 2 " +
+                "   WHEN s.date > CURRENT_DATE THEN 0 " +  // Future date = upcoming
+                "   WHEN s.date < CURRENT_DATE THEN 1 " +  // Past date = past
+                "   WHEN s.startTime > CURRENT_TIME THEN 0 " +  // Today, future time = upcoming
+                "   ELSE 1 " +  // Today, past time = past
+                "END, " +
+                "CASE " +
+                "   WHEN s.status = 'CANCELLED' THEN s.date " +
+                "   ELSE NULL " +
+                "END DESC, " +  // Within cancelled, newest first
+                "s.date ASC, " +  // Within upcoming/past, chronological
+                "s.startTime ASC", 
                 CounsellingSession.class);
         return query.getResultList();
     }
