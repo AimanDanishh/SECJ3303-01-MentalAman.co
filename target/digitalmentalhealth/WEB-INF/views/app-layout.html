@@ -47,7 +47,18 @@
             <!-- Dynamic Content Area -->
             <div class="flex-1 p-6">
                 <!-- Dynamically include the fragment for the current view -->
-                <div th:replace="~{${currentView} :: content(user=${user})}"></div>
+                <div th:replace="~{${currentView} :: content(
+                    modules=${modules},
+                    completedCount=${completedCount},
+                    inProgressCount=${inProgressCount},
+                    totalModules=${totalModules},
+                    selectedModule=${selectedModule},
+                    selectedLesson=${selectedLesson},
+                    showQuiz=${showQuiz},
+                    quizScore=${quizScore},
+                    achievement=${achievement},
+                    user=${user}
+                )}"></div>
             </div>
         </main>
     </div>

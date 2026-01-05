@@ -1,0 +1,171 @@
+<div th:fragment="content(user)">
+  <div class="p-8 space-y-6">
+
+    <!-- Page Header -->
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900 mb-2">Profile Settings</h1>
+      <p class="text-slate-600">Manage your account information and preferences</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- ================= LEFT COLUMN ================= -->
+      <div class="lg:col-span-1 space-y-6">
+
+        <!-- Profile Overview -->
+        <div class="bg-white p-6 rounded-lg shadow text-center">
+          <div class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+            <span class="text-white text-5xl">👤</span>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-900 mb-1"
+              th:text="${user.name}">John Doe</h2>
+          <p class="text-slate-600 text-sm"
+             th:text="${user.email}">test@example.com</p>
+          <p class="text-slate-500 text-sm mt-1"
+             th:text="${user.role}">STUDENT</p>
+        </div>
+
+        <!-- Activity Stats (DEMO) -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-semibold mb-4">
+            Activity Stats <span class="text-xs text-slate-400">(Demo)</span>
+          </h3>
+          <div class="grid grid-cols-2 gap-4 text-center">
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">📚</div>
+              <p class="text-xl font-bold text-slate-900">12</p>
+              <p class="text-xs text-slate-600">Modules Completed</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">💬</div>
+              <p class="text-xl font-bold text-slate-900">24</p>
+              <p class="text-xs text-slate-600">Forum Posts</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">📅</div>
+              <p class="text-xl font-bold text-slate-900">45</p>
+              <p class="text-xs text-slate-600">Days Active</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg">
+              <div class="text-2xl mb-1">🏆</div>
+              <p class="text-xl font-bold text-slate-900">850</p>
+              <p class="text-xs text-slate-600">Points Earned</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= RIGHT COLUMN ================= -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- Personal Info -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-semibold mb-4">Personal Information</h3>
+
+          <form th:action="@{/profile/update}"
+                th:object="${user}"
+                method="post"
+                class="grid grid-cols-1 md:grid-cols-2 gap-4"
+                id="profileForm">
+
+            <!-- Name -->
+            <div>
+              <label class="block text-sm font-medium mb-1">Full Name</label>
+              <p id="nameLabel" th:text="${user.name}" class="py-2"></p>
+              <input id="nameInput" th:field="*{name}" class="hidden w-full border px-4 py-2 rounded-lg"/>
+            </div>
+
+            <!-- Email (READ ONLY) -->
+            <div>
+              <label class="block text-sm font-medium mb-1">Email</label>
+              <p th:text="${user.email}" class="py-2"></p>
+            </div>
+
+            <!-- Phone -->
+            <div>
+              <label class="block text-sm font-medium mb-1">Phone</label>
+              <p id="phoneLabel" th:text="${user.phone}" class="py-2"></p>
+              <input id="phoneInput" th:field="*{phone}" class="hidden w-full border px-4 py-2 rounded-lg"/>
+            </div>
+
+            <!-- Location -->
+            <div>
+              <label class="block text-sm font-medium mb-1">Location</label>
+              <p id="locationLabel" th:text="${user.location}" class="py-2"></p>
+              <input id="locationInput" th:field="*{location}" class="hidden w-full border px-4 py-2 rounded-lg"/>
+            </div>
+
+            <!-- DOB -->
+            <div>
+              <label class="block text-sm font-medium mb-1">Date of Birth</label>
+              <p id="dobLabel"
+                 th:text="${user.dateOfBirth != null ? #temporals.format(user.dateOfBirth, 'yyyy-MM-dd') : '-'}"
+                 class="py-2"></p>
+              <input id="dobInput" type="date" th:field="*{dateOfBirth}"
+                     class="hidden w-full border px-4 py-2 rounded-lg"/>
+            </div>
+
+            <!-- Emergency -->
+            <div>
+              <label class="block text-sm font-medium mb-1">Emergency Contact</label>
+              <p id="emergencyLabel" th:text="${user.emergencyContact}" class="py-2"></p>
+              <input id="emergencyInput" th:field="*{emergencyContact}"
+                     class="hidden w-full border px-4 py-2 rounded-lg"/>
+            </div>
+
+            <!-- Bio -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1">Bio</label>
+              <p id="bioLabel" th:text="${user.bio}" class="py-2"></p>
+              <textarea id="bioInput" th:field="*{bio}" rows="3"
+                        class="hidden w-full border px-4 py-2 rounded-lg"></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="md:col-span-2 flex gap-2">
+              <button type="button" id="editBtn"
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg">Edit</button>
+              <button type="submit" id="saveBtn"
+                      class="hidden px-4 py-2 bg-green-600 text-white rounded-lg">Save</button>
+              <button type="button" id="cancelBtn"
+                      class="hidden px-4 py-2 border rounded-lg">Cancel</button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Preferences -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-xl font-semibold mb-4">Notification Preferences</h3>
+          <form th:action="@{/profile/preferences}" th:object="${user}" method="post">
+            <label><input type="checkbox" th:field="*{emailNotifications}"/> Email Updates</label><br/>
+            <label><input type="checkbox" th:field="*{pushNotifications}"/> Push Notifications</label><br/>
+            <label><input type="checkbox" th:field="*{weeklyReport}"/> Weekly Report</label><br/>
+            <label><input type="checkbox" th:field="*{anonymousMode}"/> Anonymous Mode</label><br/>
+            <button class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg">Save Preferences</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JS ================= -->
+  <script>
+    const fields = ['name','phone','location','dob','emergency','bio'];
+    const editBtn = document.getElementById('editBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    editBtn.onclick = () => {
+      fields.forEach(f => {
+        document.getElementById(f+'Label').classList.add('hidden');
+        document.getElementById(f+'Input').classList.remove('hidden');
+      });
+      editBtn.classList.add('hidden');
+      saveBtn.classList.remove('hidden');
+      cancelBtn.classList.remove('hidden');
+    };
+
+    cancelBtn.onclick = () => location.reload();
+  </script>
+</div>
