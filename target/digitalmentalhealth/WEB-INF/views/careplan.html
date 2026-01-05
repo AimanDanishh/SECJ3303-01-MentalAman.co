@@ -1,0 +1,235 @@
+<th:block th:fragment="content(user)">
+
+    <div class="p-8">
+
+        <!-- HEADER -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-8 h-8 text-purple-600"></i>
+                Personalized Care Plan
+            </h1>
+            <p class="text-slate-600">
+                AI-generated wellness plan based on your mental health data and engagement
+            </p>
+        </div>
+
+        <!-- WARNING -->
+        <div th:if="${showInsufficientDataWarning}"
+             class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+            <i data-lucide="alert-triangle"
+               class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+            <div>
+                <p class="font-medium text-yellow-900">Insufficient Data</p>
+                <p class="text-sm text-yellow-800">
+                    We need more information to generate an accurate care plan.
+                </p>
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- ================= LEFT COLUMN (2/3) ================= -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- USER DATA -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+                            Your Mental Health Data
+                        </h2>
+
+                        <form th:action="@{/careplan/refresh-data}" method="post">
+                            <button type="submit"
+                                    class="text-sm text-slate-600 hover:text-slate-900">
+                                Refresh
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4"
+                         th:if="${userData != null}">
+
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <p class="text-2xl font-bold text-blue-900"
+                               th:text="${userData.assessmentScore}">0</p>
+                            <p class="text-sm text-blue-700">Assessment</p>
+                        </div>
+
+                        <div class="text-center p-4 bg-purple-50 rounded-lg">
+                            <p class="text-2xl font-bold text-purple-900"
+                               th:text="${userData.moodEntries}">0</p>
+                            <p class="text-sm text-purple-700">Mood Entries</p>
+                        </div>
+
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <p class="text-2xl font-bold text-green-900"
+                               th:text="${userData.engagementLevel + '%'}">0%</p>
+                            <p class="text-sm text-green-700">Engagement</p>
+                        </div>
+
+                        <div class="text-center p-4 bg-orange-50 rounded-lg">
+                            <p class="text-2xl font-bold text-orange-900"
+                               th:text="${userData.stressIndicators}">0</p>
+                            <p class="text-sm text-orange-700">Stress Factors</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-6">
+                        <form th:action="@{/careplan/generate}" method="post">
+                            <button type="submit"
+                                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 mx-auto">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                Generate Care Plan
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- CARE PLAN -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <div class="flex items-center justify-between mb-4 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="target" class="w-5 h-5 text-purple-600"></i>
+                            Your Personalized Care Plan
+                        </h2>
+
+                        <span class="text-sm text-slate-600"
+                              th:text="${completedActivities + '/' + totalActivities + ' completed'}">
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="mb-6">
+                        <div class="w-full bg-slate-200 rounded-full h-3">
+                            <div class="bg-purple-600 h-3 rounded-full"
+                                 th:style="'width:' + ${progressPercentage} + '%'">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activities -->
+                    <div class="space-y-3"
+                         th:if="${carePlan != null and !carePlan.isEmpty()}">
+
+                        <div th:each="activity : ${carePlan}"
+                             class="p-4 bg-slate-50 border rounded-lg">
+
+                            <div class="flex gap-3">
+
+                                <form th:action="@{/careplan/complete/{id}(id=${activity.id})}"
+                                      method="post">
+                                    <input type="checkbox"
+                                           th:checked="${activity.completed}"
+                                           onchange="this.form.submit()"
+                                           class="mt-1 w-5 h-5"/>
+                                </form>
+
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span th:switch="${activity.category}">
+                                            <i th:case="'self-care'" data-lucide="heart" class="w-5 h-5 text-pink-600"></i>
+                                            <i th:case="'learning'" data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+                                            <i th:case="'counseling'" data-lucide="user" class="w-5 h-5 text-purple-600"></i>
+                                            <i th:case="'assessment'" data-lucide="bar-chart" class="w-5 h-5 text-orange-600"></i>
+                                            <i th:case="'community'" data-lucide="users" class="w-5 h-5 text-green-600"></i>
+                                            <i th:case="*" data-lucide="activity" class="w-5 h-5 text-slate-600"></i>
+                                        </span>
+
+                                        <h3 class="font-semibold text-slate-900"
+                                            th:text="${activity.title}"></h3>
+                                    </div>
+
+                                    <p class="text-sm text-slate-700"
+                                       th:text="${activity.description}"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:if="${carePlan == null or carePlan.isEmpty()}"
+                         class="text-center text-slate-500 py-6">
+                        No activities generated yet.
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================= RIGHT SIDEBAR (1/3) ================= -->
+            <div class="space-y-6">
+
+                <!-- HOW IT WORKS -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">How It Works</h3>
+                    <ol class="space-y-4">
+                        <li class="flex gap-3">
+                            <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center">1</span>
+                            <p class="text-sm text-slate-700">
+                                System analyzes your assessment data, mood tracking, and engagement
+                            </p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center">2</span>
+                            <p class="text-sm text-slate-700">
+                                AI determines your risk level
+                            </p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center">3</span>
+                            <p class="text-sm text-slate-700">
+                                Personalized care plan is generated
+                            </p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center">4</span>
+                            <p class="text-sm text-slate-700">
+                                High-risk users are flagged for counselors
+                            </p>
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- RISK LEVELS -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4">Risk Levels</h3>
+
+                    <div class="space-y-3">
+                        <div class="p-4 rounded-lg bg-green-50 border border-green-200">
+                            <p class="font-semibold text-green-800">Low Risk</p>
+                            <p class="text-sm text-green-700">Healthy mental wellbeing</p>
+                        </div>
+
+                        <div class="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                            <p class="font-semibold text-yellow-800">Medium Risk</p>
+                            <p class="text-sm text-yellow-700">Some concerns detected</p>
+                        </div>
+
+                        <div class="p-4 rounded-lg bg-red-50 border border-red-200">
+                            <p class="font-semibold text-red-800">High Risk</p>
+                            <p class="text-sm text-red-700">Immediate attention required</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRIVACY -->
+                <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Privacy Notice</h3>
+                    <p class="text-sm text-slate-600">
+                        Your care plan and assessments are confidential and accessible
+                        only by you and authorized counselors.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+
+</th:block>

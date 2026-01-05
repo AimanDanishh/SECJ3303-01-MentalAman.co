@@ -3,8 +3,11 @@
 <body>
     <!-- Dashboard Content Fragment -->
     <div th:fragment="dashboard">
-        <h1 class="text-xl font-bold text-slate-900 mb-2">Self-Assessment Tools</h1>
-        <p class="text-slate-600 mb-6">Complete confidential assessments to evaluate your mental health status</p>
+        <div class="p-8">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-slate-900 mb-2">Self-Assessment Tools</h1>
+                <p class="text-slate-600 mb-6">Complete confidential assessments to evaluate your mental health status</p>
+            </div>
 
         <!-- Tab Navigation -->
         <div th:unless="${selectedAssessment != null or showResults}" class="flex items-center gap-2 mb-6">
@@ -90,6 +93,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </body>
