@@ -1,2 +1,4 @@
-# Ignore the 'target' folder in the root directory
-/target/
+target/
+.classpath
+.project
+.settings/
