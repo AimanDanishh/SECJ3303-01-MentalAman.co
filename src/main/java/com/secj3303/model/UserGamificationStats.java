@@ -22,26 +22,29 @@ public class UserGamificationStats {
     @Column(name = "user_email", nullable = false, unique = true)
     private String userEmail;
     
-    @Column(name = "points_from_modules")
-    private int pointsFromModules = 0;
+    @Column(name = "total_points")
+    private int totalPoints = 0;
     
-    @Column(name = "points_from_quizzes")
-    private int pointsFromQuizzes = 0;
+    @Column(name = "current_level")
+    private int currentLevel = 1;
     
-    @Column(name = "points_from_streaks")
-    private int pointsFromStreaks = 0;
+    @Column(name = "day_streak")
+    private int dayStreak = 0;
     
-    @Column(name = "points_from_bonuses")
-    private int pointsFromBonuses = 0;
+    @Column(name = "total_modules_completed")
+    private int totalModulesCompleted = 0;
     
-    @Column(name = "total_days_active")
-    private int totalDaysActive = 0;
+    @Column(name = "total_quizzes_passed")
+    private int totalQuizzesPassed = 0;
     
-    @Column(name = "longest_streak")
-    private int longestStreak = 0;
+    @Column(name = "earned_badges", length = 1000)
+    private String earnedBadges = "";
     
-    @Column(name = "last_streak_update")
-    private LocalDateTime lastStreakUpdate;
+    @Column(name = "last_activity_date")
+    private LocalDateTime lastActivityDate;
+    
+    @Column(name = "last_level_up_date")
+    private LocalDateTime lastLevelUpDate;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -53,6 +56,9 @@ public class UserGamificationStats {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (lastActivityDate == null) {
+            lastActivityDate = LocalDateTime.now();
+        }
     }
     
     @PreUpdate
@@ -67,26 +73,37 @@ public class UserGamificationStats {
     public String getUserEmail() { return userEmail; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
     
-    public int getPointsFromModules() { return pointsFromModules; }
-    public void setPointsFromModules(int pointsFromModules) { this.pointsFromModules = pointsFromModules; }
+    public int getTotalPoints() { return totalPoints; }
+    public void setTotalPoints(int totalPoints) { this.totalPoints = totalPoints; }
     
-    public int getPointsFromQuizzes() { return pointsFromQuizzes; }
-    public void setPointsFromQuizzes(int pointsFromQuizzes) { this.pointsFromQuizzes = pointsFromQuizzes; }
+    public int getCurrentLevel() { return currentLevel; }
+    public void setCurrentLevel(int currentLevel) { this.currentLevel = currentLevel; }
     
-    public int getPointsFromStreaks() { return pointsFromStreaks; }
-    public void setPointsFromStreaks(int pointsFromStreaks) { this.pointsFromStreaks = pointsFromStreaks; }
+    public int getDayStreak() { return dayStreak; }
+    public void setDayStreak(int dayStreak) { this.dayStreak = dayStreak; }
     
-    public int getPointsFromBonuses() { return pointsFromBonuses; }
-    public void setPointsFromBonuses(int pointsFromBonuses) { this.pointsFromBonuses = pointsFromBonuses; }
+    public int getTotalModulesCompleted() { return totalModulesCompleted; }
+    public void setTotalModulesCompleted(int totalModulesCompleted) { 
+        this.totalModulesCompleted = totalModulesCompleted; 
+    }
     
-    public int getTotalDaysActive() { return totalDaysActive; }
-    public void setTotalDaysActive(int totalDaysActive) { this.totalDaysActive = totalDaysActive; }
+    public int getTotalQuizzesPassed() { return totalQuizzesPassed; }
+    public void setTotalQuizzesPassed(int totalQuizzesPassed) { 
+        this.totalQuizzesPassed = totalQuizzesPassed; 
+    }
     
-    public int getLongestStreak() { return longestStreak; }
-    public void setLongestStreak(int longestStreak) { this.longestStreak = longestStreak; }
+    public String getEarnedBadges() { return earnedBadges; }
+    public void setEarnedBadges(String earnedBadges) { this.earnedBadges = earnedBadges; }
     
-    public LocalDateTime getLastStreakUpdate() { return lastStreakUpdate; }
-    public void setLastStreakUpdate(LocalDateTime lastStreakUpdate) { this.lastStreakUpdate = lastStreakUpdate; }
+    public LocalDateTime getLastActivityDate() { return lastActivityDate; }
+    public void setLastActivityDate(LocalDateTime lastActivityDate) { 
+        this.lastActivityDate = lastActivityDate; 
+    }
+    
+    public LocalDateTime getLastLevelUpDate() { return lastLevelUpDate; }
+    public void setLastLevelUpDate(LocalDateTime lastLevelUpDate) { 
+        this.lastLevelUpDate = lastLevelUpDate; 
+    }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
@@ -94,7 +111,17 @@ public class UserGamificationStats {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     
-    public int getTotalPoints() {
-        return pointsFromModules + pointsFromQuizzes + pointsFromStreaks + pointsFromBonuses;
+    // Helper methods
+    public boolean hasBadge(String badgeCode) {
+        if (earnedBadges == null || earnedBadges.isEmpty()) {
+            return false;
+        }
+        String[] badges = earnedBadges.split(",");
+        for (String badge : badges) {
+            if (badge.trim().equals(badgeCode)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

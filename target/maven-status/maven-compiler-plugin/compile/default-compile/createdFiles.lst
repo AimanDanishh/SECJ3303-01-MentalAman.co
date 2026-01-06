@@ -2,6 +2,7 @@ com\secj3303\model\Referral.class
 com\secj3303\controller\AdminController.class
 com\secj3303\controller\MentalHealthController.class
 com\secj3303\repository\LearningModuleRepository.class
+com\secj3303\service\GamificationIntegrationService.class
 com\secj3303\controller\PersonController.class
 com\secj3303\controller\GamificationController.class
 com\secj3303\model\AssessmentModels$Question.class
@@ -19,10 +20,12 @@ com\secj3303\model\Post.class
 com\secj3303\model\DashboardData$StatItem.class
 com\secj3303\dao\PostDaoImpl.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
+com\secj3303\service\GamificationIntegrationService$GamificationUserStats.class
 com\secj3303\model\AdminData.class
 com\secj3303\model\AssessmentModels.class
 com\secj3303\controller\BmiController.class
 com\secj3303\service\LearningService.class
+com\secj3303\repository\UserGamificationStatsRepository.class
 com\secj3303\controller\ReferralController.class
 com\secj3303\config\SecurityConfig.class
 com\secj3303\model\Counsellor.class
@@ -60,7 +63,6 @@ com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
 com\secj3303\repository\ModuleProgressRepository.class
-com\secj3303\dao\ModuleProgressDao.class
 com\secj3303\model\CarePlanModels$CarePlanActivity.class
 com\secj3303\controller\AICoachController.class
 com\secj3303\model\QuizQuestion.class
@@ -85,10 +87,12 @@ com\secj3303\model\StudentEngagement.class
 com\secj3303\controller\ContentManagementController.class
 com\secj3303\dao\ReplyDaoImpl.class
 com\secj3303\model\AssessmentModels$Assessment.class
+com\secj3303\service\PersistentGamificationService.class
 com\secj3303\model\AdminData$FlaggedContentItem.class
 com\secj3303\model\ContentManagementModels$ContentItem.class
 com\secj3303\dao\CounsellorDaoHibernate.class
 com\secj3303\model\DashboardData.class
+com\secj3303\service\PersistentGamificationService$DummyUser.class
 com\secj3303\dao\MoodEntryDao.class
 com\secj3303\dao\CounsellorDao.class
 com\secj3303\service\AssessmentService.class
