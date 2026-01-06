@@ -21,7 +21,12 @@
     <!-- ===================================================== -->
     <!-- 1. Component Scan -->
     <!-- ===================================================== -->
-    <context:component-scan base-package="com.secj3303"/>
+    <context:component-scan base-package="com.secj3303">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Component"/>
+    </context:component-scan>
 
     <!-- 🔥 ENABLE SPRING DATA JPA REPOSITORIES -->
     <jpa:repositories base-package="com.secj3303.repository"/>
@@ -63,6 +68,11 @@
     <!-- ===================================================== -->
     <mvc:resources mapping="/resources/**" location="/resources/"/>
 
+    <!-- Add this to your dispatcher-servlet.xml if not already there -->
+    <mvc:resources mapping="/css/**" location="/WEB-INF/views/css/"/>
+    <mvc:resources mapping="/js/**" location="/WEB-INF/views/js/"/>
+    <mvc:resources mapping="/images/**" location="/WEB-INF/views/images/"/>
+
     <!-- ===================================================== -->
     <!-- 5. DataSource -->
     <!-- ===================================================== -->
@@ -93,6 +103,11 @@
             <props>
                 <prop key="hibernate.hbm2ddl.auto">update</prop>
                 <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.id.new_generator_mappings">true</prop>
+                <prop key="hibernate.connection.characterEncoding">UTF-8</prop>
+                <prop key="hibernate.connection.useUnicode">true</prop>
             </props>
         </property>
     </bean>
