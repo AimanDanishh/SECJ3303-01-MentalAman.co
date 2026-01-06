@@ -7,7 +7,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 @Entity
 @Table(name = "lesson")
@@ -26,7 +25,7 @@ public class Lesson {
     @JoinColumn(name = "module_id")
     private LearningModule module;
 
-    @Transient
+    //@Transient
     private boolean completed;
 
     // getters & setters
