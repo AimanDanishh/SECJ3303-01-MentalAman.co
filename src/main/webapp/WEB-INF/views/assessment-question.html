@@ -33,7 +33,15 @@
 
                 <!-- Card Content -->
                 <div class="p-6">
-                    <form th:action="@{/assessment/submit}" method="post" class="space-y-4">
+                    <form th:action="@{/assessment/submit}" method="post" class="space-y-4" id="assessmentForm">
+                        <!-- Hidden inputs for all previously answered questions -->
+                        <div th:each="entry : ${answers}">
+                            <input type="hidden" 
+                                th:name="'q_' + ${entry.key}" 
+                                th:value="${entry.value}"
+                                th:if="${entry.key != currentQuestion.id}">
+                        </div>
+                        
                         <div class="mb-8">
                             <h3 class="text-lg font-medium text-slate-900 mb-6" 
                                 th:text="${currentQuestion.text}"></h3>
@@ -61,17 +69,19 @@
                                         <span class="text-right">Every day</span>
                                     </div>
                                     
-                                    <!-- Radio Options -->
+                                    <!-- Radio Options - FIXED: Simplified expression -->
                                     <div class="space-y-3">
                                         <div th:each="value : ${#numbers.sequence(0, currentQuestion.scaleMax - 1)}">
-                                            <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
-                                                            (${answers.get('q_' + currentQuestion.id)} == value ? 
+                                            <!-- Pre-calculate answer for this question -->
+                                            <label th:with="answer=${answers.get(currentQuestion.id)}"
+                                                   th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' + 
+                                                           (${answer != null && answer == value} ? 
                                                             'border-blue-500 bg-blue-50' : 
                                                             'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
                                                 <input type="radio"
                                                     th:name="'q_' + ${currentQuestion.id}"
                                                     th:value="${value}"
-                                                    th:checked="${answers.get('q_' + currentQuestion.id) == value}"
+                                                    th:checked="${answer != null && answer == value}"
                                                     class="w-5 h-5 text-blue-600"
                                                     onchange="handleRadioChange(this)">
                                                 <div class="ml-3">
@@ -109,23 +119,25 @@
                                 </div>
                             </div>
 
-                            <!-- Multiple Choice Questions -->
+                            <!-- Multiple Choice Questions - FIXED: Simplified expression -->
                             <div th:if="${currentQuestion.type == 'multiple-choice'}">
                                 <div class="space-y-3">
                                     <div th:each="option, stat : ${currentQuestion.options}">
-                                        <label th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
-                                                        (${answers.get('q_' + currentQuestion.id)} == option.value ? 
+                                        <!-- Pre-calculate answer for this question -->
+                                        <label th:with="answer=${answers.get(currentQuestion.id)}"
+                                               th:class="'flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ' +
+                                                       (${answer != null && answer == option.value} ? 
                                                         'border-blue-500 bg-blue-50' : 
                                                         'border-slate-200 hover:border-slate-300 hover:bg-slate-50')">
                                             <input type="radio"
-                                                th:name="q_${currentQuestion.id}"
+                                                th:name="'q_' + ${currentQuestion.id}"
                                                 th:value="${option.value}"
-                                                th:checked="${answers.get('q_' + currentQuestion.id) == option.value}"
+                                                th:checked="${answer != null && answer == option.value}"
                                                 class="w-5 h-5 text-blue-600"
-                                                onclick="this.form.submit()">
+                                                onchange="handleRadioChange(this)">
                                             <div class="ml-3 flex items-center gap-3">
                                                 <span th:class="'w-8 h-8 rounded-full flex items-center justify-center ' +
-                                                            (${answers.get('q_' + currentQuestion.id)} == option.value ? 
+                                                            (${answer != null && answer == option.value} ? 
                                                                 'bg-blue-100' : 'bg-slate-100')">
                                                     <span class="font-medium text-slate-900" 
                                                         th:text="${#strings.substring('ABCDE', stat.index, stat.index + 1)}"></span>
@@ -182,6 +194,32 @@
                 </p>
             </div>
         </div>
+        
+        <!-- Add JavaScript to handle form submission - REMOVED AUTO-SAVE -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('assessmentForm');
+            
+            // Add function to handle radio changes for visual feedback ONLY
+            window.handleRadioChange = function(radio) {
+                const labels = radio.closest('.space-y-3').querySelectorAll('label');
+                labels.forEach(label => {
+                    label.classList.remove('border-blue-500', 'bg-blue-50');
+                    label.classList.add('border-slate-200', 'hover:border-slate-300', 'hover:bg-slate-50');
+                });
+                
+                const parentLabel = radio.closest('label');
+                parentLabel.classList.add('border-blue-500', 'bg-blue-50');
+                parentLabel.classList.remove('border-slate-200', 'hover:border-slate-300', 'hover:bg-slate-50');
+            };
+            
+            // Initialize visual state for current answer
+            const currentCheckedRadio = form.querySelector('input[type="radio"]:checked');
+            if (currentCheckedRadio) {
+                handleRadioChange(currentCheckedRadio);
+            }
+        });
+        </script>
     </div>
 </body>
 </html>

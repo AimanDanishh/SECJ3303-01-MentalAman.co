@@ -10,41 +10,45 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import com.secj3303.model.User;
-import com.secj3303.repository.UserRepository;
+import com.secj3303.dao.PersonDao;
+import com.secj3303.model.Person;
 
 @Configuration
 @EnableWebSecurity
 @SuppressWarnings("deprecation")
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final UserRepository userRepository;
+    private final PersonDao personDao;
 
-    public SecurityConfig(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public SecurityConfig(PersonDao personDao) {
+        this.personDao = personDao;
     }
 
     // ===============================
-    // AUTHENTICATION (JPA-BASED)
+    // AUTHENTICATION (DAO + HIBERNATE)
     // ===============================
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 
         auth.userDetailsService(username -> {
 
-            User user = userRepository.findById(username)
-                .orElseThrow(() ->
-                    new UsernameNotFoundException("User not found: " + username));
+            // username = email
+            Person person = personDao.findByEmail(username);
+
+            if (person == null) {
+                throw new UsernameNotFoundException(
+                        "User not found with email: " + username);
+            }
 
             return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                user.isEnabled(),
-                true,
-                true,
-                true,
+                person.getEmail(),
+                person.getPassword(),
+                true,   // enabled
+                true,   // accountNonExpired
+                true,   // credentialsNonExpired
+                true,   // accountNonLocked
                 Collections.singleton(
-                    new SimpleGrantedAuthority("ROLE_" + user.getRole())
+                    new SimpleGrantedAuthority("ROLE_" + person.getRole())
                 )
             );
         });
@@ -58,10 +62,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
             .csrf().disable()
+
             .authorizeRequests()
-                .antMatchers("/login", "/resources/**").permitAll()
+                .antMatchers("/login", "/resources/**", "/css/**", "/js/**").permitAll()
+                .antMatchers("/admin/**").hasRole("ADMIN")
+                .antMatchers("/member/**").hasRole("MEMBER")
                 .anyRequest().authenticated()
             .and()
+
             .formLogin()
                 .loginPage("/login")
                 .usernameParameter("username") // email
@@ -69,6 +77,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .defaultSuccessUrl("/dashboard", true)
                 .permitAll()
             .and()
+
             .logout()
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")

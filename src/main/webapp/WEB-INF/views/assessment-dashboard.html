@@ -31,7 +31,14 @@
                 <!-- Available Assessments -->
                 <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
                     <h2 class="text-xl font-bold text-slate-900 mb-4">Available Assessments</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <div th:if="${#lists.isEmpty(assessments)}" 
+                        class="text-center py-8">
+                        <i data-lucide="clipboard-x" class="w-12 h-12 text-slate-300 mx-auto mb-4"></i>
+                        <p class="text-slate-500">No assessments available at this time.</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(assessments)}" 
+                        class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div th:each="assess : ${assessments}" 
                              th:onclick="|window.location.href='@{/assessment/start/{id}(id=${assess.id})}'|"
                              class="bg-slate-50 p-4 rounded-xl border border-slate-200 hover:shadow-md transition-shadow cursor-pointer">

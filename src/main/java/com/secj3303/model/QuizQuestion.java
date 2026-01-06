@@ -1,6 +1,6 @@
 package com.secj3303.model;
 
-import java.util.ArrayList; // Changed to List
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CollectionTable;
@@ -12,7 +12,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OrderColumn; // Added for ordering
+import javax.persistence.OrderColumn;
 import javax.persistence.Table;
 
 @Entity
@@ -25,29 +25,21 @@ public class QuizQuestion {
 
     private String question;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY) // ✅ CHANGED
     @CollectionTable(
         name = "quizquestion_options",
         joinColumns = @JoinColumn(name = "quizquestion_id")
     )
-    @OrderColumn(name = "option_order") // Important: This keeps the answer order fixed
+    @OrderColumn(name = "option_order")
     private List<String> options = new ArrayList<>();
 
     private int correctAnswer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "module_id")
+    @JoinColumn(name = "module_id", nullable = false) // ✅ CHANGED
     private LearningModule module;
 
-    // ===== Updated getters & setters =====
-
-    public List<String> getOptions() {
-        return options;
-    }
-
-    public void setOptions(List<String> options) {
-        this.options = options;
-    }
+    // ===== getters & setters =====
 
     public Long getId() {
         return id;
@@ -65,6 +57,14 @@ public class QuizQuestion {
         this.question = question;
     }
 
+    public List<String> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<String> options) {
+        this.options = options;
+    }
+
     public int getCorrectAnswer() {
         return correctAnswer;
     }
@@ -80,7 +80,4 @@ public class QuizQuestion {
     public void setModule(LearningModule module) {
         this.module = module;
     }
-
-    // ... (Keep other getters & setters as they are) ...
-    
 }

@@ -1,31 +1,17 @@
 package com.secj3303.controller;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom; // Added missing Question import
-
-import javax.servlet.http.HttpSession;
-
+import com.secj3303.model.*;
+import com.secj3303.service.AssessmentService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam; // Import HashMap for map initialization
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.secj3303.model.AssessmentModels;
-import com.secj3303.model.AssessmentModels.Assessment; // Import Map
-import com.secj3303.model.AssessmentModels.AssessmentResult;
-import com.secj3303.model.AssessmentModels.Question;
-import com.secj3303.model.AssessmentModels.StudentData;
-import com.secj3303.model.User;
-import com.secj3303.service.AssessmentService;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.servlet.http.HttpSession;
+import java.util.*;
 
 @Controller
 @RequestMapping("/assessment")
@@ -34,509 +20,21 @@ public class SelfAssessmentController {
     private static final String DEFAULT_VIEW = "assessment";
     private final AssessmentService assessmentService;
     
-    // Session keys for Student State
-    private static final String SELECTED_ASSESSMENT_KEY = "selectedAssessment";
+    @PersistenceContext
+    private EntityManager entityManager;
+    
+    // Session keys
+    private static final String SELECTED_ASSESSMENT_ID_KEY = "selectedAssessmentId";
     private static final String ANSWERS_KEY = "assessmentAnswers";
-    private static final String HISTORY_KEY = "studentAssessmentHistory";
+    private static final String CURRENT_QUESTION_INDEX_KEY = "currentQuestionIndex";
     private static final String SAVED_PROGRESS_KEY = "assessmentSavedProgress";
-
-    // Session keys for Faculty/Counsellor State
-    private static final String SELECTED_STUDENT_KEY = "selectedStudent";
-    private static final String FACULTY_STUDENT_DATA_KEY = "facultyStudentData";
+    private static final String SELECTED_STUDENT_ID_KEY = "selectedStudentId";
     
     public SelfAssessmentController(AssessmentService assessmentService) {
         this.assessmentService = assessmentService;
     }
     
-    // --- Utility to initialize student history (since there's no auth/db) ---
-    private List<AssessmentResult> getStudentHistory(HttpSession session) {
-        List<AssessmentResult> history = (List<AssessmentResult>) session.getAttribute(HISTORY_KEY);
-        if (history == null) {
-            // Mock initial history for the general student view
-            history = AssessmentModels.ASSIGNED_STUDENTS.stream()
-                .filter(s -> s.studentId.equals("S2021003")) // Mock student SJ's history
-                .findFirst()
-                .map(s -> new ArrayList<>(s.assessmentHistory))
-                .orElse(new ArrayList<>());
-            session.setAttribute(HISTORY_KEY, history);
-        }
-        return history;
-    }
-    
-    // --- Utility to manage assigned students list for Faculty/Counsellor view ---
-    private List<StudentData> getAssignedStudents(HttpSession session) {
-        List<StudentData> students = (List<StudentData>) session.getAttribute(FACULTY_STUDENT_DATA_KEY);
-        if (students == null) {
-            students = AssessmentModels.ASSIGNED_STUDENTS;
-            session.setAttribute(FACULTY_STUDENT_DATA_KEY, students);
-        }
-        return students;
-    }
-
-
-    // --- Main Dashboard/List View ---
-    @GetMapping
-    public String dashboard(
-        @RequestParam(required = false) Integer selectStudentId,
-        @RequestParam(defaultValue = "assessments") String tab,
-        @RequestParam(required = false) String searchQuery,
-        @RequestParam(defaultValue = "all") String filterRisk,
-        Model model,
-        HttpSession session,
-        Authentication authentication
-    ) {
-
-        User user = buildUser(authentication);
-
-        model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole());
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("activeTab", tab);
-        
-        // FIX: Check session attributes directly and pass to model
-        Assessment selectedAssessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
-        String showResultsFlag = (String) session.getAttribute("showResultsFlag");
-        boolean showResults = "true".equals(showResultsFlag);
-        
-        // Add the actual objects to model
-        model.addAttribute("selectedAssessment", selectedAssessment); // This is the Assessment object or null
-        model.addAttribute("showResultsFlag", showResultsFlag); // This is the flag
-        model.addAttribute("showResults", showResults); // This is boolean
-        
-        // --- FACULTY/COUNSELLOR VIEW ---
-        if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
-            List<StudentData> students = getAssignedStudents(session);
-
-            List<StudentData> filteredStudents = assessmentService.filterStudents(searchQuery, filterRisk);
-        
-            // Calculate statistics server-side
-            long highRiskCount = students.stream()
-                .filter(s -> "high".equalsIgnoreCase(s.riskLevel))
-                .count();
-            long moderateRiskCount = students.stream()
-                .filter(s -> "moderate".equalsIgnoreCase(s.riskLevel))
-                .count();
-            long lowRiskCount = students.stream()
-                .filter(s -> "low".equalsIgnoreCase(s.riskLevel))
-                .count();
-
-
-            // Add all required model attributes
-            model.addAttribute("assignedStudents", students);
-            model.addAttribute("filteredStudents", filteredStudents);
-            model.addAttribute("searchQuery", searchQuery == null ? "" : searchQuery);
-            model.addAttribute("filterRisk", filterRisk);
-            model.addAttribute("filteredCount", filteredStudents.size());
-            model.addAttribute("totalCount", students.size()); // Total from all students
-            model.addAttribute("highRiskCount", highRiskCount); // From all students
-            model.addAttribute("moderateRiskCount", moderateRiskCount); // From all students
-            model.addAttribute("lowRiskCount", lowRiskCount); // From all students
-
-            // Initialize these to avoid null in Thymeleaf
-            model.addAttribute("showReportModal", false);
-            model.addAttribute("selectedReport", null);
-            model.addAttribute("selectedStudent", null);
-                        
-            if (selectStudentId != null) {
-                students.stream()
-                    .filter(s -> s.id == selectStudentId)
-                    .findFirst()
-                    .ifPresent(student -> {
-                        model.addAttribute("selectedStudent", student);
-                        // Store in session for later use
-                        session.setAttribute(SELECTED_STUDENT_KEY, student);
-                    });
-            }
-
-            return "faculty-assessment";
-        }
-        
-        // --- STUDENT VIEW (Default) ---
-        
-        // Only reset assessment flow variables if NOT in assessment mode
-        if (selectedAssessment == null && !showResults) {
-            session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-            session.removeAttribute(ANSWERS_KEY);
-            session.removeAttribute(SELECTED_STUDENT_KEY);
-        }
-        model.addAttribute("assessments", assessmentService.getAllAssessments());
-        model.addAttribute("pastResults", getStudentHistory(session));
-        model.addAttribute("savedProgress", session.getAttribute(SAVED_PROGRESS_KEY));
-        
-        return "self-assessment";
-    }
-        
-    // --- Assessment Selection and Navigation ---
-    
-    @GetMapping("/start/{id}")
-    public String startAssessment(@PathVariable int id, HttpSession session, RedirectAttributes redirect) {
-        Optional<Assessment> assessmentOpt = assessmentService.findAssessment(id);
-        if (assessmentOpt.isEmpty()) {
-            redirect.addFlashAttribute("errorMessage", "Assessment not found.");
-            redirect.addFlashAttribute("showError", true);
-            return "redirect:/assessment";
-        }
-        
-        Assessment assessment = assessmentOpt.get();
-        session.setAttribute(SELECTED_ASSESSMENT_KEY, assessment);
-        
-        // Initialize answers and index (or load saved progress)
-        Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
-        
-        // Use AssessmentAnswers class from AssessmentModels
-        AssessmentModels.AssessmentAnswers answersObject;
-
-        if (savedProgress != null && savedProgress.containsKey(id)) {
-            AssessmentModels.AssessmentAnswers progress = savedProgress.get(id);
-            answersObject = progress;
-            redirect.addAttribute("q", progress.currentQuestionIndex);
-        } else {
-            answersObject = new AssessmentModels.AssessmentAnswers();
-            // Initialize the map to avoid NullPointerException
-            answersObject.answers = new HashMap<>(); 
-        }
-
-        session.setAttribute(ANSWERS_KEY, answersObject);
-
-        return "redirect:/assessment/question";
-    }
-    
-    @GetMapping("/question")
-    public String displayQuestion(
-        @RequestParam(defaultValue = "0") int q,
-        Model model, 
-        HttpSession session, 
-        RedirectAttributes redirect,
-        Authentication authentication
-    ) {
-        // Get user from session
-        User user = buildUser(authentication);
-
-        model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole());
-        model.addAttribute("currentView", DEFAULT_VIEW);
-
-        
-        Assessment assessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
-        AssessmentModels.AssessmentAnswers answersObject = (AssessmentModels.AssessmentAnswers) session.getAttribute(ANSWERS_KEY);
-
-        if (assessment == null || answersObject == null || q < 0 || q >= assessment.questions.size()) {
-            return "redirect:/assessment";
-        }
-        
-        Question currentQuestion = assessment.questions.get(q);
-        
-        // CRITICAL: Add ALL required model attributes
-        model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole());
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        
-        // These are needed for the template's conditional rendering
-        model.addAttribute("selectedAssessment", assessment);  
-        model.addAttribute("showResults", false);             
-        model.addAttribute("showResultsFlag", "false");        
-        
-        model.addAttribute("assessment", assessment);
-        model.addAttribute("currentQuestion", currentQuestion);
-        model.addAttribute("currentQuestionIndex", q);
-        
-        // Pass the raw map to the view for access
-        model.addAttribute("answers", answersObject.answers != null ? answersObject.answers : new HashMap<>()); 
-        
-        model.addAttribute("progress", ((q + 1) / (double) assessment.questions.size()) * 100);
-        
-        // Provide scale labels dynamically
-        if ("scale".equals(currentQuestion.type)) {
-            model.addAttribute("scaleLabels", assessmentService.getScaleLabels(currentQuestion.scaleMax));
-        } else {
-            model.addAttribute("scaleLabels", new ArrayList<>()); // Empty list
-        }
-
-        return "self-assessment";
-    }
-    
-    // --- Assessment Submission/Navigation Handlers ---
-    
-    @PostMapping("/submit")
-    public String handleSubmit(
-        @RequestParam Map<String, String> formData,
-        @RequestParam int currentQuestionIndex,
-        @RequestParam int nextStep, // 1 for Next, -1 for Previous, 2 for Submit, 3 for Save
-        HttpSession session, RedirectAttributes redirect
-    ) {
-        Assessment assessment = (Assessment) session.getAttribute(SELECTED_ASSESSMENT_KEY);
-        AssessmentModels.AssessmentAnswers answersObject = (AssessmentModels.AssessmentAnswers) session.getAttribute(ANSWERS_KEY);
-        
-        if (assessment == null || answersObject == null) {
-             return "redirect:/assessment";
-        }
-        
-        Map<String, Integer> sessionAnswers = answersObject.answers; // Direct reference to the map
-
-        // 1. Process submitted answer for current question
-        Question currentQuestion = assessment.questions.get(currentQuestionIndex);
-        String answerKey = "q_" + currentQuestion.id;
-        
-        if (formData.containsKey(answerKey)) {
-            try {
-                 String answerValueStr = formData.get(answerKey);
-                 int answerValue = Integer.parseInt(answerValueStr);
-                 // FIX: Insert String key and Integer value into the map
-                 sessionAnswers.put(answerKey, answerValue); 
-                 session.setAttribute(ANSWERS_KEY, answersObject); // Save the updated object back
-            } catch (NumberFormatException e) {
-                 // Error handled gracefully
-            }
-        }
-        
-        // 2. Check if answer is required for navigation
-        boolean answered = sessionAnswers.containsKey(answerKey);
-
-        if (nextStep == 1 && !answered) {
-            redirect.addFlashAttribute("errorMessage", "Please answer the current question before moving forward.");
-            redirect.addFlashAttribute("showError", true);
-            return "redirect:/assessment/question?q=" + currentQuestionIndex;
-        }
-
-        // 3. Handle action (Submit, Next, Previous, Save)
-        
-        if (nextStep == 2) { 
-            // FINAL SUBMISSION
-            if (sessionAnswers.size() < assessment.questions.size()) {
-                redirect.addFlashAttribute("errorMessage", "Please answer all questions before submitting.");
-                redirect.addFlashAttribute("showError", true);
-                return "redirect:/assessment/question?q=" + currentQuestionIndex;
-            }
-            
-            // Simulate save failure (10% chance)
-            if (ThreadLocalRandom.current().nextDouble() < 0.1) {
-                 redirect.addFlashAttribute("errorMessage", "Failed to save your assessment report due to a database error.");
-                 redirect.addFlashAttribute("showError", true);
-                 return "redirect:/assessment/question?q=" + currentQuestionIndex;
-            }
-
-            AssessmentResult result = assessmentService.calculateScore(assessment, answersObject);
-
-            // Save result to student history
-            List<AssessmentResult> history = getStudentHistory(session);
-            history.add(0, result);
-            session.setAttribute(HISTORY_KEY, history);
-
-            // Clean up session state and show results
-            session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-            session.removeAttribute(ANSWERS_KEY);
-
-            // Remove from saved progress
-            Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
-            if (savedProgress != null) {
-                savedProgress.remove(assessment.id);
-                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
-            }
-
-            // Redirect to view the specific result
-            return "redirect:/assessment/results/" + result.id;
-                    } 
-        
-            else if (nextStep == 3) { 
-                // SAVE PROGRESS
-                Map<Integer, AssessmentModels.AssessmentAnswers> savedProgress = (Map<Integer, AssessmentModels.AssessmentAnswers>) session.getAttribute(SAVED_PROGRESS_KEY);
-                if (savedProgress == null) {
-                    savedProgress = new HashMap<>();
-                }
-                
-                AssessmentModels.AssessmentAnswers progress = new AssessmentModels.AssessmentAnswers();
-                progress.answers = new HashMap<>(sessionAnswers);
-                progress.assessmentId = assessment.id;
-                progress.currentQuestionIndex = currentQuestionIndex;
-
-                savedProgress.put(assessment.id, progress);
-                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
-
-                session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-                session.removeAttribute(ANSWERS_KEY);
-                
-                redirect.addFlashAttribute("alert", "✓ Progress saved! You can resume this assessment later.");
-                redirect.addFlashAttribute("alertType", "success");
-                return "redirect:/assessment";
-            }
-            
-            else {
-                // NEXT/PREVIOUS NAVIGATION
-                int newIndex = currentQuestionIndex + nextStep;
-                return "redirect:/assessment/question?q=" + newIndex;
-            }
-        }
-
-    // --- Results View (Redirect target after submission) ---
-
-    @GetMapping("/results")
-    public String displayResults(
-        Model model, 
-        HttpSession session, 
-        Authentication authentication,
-        @RequestParam(required = false) Integer resultId) {
-    
-    // Get user from session
-    User user = buildUser(authentication);
-    
-    // Check if user is a student
-    if (!"student".equals(user.getRole())) {
-        return "redirect:/assessment";
-    }
-    
-    AssessmentResult result;
-    List<AssessmentResult> history = getStudentHistory(session);
-    
-    if (resultId != null) {
-        // View specific result by ID
-        result = history.stream()
-            .filter(r -> r.id == resultId)
-            .findFirst()
-            .orElse(null);
-    } else {
-        // View the most recent result (for submission flow)
-        result = !history.isEmpty() ? history.get(0) : null;
-    }
-    
-    if (result == null) {
-        return "redirect:/assessment";
-    }
-    
-    // Set showResults flag
-    session.setAttribute("showResultsFlag", "true");
-    
-    model.addAttribute("currentView", DEFAULT_VIEW);
-    model.addAttribute("showResults", true);
-    model.addAttribute("assessmentScore", result.score);
-    model.addAttribute("selectedReport", result);
-    model.addAttribute("user", user);
-    model.addAttribute("userRole", user.getRole());
-    
-    return "self-assessment";
-    }
-
-    // --- View Specific Assessment Result ---
-    @GetMapping("/results/{resultId}")
-    public String viewSpecificResult(
-        @PathVariable int resultId, 
-        Model model, 
-        HttpSession session,
-        Authentication authentication) {
-        // Get user from session
-        User user = buildUser(authentication);
-        
-        // Check if user is a student
-        if (!"student".equals(user.getRole())) {
-            return "redirect:/assessment";
-        }
-        
-        // Find the result in student's history
-        List<AssessmentResult> history = getStudentHistory(session);
-        AssessmentResult result = history.stream()
-            .filter(r -> r.id == resultId)
-            .findFirst()
-            .orElse(null);
-        
-        if (result == null) {
-            return "redirect:/assessment";
-        }
-        
-        // Set showResults flag
-        session.setAttribute("showResultsFlag", "true");
-        
-        // Add to model
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("showResults", true);
-        model.addAttribute("assessmentScore", result.score);
-        model.addAttribute("selectedReport", result);
-        model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole());
-        
-        return "self-assessment";
-    }
-
-    // --- View Full Assessment Report ---
-    @GetMapping("/report/{resultId}")
-    public String viewFullReport(@PathVariable int resultId, Model model, HttpSession session, Authentication authentication) {
-        // Get user from session
-        User user = buildUser(authentication);
-        
-        // Check if user is a student
-        if (!"student".equals(user.getRole())) {
-            return "redirect:/assessment";
-        }
-        
-        // Find the result in student's history
-        List<AssessmentResult> history = getStudentHistory(session);
-        AssessmentResult result = history.stream()
-            .filter(r -> r.id == resultId)
-            .findFirst()
-            .orElse(null);
-        
-        if (result == null) {
-            return "redirect:/assessment";
-        }
-        
-        // Set showResults flag
-        session.setAttribute("showResultsFlag", "true");
-        
-        // Add to model
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("showResults", true);
-        model.addAttribute("assessmentScore", result.score);
-        model.addAttribute("selectedReport", result);
-        model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole());
-        
-        return "self-assessment";
-    }
-
-        // --- Clear Assessment State and Return to Dashboard ---
-    @GetMapping("/clear")
-    public String clearAssessmentState(HttpSession session) {
-        // Clear all assessment-related session attributes
-        session.removeAttribute(SELECTED_ASSESSMENT_KEY);
-        session.removeAttribute(ANSWERS_KEY);
-        session.removeAttribute("showResultsFlag");
-        session.removeAttribute("currentResultId");
-        
-        // Keep user and other session data
-        return "redirect:/assessment";
-    }
-
-    // --- Faculty/Counsellor Report View ---
-    
-    @GetMapping("/report/view/{studentId}/{reportId}")
-    public String viewReport(
-        @PathVariable int studentId,
-        @PathVariable int reportId,
-        Model model, HttpSession session
-    ) {
-        StudentData selectedStudent = getAssignedStudents(session).stream()
-            .filter(s -> s.id == studentId).findFirst().orElse(null);
-
-        if (selectedStudent == null) {
-            return "redirect:/assessment";
-        }
-        
-        AssessmentResult selectedReport = selectedStudent.assessmentHistory.stream()
-            .filter(r -> r.id == reportId).findFirst().orElse(null);
-
-        if (selectedReport == null) {
-            // Redirect back to student detail view if report not found
-            return "redirect:/assessment?selectStudentId=" + studentId;
-        }
-
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("selectedReport", selectedReport);
-        model.addAttribute("selectedStudent", selectedStudent); // Pass student for context
-        model.addAttribute("showReportModal", true);
-        model.addAttribute("userRole", "counsellor");
-
-        return "faculty-report";
-    }
-
-    // Helper
+    // Build user from authentication
     private User buildUser(Authentication authentication) {
         User user = new User();
         user.setEmail(authentication.getName());
@@ -550,5 +48,630 @@ public class SelfAssessmentController {
                 .toLowerCase()
         );
         return user;
+    }
+    
+    // Get current student from database - AUTO-CREATE if not found
+    private Optional<Student> getCurrentStudent(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Optional.empty();
+        }
+        
+        String email = authentication.getName();
+        Optional<Student> studentOpt = assessmentService.getStudentByEmail(email);
+        
+        // AUTO-CREATE STUDENT if not found (for demo/testing)
+        if (studentOpt.isEmpty()) {
+            Student newStudent = new Student();
+            String username = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
+            
+            // Create a proper name from email
+            String[] nameParts = username.split("\\.");
+            StringBuilder nameBuilder = new StringBuilder();
+            for (String part : nameParts) {
+                if (!part.isEmpty()) {
+                    nameBuilder.append(Character.toUpperCase(part.charAt(0)))
+                               .append(part.substring(1)).append(" ");
+                }
+            }
+            String studentName = nameBuilder.toString().trim();
+            if (studentName.isEmpty()) studentName = "Student User";
+            
+            newStudent.setName(studentName);
+            newStudent.setEmail(email);
+            newStudent.setStudentId("S" + System.currentTimeMillis() % 1000000);
+            newStudent.setDepartment("General Studies");
+            newStudent.setYear("Year 1");
+            newStudent.setCurrentGrade("B");
+            newStudent.setAttendance(85);
+            newStudent.setLastActivity(java.time.LocalDate.now().toString());
+            newStudent.setRiskLevel("low");
+            
+            Student savedStudent = assessmentService.saveStudent(newStudent);
+            return Optional.of(savedStudent);
+        }
+        
+        return studentOpt;
+    }
+    
+    // Main Dashboard
+    @GetMapping
+    public String dashboard(
+        @RequestParam(required = false) Integer selectStudentId,
+        @RequestParam(defaultValue = "assessments") String tab,
+        @RequestParam(required = false) String searchQuery,
+        @RequestParam(defaultValue = "all") String filterRisk,
+        Model model,
+        HttpSession session,
+        Authentication authentication
+    ) {
+        User user = buildUser(authentication);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        model.addAttribute("activeTab", tab);
+        
+        // Check session for selected assessment
+        Integer selectedAssessmentId = (Integer) session.getAttribute(SELECTED_ASSESSMENT_ID_KEY);
+        Assessment selectedAssessment = null;
+        if (selectedAssessmentId != null) {
+            selectedAssessment = assessmentService.findAssessment(selectedAssessmentId).orElse(null);
+        }
+        
+        String showResultsFlag = (String) session.getAttribute("showResultsFlag");
+        boolean showResults = "true".equals(showResultsFlag);
+        
+        model.addAttribute("selectedAssessment", selectedAssessment);
+        model.addAttribute("showResultsFlag", showResultsFlag);
+        model.addAttribute("showResults", showResults);
+        
+        // Faculty/Counsellor View
+        if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
+            List<Student> students = assessmentService.getAllStudentWithAssessmentCount();
+            List<Student> filteredStudents = assessmentService.filterStudents(searchQuery, filterRisk);
+            
+            long highRiskCount = assessmentService.getStudentCountByRiskLevel("high");
+            long moderateRiskCount = assessmentService.getStudentCountByRiskLevel("moderate");
+            long lowRiskCount = assessmentService.getStudentCountByRiskLevel("low");
+            
+            model.addAttribute("assignedStudents", students);
+            model.addAttribute("filteredStudents", filteredStudents);
+            model.addAttribute("searchQuery", searchQuery != null ? searchQuery : "");
+            model.addAttribute("filterRisk", filterRisk);
+            model.addAttribute("filteredCount", filteredStudents.size());
+            model.addAttribute("totalCount", students.size());
+            model.addAttribute("highRiskCount", highRiskCount);
+            model.addAttribute("moderateRiskCount", moderateRiskCount);
+            model.addAttribute("lowRiskCount", lowRiskCount);
+            model.addAttribute("showReportModal", false);
+            model.addAttribute("selectedReport", null);
+            model.addAttribute("selectedStudent", null);
+            
+            if (selectStudentId != null) {
+                Optional<Student> student = assessmentService.getStudentById(selectStudentId);
+                student.ifPresent(s -> {
+                    model.addAttribute("selectedStudent", s);
+                    session.setAttribute(SELECTED_STUDENT_ID_KEY, s.getId());
+                    
+                    List<AssessmentResult> history = assessmentService.getStudentAssessmentHistory(s.getId());
+                    model.addAttribute("studentHistory", history);
+                });
+            }
+            
+            return "faculty-assessment";
+        }
+        
+        // Student View - Clear session state if no active assessment
+        if (selectedAssessment == null && !showResults) {
+            session.removeAttribute(SELECTED_ASSESSMENT_ID_KEY);
+            session.removeAttribute(ANSWERS_KEY);
+            session.removeAttribute(CURRENT_QUESTION_INDEX_KEY);
+        }
+        
+        model.addAttribute("assessments", assessmentService.getAllAssessments());
+        
+        // Load student's past results from database
+        Optional<Student> currentStudent = getCurrentStudent(authentication);
+        if (currentStudent.isPresent()) {
+            Student student = currentStudent.get();
+            List<AssessmentResult> pastResults = assessmentService.getStudentAssessmentHistory(student.getId());
+            model.addAttribute("pastResults", pastResults);
+            session.setAttribute("studentId", student.getId());
+            
+            // Load saved progress from database
+            Map<String, AssessmentProgress> savedProgress = loadSavedProgress(student.getId(), session);
+            model.addAttribute("savedProgress", savedProgress);
+        }
+        
+        return "self-assessment";
+    }
+    
+    // Load saved progress for a student
+    private Map<String, AssessmentProgress> loadSavedProgress(Integer studentId, HttpSession session) {
+        Map<String, AssessmentProgress> savedProgress = 
+            (Map<String, AssessmentProgress>) session.getAttribute(SAVED_PROGRESS_KEY);
+        
+        if (savedProgress == null) {
+            savedProgress = new HashMap<>();
+        }
+        
+        // Load from database and merge with session data
+        List<Assessment> allAssessments = assessmentService.getAllAssessments();
+        for (Assessment assessment : allAssessments) {
+            Map<Integer, Integer> dbAnswers = assessmentService.getAssessmentAnswers(studentId, assessment.getId());
+            if (!dbAnswers.isEmpty()) {
+                String progressKey = studentId + "_" + assessment.getId();
+                AssessmentProgress progress = savedProgress.get(progressKey);
+                
+                if (progress == null) {
+                    progress = new AssessmentProgress();
+                    progress.setStudentId(studentId);
+                    progress.setAssessmentId(assessment.getId());
+                    progress.setAnswers(dbAnswers);
+                    progress.setCurrentQuestionIndex(findLastAnsweredQuestionIndex(assessment, dbAnswers));
+                    savedProgress.put(progressKey, progress);
+                } else {
+                    // Merge: database answers override session answers
+                    progress.getAnswers().putAll(dbAnswers);
+                }
+            }
+        }
+        
+        session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+        return savedProgress;
+    }
+    
+    // Start Assessment - FIXED to properly load all saved answers
+    @GetMapping("/start/{id}")
+    public String startAssessment(@PathVariable Integer id, HttpSession session, 
+                                  RedirectAttributes redirect, Authentication authentication) {
+        Optional<Assessment> assessmentOpt = assessmentService.findAssessment(id);
+        if (assessmentOpt.isEmpty()) {
+            redirect.addFlashAttribute("errorMessage", "Assessment not found.");
+            redirect.addFlashAttribute("showError", true);
+            return "redirect:/assessment";
+        }
+        
+        Assessment assessment = assessmentOpt.get();
+        
+        // Get current student
+        Optional<Student> studentOpt = getCurrentStudent(authentication);
+        if (studentOpt.isEmpty()) {
+            redirect.addFlashAttribute("errorMessage", "Unable to create student profile.");
+            redirect.addFlashAttribute("showError", true);
+            return "redirect:/assessment";
+        }
+        
+        Student student = studentOpt.get();
+        session.setAttribute(SELECTED_ASSESSMENT_ID_KEY, assessment.getId());
+        
+        // FIRST: Load ALL saved answers from database
+        Map<Integer, Integer> dbAnswers = assessmentService.getAssessmentAnswers(student.getId(), assessment.getId());
+        Map<Integer, Integer> answers = new HashMap<>(dbAnswers); // Start with DB answers
+        
+        // SECOND: Check session for any newer answers
+        Map<String, AssessmentProgress> savedProgress = 
+            (Map<String, AssessmentProgress>) session.getAttribute(SAVED_PROGRESS_KEY);
+        
+        if (savedProgress != null) {
+            String progressKey = student.getId() + "_" + assessment.getId();
+            AssessmentProgress progress = savedProgress.get(progressKey);
+            if (progress != null && progress.getAnswers() != null) {
+                // Merge session answers (they might be more recent)
+                answers.putAll(progress.getAnswers());
+            }
+        }
+        
+        // Determine starting question index
+        Integer currentQuestionIndex = 0;
+        if (!answers.isEmpty()) {
+            currentQuestionIndex = findLastAnsweredQuestionIndex(assessment, answers);
+            // If last question was answered, start from there (not next)
+            if (currentQuestionIndex >= assessment.getQuestions().size() - 1) {
+                currentQuestionIndex = assessment.getQuestions().size() - 1;
+            }
+        }
+        
+        session.setAttribute(ANSWERS_KEY, answers);
+        session.setAttribute(CURRENT_QUESTION_INDEX_KEY, currentQuestionIndex);
+        session.setAttribute("studentId", student.getId());
+        
+        return "redirect:/assessment/question?q=" + currentQuestionIndex;
+    }
+    
+    private Integer findLastAnsweredQuestionIndex(Assessment assessment, Map<Integer, Integer> answers) {
+        List<Question> questions = assessment.getQuestions();
+        for (int i = 0; i < questions.size(); i++) {
+            if (!answers.containsKey(questions.get(i).getId())) {
+                return i > 0 ? i - 1 : 0;
+            }
+        }
+        return questions.size() - 1; // All questions answered
+    }
+    
+    // Display Question
+    @GetMapping("/question")
+    public String displayQuestion(
+        @RequestParam(defaultValue = "0") int q,
+        Model model,
+        HttpSession session,
+        RedirectAttributes redirect,
+        Authentication authentication
+    ) {
+        User user = buildUser(authentication);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        
+        // Get selected assessment
+        Integer assessmentId = (Integer) session.getAttribute(SELECTED_ASSESSMENT_ID_KEY);
+        if (assessmentId == null) {
+            return "redirect:/assessment";
+        }
+        
+        Optional<Assessment> assessmentOpt = assessmentService.findAssessment(assessmentId);
+        if (assessmentOpt.isEmpty()) {
+            return "redirect:/assessment";
+        }
+        
+        Assessment assessment = assessmentOpt.get();
+        List<Question> questions = assessment.getQuestions();
+        
+        // Validate question index
+        if (q < 0 || q >= questions.size()) {
+            return "redirect:/assessment";
+        }
+        
+        Question currentQuestion = questions.get(q);
+        Map<Integer, Integer> answers = (Map<Integer, Integer>) session.getAttribute(ANSWERS_KEY);
+        if (answers == null) {
+            answers = new HashMap<>();
+            session.setAttribute(ANSWERS_KEY, answers);
+        }
+        
+        // Get student for saving progress
+        Optional<Student> studentOpt = getCurrentStudent(authentication);
+        if (studentOpt.isPresent()) {
+            Integer studentId = studentOpt.get().getId();
+            model.addAttribute("studentId", studentId);
+        }
+        
+        model.addAttribute("assessment", assessment);
+        model.addAttribute("currentQuestion", currentQuestion);
+        model.addAttribute("currentQuestionIndex", q);
+        model.addAttribute("answers", answers);
+        model.addAttribute("selectedAssessment", assessment);
+        model.addAttribute("showResults", false);
+        model.addAttribute("showResultsFlag", "false");
+        
+        double progress = ((q + 1) / (double) questions.size()) * 100;
+        model.addAttribute("progress", progress);
+        
+        if ("scale".equals(currentQuestion.getType())) {
+            model.addAttribute("scaleLabels", 
+                assessmentService.getScaleLabels(currentQuestion.getScaleMax()));
+        } else {
+            model.addAttribute("scaleLabels", new ArrayList<>());
+        }
+        
+        return "self-assessment";
+    }
+    
+    // Handle Question Submission/Navigation - FIXED to save ALL answers
+    @PostMapping("/submit")
+    public String handleSubmit(
+        @RequestParam Map<String, String> formData,
+        @RequestParam int currentQuestionIndex,
+        @RequestParam int nextStep, // 1=Next, -1=Previous, 2=Submit, 3=Save
+        HttpSession session,
+        RedirectAttributes redirect,
+        Authentication authentication
+    ) {
+        // Get selected assessment
+        Integer assessmentId = (Integer) session.getAttribute(SELECTED_ASSESSMENT_ID_KEY);
+        if (assessmentId == null) {
+            return "redirect:/assessment";
+        }
+        
+        Optional<Assessment> assessmentOpt = assessmentService.findAssessment(assessmentId);
+        if (assessmentOpt.isEmpty()) {
+            return "redirect:/assessment";
+        }
+        
+        Assessment assessment = assessmentOpt.get();
+        List<Question> questions = assessment.getQuestions();
+        
+        // Validate current question index
+        if (currentQuestionIndex < 0 || currentQuestionIndex >= questions.size()) {
+            return "redirect:/assessment";
+        }
+        
+        Question currentQuestion = questions.get(currentQuestionIndex);
+        Map<Integer, Integer> answers = (Map<Integer, Integer>) session.getAttribute(ANSWERS_KEY);
+        if (answers == null) {
+            answers = new HashMap<>();
+        }
+        
+        System.out.println("DEBUG: Before processing form, answers size: " + answers.size());
+        System.out.println("DEBUG: Form data keys: " + formData.keySet());
+        
+        // FIX 1: Process ALL question answers from the form
+        // The form might have hidden inputs with previous answers
+        for (Question question : questions) {
+            String answerKey = "q_" + question.getId();
+            if (formData.containsKey(answerKey) && !formData.get(answerKey).isEmpty()) {
+                try {
+                    int answerValue = Integer.parseInt(formData.get(answerKey));
+                    answers.put(question.getId(), answerValue);
+                    System.out.println("DEBUG: Found answer for Q" + question.getId() + " = " + answerValue);
+                } catch (NumberFormatException e) {
+                    System.err.println("Error parsing answer for Q" + question.getId() + ": " + formData.get(answerKey));
+                }
+            }
+        }
+        
+        // FIX 2: Also check for the current question's answer (in case it wasn't in formData yet)
+        String currentAnswerKey = "q_" + currentQuestion.getId();
+        if (formData.containsKey("answer")) {
+            // Some forms might use just "answer" for the current question
+            try {
+                int answerValue = Integer.parseInt(formData.get("answer"));
+                answers.put(currentQuestion.getId(), answerValue);
+                System.out.println("DEBUG: Current question answer: Q" + currentQuestion.getId() + " = " + answerValue);
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
+        }
+        
+        session.setAttribute(ANSWERS_KEY, answers);
+        System.out.println("DEBUG: After processing form, answers size: " + answers.size());
+        
+        // Check if current question is answered for navigation
+        boolean currentAnswered = answers.containsKey(currentQuestion.getId());
+        
+        if (nextStep == 1 && !currentAnswered) {
+            redirect.addFlashAttribute("errorMessage", 
+                "Please answer the current question before moving forward.");
+            redirect.addFlashAttribute("showError", true);
+            return "redirect:/assessment/question?q=" + currentQuestionIndex;
+        }
+        
+        // Handle actions
+        if (nextStep == 2) { // Submit
+            if (answers.size() < questions.size()) {
+                redirect.addFlashAttribute("errorMessage", 
+                    "Please answer all questions before submitting.");
+                redirect.addFlashAttribute("showError", true);
+                return "redirect:/assessment/question?q=" + currentQuestionIndex;
+            }
+            
+            // Get current student
+            Optional<Student> studentOpt = getCurrentStudent(authentication);
+            if (studentOpt.isEmpty()) {
+                redirect.addFlashAttribute("errorMessage", "Student not found.");
+                redirect.addFlashAttribute("showError", true);
+                return "redirect:/assessment";
+            }
+            
+            Student student = studentOpt.get();
+            
+            // Calculate and save result
+            AssessmentResult result = assessmentService.calculateScore(assessment, answers, student);
+            
+            // Clear all session state
+            clearAllAssessmentState(session);
+            
+            // Store result ID in session for results view
+            session.setAttribute("lastResultId", result.getId());
+            session.setAttribute("showResultsFlag", "true");
+            
+            return "redirect:/assessment/results/" + result.getId();
+            
+        } else if (nextStep == 3) { // Save Progress
+            // Get current student
+            Optional<Student> studentOpt = getCurrentStudent(authentication);
+            if (studentOpt.isEmpty()) {
+                redirect.addFlashAttribute("errorMessage", "Student not found.");
+                redirect.addFlashAttribute("showError", true);
+                return "redirect:/assessment";
+            }
+            
+            Student student = studentOpt.get();
+            
+            System.out.println("DEBUG: Saving progress with " + answers.size() + " answers");
+            
+            // Save ALL answers to database
+            assessmentService.saveAssessmentProgress(
+                student.getId(), 
+                assessment.getId(), 
+                answers, 
+                currentQuestionIndex
+            );
+            
+            // Also save to session
+            Map<String, AssessmentProgress> savedProgress = 
+                (Map<String, AssessmentProgress>) session.getAttribute(SAVED_PROGRESS_KEY);
+            if (savedProgress == null) {
+                savedProgress = new HashMap<>();
+            }
+            
+            AssessmentProgress progress = new AssessmentProgress();
+            progress.setAnswers(new HashMap<>(answers));
+            progress.setAssessmentId(assessment.getId());
+            progress.setCurrentQuestionIndex(currentQuestionIndex);
+            progress.setStudentId(student.getId());
+            
+            String progressKey = student.getId() + "_" + assessment.getId();
+            savedProgress.put(progressKey, progress);
+            session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+            
+            // Clear current assessment state but keep saved progress
+            session.removeAttribute(SELECTED_ASSESSMENT_ID_KEY);
+            session.removeAttribute(ANSWERS_KEY);
+            session.removeAttribute(CURRENT_QUESTION_INDEX_KEY);
+            
+            redirect.addFlashAttribute("alert", "✓ Progress saved! You can resume this assessment later.");
+            redirect.addFlashAttribute("alertType", "success");
+            return "redirect:/assessment";
+            
+        } else { // Next/Previous (-1 or 1)
+            // Auto-save progress as they navigate
+            Optional<Student> studentOpt = getCurrentStudent(authentication);
+            if (studentOpt.isPresent() && !answers.isEmpty()) {
+                Student student = studentOpt.get();
+                
+                // Update current question index based on navigation
+                int newIndex = currentQuestionIndex + nextStep;
+                if (newIndex < 0) newIndex = 0;
+                if (newIndex >= questions.size()) newIndex = questions.size() - 1;
+                
+                // Save progress to session
+                Map<String, AssessmentProgress> savedProgress = 
+                    (Map<String, AssessmentProgress>) session.getAttribute(SAVED_PROGRESS_KEY);
+                if (savedProgress == null) {
+                    savedProgress = new HashMap<>();
+                }
+                
+                String progressKey = student.getId() + "_" + assessment.getId();
+                AssessmentProgress progress = savedProgress.get(progressKey);
+                
+                if (progress == null) {
+                    progress = new AssessmentProgress();
+                    progress.setStudentId(student.getId());
+                    progress.setAssessmentId(assessment.getId());
+                }
+                
+                progress.setAnswers(new HashMap<>(answers));
+                progress.setCurrentQuestionIndex(newIndex);
+                savedProgress.put(progressKey, progress);
+                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+                
+                // Also auto-save to database every 3 questions
+                if (answers.size() % 3 == 0) {
+                    assessmentService.saveAssessmentProgress(
+                        student.getId(), 
+                        assessment.getId(), 
+                        answers, 
+                        newIndex
+                    );
+                }
+                
+                // Update session with new index
+                session.setAttribute(CURRENT_QUESTION_INDEX_KEY, newIndex);
+            }
+            
+            int newIndex = currentQuestionIndex + nextStep;
+            return "redirect:/assessment/question?q=" + newIndex;
+        }
+    }
+    
+    // Helper method to clear all assessment state
+    private void clearAllAssessmentState(HttpSession session) {
+        session.removeAttribute(SELECTED_ASSESSMENT_ID_KEY);
+        session.removeAttribute(ANSWERS_KEY);
+        session.removeAttribute(CURRENT_QUESTION_INDEX_KEY);
+        session.removeAttribute("showResultsFlag");
+        session.removeAttribute("lastResultId");
+    }
+    
+    // Display Results
+    @GetMapping("/results/{resultId}")
+    public String viewSpecificResult(
+        @PathVariable Integer resultId,
+        Model model,
+        HttpSession session,
+        Authentication authentication
+    ) {
+        User user = buildUser(authentication);
+        
+        if (!"student".equals(user.getRole())) {
+            return "redirect:/assessment";
+        }
+        
+        // Get current student
+        Optional<Student> studentOpt = getCurrentStudent(authentication);
+        if (studentOpt.isEmpty()) {
+            return "redirect:/assessment";
+        }
+        
+        Student student = studentOpt.get();
+        
+        // Find the result using EntityManager
+        AssessmentResult result = entityManager.find(AssessmentResult.class, resultId);
+        if (result == null || !result.getStudent().getId().equals(student.getId())) {
+            return "redirect:/assessment";
+        }
+        
+        // Set results flag but clear other assessment state
+        session.setAttribute("showResultsFlag", "true");
+        clearAllAssessmentState(session);
+        
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        model.addAttribute("showResults", true);
+        model.addAttribute("assessmentScore", result.getScore());
+        model.addAttribute("selectedReport", result);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        
+        return "self-assessment";
+    }
+    
+    // Clear Assessment State
+    @GetMapping("/clear")
+    public String clearAssessmentState(HttpSession session) {
+        clearAllAssessmentState(session);
+        return "redirect:/assessment";
+    }
+    
+    // Clear Saved Progress for a specific assessment
+    @GetMapping("/clear-progress/{assessmentId}")
+    public String clearSavedProgress(
+        @PathVariable Integer assessmentId,
+        HttpSession session,
+        Authentication authentication,
+        RedirectAttributes redirect
+    ) {
+        Optional<Student> studentOpt = getCurrentStudent(authentication);
+        if (studentOpt.isPresent()) {
+            Student student = studentOpt.get();
+            
+            // Clear from database
+            assessmentService.clearAssessmentProgress(student.getId(), assessmentId);
+            
+            // Clear from session
+            Map<String, AssessmentProgress> savedProgress = 
+                (Map<String, AssessmentProgress>) session.getAttribute(SAVED_PROGRESS_KEY);
+            if (savedProgress != null) {
+                String progressKey = student.getId() + "_" + assessmentId;
+                savedProgress.remove(progressKey);
+                session.setAttribute(SAVED_PROGRESS_KEY, savedProgress);
+            }
+            
+            redirect.addFlashAttribute("alert", "✓ Saved progress cleared.");
+            redirect.addFlashAttribute("alertType", "success");
+        }
+        
+        return "redirect:/assessment";
+    }
+    
+    // ... Rest of your methods remain the same ...
+    
+    // Helper class for assessment progress
+    public static class AssessmentProgress {
+        private Map<Integer, Integer> answers;
+        private Integer assessmentId;
+        private Integer currentQuestionIndex;
+        private Integer studentId;
+        
+        public Map<Integer, Integer> getAnswers() { return answers; }
+        public void setAnswers(Map<Integer, Integer> answers) { this.answers = answers; }
+        
+        public Integer getAssessmentId() { return assessmentId; }
+        public void setAssessmentId(Integer assessmentId) { this.assessmentId = assessmentId; }
+        
+        public Integer getCurrentQuestionIndex() { return currentQuestionIndex; }
+        public void setCurrentQuestionIndex(Integer currentQuestionIndex) { this.currentQuestionIndex = currentQuestionIndex; }
+        
+        public Integer getStudentId() { return studentId; }
+        public void setStudentId(Integer studentId) { this.studentId = studentId; }
     }
 }

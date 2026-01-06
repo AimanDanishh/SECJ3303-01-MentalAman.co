@@ -1,31 +1,34 @@
 package com.secj3303.config;
 
-import java.util.LinkedHashSet; // Use LinkedHashSet for insertion order
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.secj3303.dao.LearningModuleDao;
 import com.secj3303.model.LearningModule;
 import com.secj3303.model.Lesson;
 import com.secj3303.model.QuizQuestion;
-import com.secj3303.repository.LearningModuleRepository;
 
 @Component
+@Transactional
 public class LearningContentInitializer {
 
-    private final LearningModuleRepository moduleRepo;
+    private final LearningModuleDao moduleDao;
 
-    public LearningContentInitializer(LearningModuleRepository moduleRepo) {
-        this.moduleRepo = moduleRepo;
+    public LearningContentInitializer(LearningModuleDao moduleDao) {
+        this.moduleDao = moduleDao;
     }
 
     @EventListener(ContextRefreshedEvent.class)
     public void init() {
 
-        if (moduleRepo.count() > 0) return;
+        // ✅ DAO-safe replacement for moduleRepo.count()
+        if (!moduleDao.findAllWithLessonsAndQuiz().isEmpty()) return;
 
         // =========================
         // MODULE
@@ -61,23 +64,22 @@ public class LearningContentInitializer {
         module.setLessons(lessons);
 
         // =========================
-        // QUIZ (Set, NOT List to match Model)
+        // QUIZ (Set to match entity)
         // =========================
         Set<QuizQuestion> quiz = new LinkedHashSet<>();
 
         QuizQuestion q1 = new QuizQuestion();
         q1.setQuestion("Stress differs from anxiety because stress has a trigger");
         q1.setCorrectAnswer(0);
-        // This matches the List<String> options in your QuizQuestion model
-        q1.setOptions(List.of("True", "False")); 
+        q1.setOptions(List.of("True", "False"));
         q1.setModule(module);
         quiz.add(q1);
 
         module.setQuiz(quiz);
 
         // =========================
-        // SAVE
+        // SAVE (DAO Hibernate)
         // =========================
-        moduleRepo.save(module);
+        moduleDao.save(module);
     }
 }
