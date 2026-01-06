@@ -76,9 +76,4 @@ public class ModuleProgress {
     public void setQuizPassed(boolean quizPassed) {
         this.quizPassed = quizPassed;
     }
-<<<<<<< HEAD
-
 }
-=======
-}
->>>>>>> 1b3288df7651228c27f52d41c137c2653dfd0932

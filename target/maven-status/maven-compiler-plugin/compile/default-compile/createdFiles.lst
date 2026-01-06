@@ -1,11 +1,8 @@
 com\secj3303\model\Referral.class
 com\secj3303\controller\AdminController.class
 com\secj3303\controller\MentalHealthController.class
-<<<<<<< HEAD
-com\secj3303\repository\LearningModuleRepository.class
 com\secj3303\service\GamificationIntegrationService.class
-=======
->>>>>>> 1b3288df7651228c27f52d41c137c2653dfd0932
+com\secj3303\model\GamificationLeaderboardEntry.class
 com\secj3303\controller\PersonController.class
 com\secj3303\controller\GamificationController.class
 com\secj3303\model\DashboardData$EventItem.class
@@ -14,24 +11,23 @@ com\secj3303\model\CarePlanModels$RiskAssessment.class
 com\secj3303\model\CarePlanModels$UserData.class
 com\secj3303\dao\LessonDao.class
 com\secj3303\dao\AssessmentResultDao.class
+com\secj3303\model\GamificationUserStats.class
 com\secj3303\controller\LearningController.class
 com\secj3303\model\LearningModule.class
 com\secj3303\model\Student.class
 com\secj3303\controller\MoodTrackerController.class
 com\secj3303\controller\APISettingsController.class
+com\secj3303\dao\GamificationDao$RecentAchievement.class
 com\secj3303\dao\AssessmentResultDaoHibernate.class
 com\secj3303\dao\StudentDaoHibernate.class
 com\secj3303\dao\GenericDao.class
 com\secj3303\model\GamificationData$LeaderboardEntry.class
 com\secj3303\model\Post.class
 com\secj3303\model\DashboardData$StatItem.class
+com\secj3303\dao\GamificationDao$PointsActivity.class
 com\secj3303\dao\PostDaoImpl.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
-<<<<<<< HEAD
-com\secj3303\service\GamificationIntegrationService$GamificationUserStats.class
-=======
 com\secj3303\dao\ModuleProgressDaoHibernate.class
->>>>>>> 1b3288df7651228c27f52d41c137c2653dfd0932
 com\secj3303\model\AdminData.class
 com\secj3303\model\AssessmentModels.class
 com\secj3303\controller\BmiController.class
@@ -61,18 +57,17 @@ com\secj3303\model\Person.class
 com\secj3303\model\GamificationData$Badge.class
 com\secj3303\model\ModuleProgress.class
 com\secj3303\dao\PersonDaoImpl.class
-<<<<<<< HEAD
 com\secj3303\model\UserGamificationStats.class
-=======
 com\secj3303\service\StudentService.class
->>>>>>> 1b3288df7651228c27f52d41c137c2653dfd0932
 com\secj3303\model\APIKey.class
 com\secj3303\model\GamificationData.class
 com\secj3303\repository\UserRepository.class
 com\secj3303\config\DataInitializer.class
 com\secj3303\dao\StudentDao.class
 com\secj3303\dao\CategoryDaoImpl.class
+com\secj3303\dao\GamificationDao$NextLevelProgress.class
 com\secj3303\model\CounsellingSession.class
+com\secj3303\model\GamificationBadge.class
 com\secj3303\model\Lesson.class
 com\secj3303\controller\CounsellingSessionController.class
 com\secj3303\controller\AnalyticsController.class
@@ -81,14 +76,10 @@ com\secj3303\dao\AssessmentDao.class
 com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
-<<<<<<< HEAD
-com\secj3303\repository\ModuleProgressRepository.class
-=======
-com\secj3303\model\CounsellingSession$1.class
+com\secj3303\dao\GamificationDao.class
 com\secj3303\dao\AssessmentDaoHibernate.class
 com\secj3303\dao\ModuleProgressDao.class
 com\secj3303\model\AssessmentAnswer.class
->>>>>>> 1b3288df7651228c27f52d41c137c2653dfd0932
 com\secj3303\model\CarePlanModels$CarePlanActivity.class
 com\secj3303\controller\SelfAssessmentController$AssessmentProgress.class
 com\secj3303\controller\AICoachController.class
@@ -100,6 +91,7 @@ com\secj3303\model\AssessmentModels$AssessmentAnswersForm.class
 com\secj3303\dao\MoodEntryDaoHibernate.class
 com\secj3303\model\CarePlanModels.class
 com\secj3303\model\CounsellingSession$SessionStatus.class
+com\secj3303\dao\GamificationDaoHibernate.class
 com\secj3303\model\Report.class
 com\secj3303\model\AssessmentResult.class
 com\secj3303\dao\AssessmentAnswerDaoHibernate.class
