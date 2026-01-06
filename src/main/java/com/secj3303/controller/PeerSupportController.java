@@ -16,12 +16,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.secj3303.dao.PersonDao;
 import com.secj3303.model.PeerSupportModels;
 import com.secj3303.model.PeerSupportModels.ContentCheckResult;
+import com.secj3303.model.Person;
 import com.secj3303.model.Post;
 import com.secj3303.model.Reply;
 import com.secj3303.model.Report;
-import com.secj3303.model.User;
 import com.secj3303.service.ForumService;
 
 @Controller
@@ -31,8 +32,14 @@ public class PeerSupportController {
     @Autowired
     private ForumService forumService;
 
+    @Autowired
+    private PersonDao personDao;
+
     private static final String DEFAULT_VIEW = "peer-support";
 
+    // ===============================
+    // FORUM DASHBOARD
+    // ===============================
     @GetMapping
     public String forumDashboard(
             @RequestParam(defaultValue = "all") String category,
@@ -44,18 +51,8 @@ public class PeerSupportController {
             HttpSession session
     ) {
         List<Post> filteredPosts = forumService.getPostsByCategory(category);
-        
-        // Load replies for each post if expanded
-        if (expandedId != null) {
-            for (Post post : filteredPosts) {
-                if (post.getId() == expandedId) {
-                    // Replies are loaded when accessing getReplies()
-                    break;
-                }
-            }
-        }
 
-        User user = buildUser(authentication);
+        Person person = getAuthenticatedPerson(authentication);
 
         model.addAttribute("currentView", DEFAULT_VIEW);
         model.addAttribute("categories", forumService.getCategoriesWithCounts());
@@ -77,11 +74,14 @@ public class PeerSupportController {
             model.addAttribute("newPostFormData", new Post());
         }
 
-        model.addAttribute("user", user);
+        model.addAttribute("user", person); // keep name "user" for UI compatibility
 
         return "app-layout";
     }
 
+    // ===============================
+    // CREATE POST
+    // ===============================
     @PostMapping("/create")
     public String handleCreatePost(
             @ModelAttribute("newPostFormData") Post newPost,
@@ -100,7 +100,7 @@ public class PeerSupportController {
         if (newPost.getTitle() == null || newPost.getTitle().trim().isEmpty() ||
             newPost.getContent() == null || newPost.getContent().trim().isEmpty() ||
             redirect.getFlashAttributes().containsKey("contentWarning")) {
-            
+
             redirect.addFlashAttribute("showError", true);
             redirect.addFlashAttribute("newPostFormData", newPost);
             redirect.addAttribute("modal", "create");
@@ -108,19 +108,15 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        // Set author name based on user role
-        User user = buildUser(authentication);
-        String authorName = getAnonymousNameByRole(user.getRole());
-        String authorInitials = getAuthorInitialsByRole(user.getRole());
+        Person person = getAuthenticatedPerson(authentication);
 
-        newPost.setAuthor(authorName);
-        newPost.setAuthorInitials(authorInitials);
+        newPost.setAuthor(getAnonymousNameByRole(person.getRole()));
+        newPost.setAuthorInitials(getAuthorInitialsByRole(person.getRole()));
         newPost.setTime("Just now");
         newPost.setLikes(0);
         newPost.setTrending(false);
         newPost.setHelpful(false);
 
-        // Save to database using DAO
         forumService.createPost(newPost);
 
         redirect.addFlashAttribute("alert", "Your post has been published anonymously! ✓");
@@ -130,6 +126,9 @@ public class PeerSupportController {
         return "redirect:/forum";
     }
 
+    // ===============================
+    // REPLY
+    // ===============================
     @PostMapping("/reply/{postId}")
     public String handleSubmitReply(
             @PathVariable int postId,
@@ -144,7 +143,8 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        PeerSupportModels.ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(replyText);
+        ContentCheckResult contentCheck =
+                PeerSupportModels.checkContentForHarmfulText(replyText);
 
         if (!contentCheck.isClean) {
             redirect.addFlashAttribute("alert", "Content Warning: " + contentCheck.warning);
@@ -155,16 +155,12 @@ public class PeerSupportController {
 
         Post post = forumService.getPostById(postId);
         if (post != null) {
+            Person person = getAuthenticatedPerson(authentication);
+
             Reply reply = new Reply();
             reply.setPost(post);
-            
-            // Set author name based on user role
-            User user = buildUser(authentication);
-            String authorName = getAnonymousNameByRole(user.getRole());
-            String authorInitials = getAuthorInitialsByRole(user.getRole());
-            
-            reply.setAuthor(authorName);
-            reply.setAuthorInitials(authorInitials);
+            reply.setAuthor(getAnonymousNameByRole(person.getRole()));
+            reply.setAuthorInitials(getAuthorInitialsByRole(person.getRole()));
             reply.setTime("Just now");
             reply.setContent(replyText);
             reply.setLikes(0);
@@ -179,6 +175,9 @@ public class PeerSupportController {
         return "redirect:/forum";
     }
 
+    // ===============================
+    // LIKE POST
+    // ===============================
     @PostMapping("/like/{postId}")
     public String handleLike(
             @PathVariable int postId,
@@ -195,6 +194,9 @@ public class PeerSupportController {
         return "redirect:/forum";
     }
 
+    // ===============================
+    // LIKE REPLY
+    // ===============================
     @PostMapping("/reply/like/{postId}/{replyId}")
     public String handleReplyLike(
             @PathVariable int postId,
@@ -209,6 +211,9 @@ public class PeerSupportController {
         return "redirect:/forum";
     }
 
+    // ===============================
+    // REPORT
+    // ===============================
     @PostMapping("/report/submit")
     public String handleSubmitReport(
             @ModelAttribute Report report,
@@ -223,17 +228,19 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        // Save report to database using DAO
         forumService.createReport(report);
 
-        redirect.addFlashAttribute("alert", "Report submitted successfully! Our moderation team will review this within 24 hours.");
+        redirect.addFlashAttribute("alert",
+                "Report submitted successfully! Our moderation team will review this within 24 hours.");
         redirect.addFlashAttribute("alertType", "success");
         redirect.addAttribute("category", "all");
 
         return "redirect:/forum";
     }
 
-    // Helper method to initialize dummy data (optional endpoint)
+    // ===============================
+    // DUMMY DATA
+    // ===============================
     @GetMapping("/init")
     public String initializeDummyData(RedirectAttributes redirect) {
         forumService.initializeDummyData();
@@ -242,48 +249,35 @@ public class PeerSupportController {
         return "redirect:/forum";
     }
 
-    private User buildUser(Authentication authentication) {
-        User user = new User();
-        user.setEmail(authentication.getName());
-        user.setName(authentication.getName().split("@")[0]);
-        user.setRole(
-                authentication.getAuthorities()
-                        .iterator()
-                        .next()
-                        .getAuthority()
-                        .replace("ROLE_", "")
-                        .toLowerCase()
-        );
-        return user;
+    // ===============================
+    // HELPERS
+    // ===============================
+    private Person getAuthenticatedPerson(Authentication authentication) {
+        String email = authentication.getName();
+        Person person = personDao.findByEmail(email);
+        if (person == null) {
+            throw new RuntimeException("Person not found: " + email);
+        }
+        return person;
     }
-    
+
     private String getAnonymousNameByRole(String role) {
         switch (role.toUpperCase()) {
-            case "STUDENT":
-                return "Anonymous Student";
-            case "FACULTY":
-                return "Anonymous Faculty";
-            case "COUNSELLOR":
-                return "Anonymous Counsellor";
-            case "ADMINISTRATOR":
-                return "Anonymous Admin";
-            default:
-                return "Anonymous User";
+            case "STUDENT": return "Anonymous Student";
+            case "FACULTY": return "Anonymous Faculty";
+            case "COUNSELLOR": return "Anonymous Counsellor";
+            case "ADMINISTRATOR": return "Anonymous Admin";
+            default: return "Anonymous User";
         }
     }
-    
+
     private String getAuthorInitialsByRole(String role) {
         switch (role.toUpperCase()) {
-            case "STUDENT":
-                return "AS";
-            case "FACULTY":
-                return "AF";
-            case "COUNSELLOR":
-                return "AC";
-            case "ADMINISTRATOR":
-                return "AA";
-            default:
-                return "AU";
+            case "STUDENT": return "AS";
+            case "FACULTY": return "AF";
+            case "COUNSELLOR": return "AC";
+            case "ADMINISTRATOR": return "AA";
+            default: return "AU";
         }
     }
 }
