@@ -1,6 +1,7 @@
 package com.secj3303.config;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet; // Use LinkedHashSet for insertion order
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -37,9 +38,9 @@ public class LearningContentInitializer {
         module.setLocked(false);
 
         // =========================
-        // LESSONS (Set, NOT List)
+        // LESSONS (LinkedHashSet preserves order)
         // =========================
-        Set<Lesson> lessons = new HashSet<>();
+        Set<Lesson> lessons = new LinkedHashSet<>();
 
         Lesson l1 = new Lesson();
         l1.setTitle("What is Stress?");
@@ -60,14 +61,15 @@ public class LearningContentInitializer {
         module.setLessons(lessons);
 
         // =========================
-        // QUIZ (Set, NOT List)
+        // QUIZ (Set, NOT List to match Model)
         // =========================
-        Set<QuizQuestion> quiz = new HashSet<>();
+        Set<QuizQuestion> quiz = new LinkedHashSet<>();
 
         QuizQuestion q1 = new QuizQuestion();
         q1.setQuestion("Stress differs from anxiety because stress has a trigger");
         q1.setCorrectAnswer(0);
-        q1.setOptions(Set.of("True", "False")); // must be Set
+        // This matches the List<String> options in your QuizQuestion model
+        q1.setOptions(List.of("True", "False")); 
         q1.setModule(module);
         quiz.add(q1);
 

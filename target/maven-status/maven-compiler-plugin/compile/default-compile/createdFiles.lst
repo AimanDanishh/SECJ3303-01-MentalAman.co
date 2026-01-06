@@ -58,6 +58,7 @@ com\secj3303\controller\ProfileController.class
 com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
+com\secj3303\model\CounsellingSession$1.class
 com\secj3303\repository\ModuleProgressRepository.class
 com\secj3303\model\CarePlanModels$CarePlanActivity.class
 com\secj3303\controller\AICoachController.class
