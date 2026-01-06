@@ -25,7 +25,6 @@ com\secj3303\model\AdminData.class
 com\secj3303\model\AssessmentModels.class
 com\secj3303\controller\BmiController.class
 com\secj3303\service\LearningService.class
-com\secj3303\repository\UserGamificationStatsRepository.class
 com\secj3303\controller\ReferralController.class
 com\secj3303\config\SecurityConfig.class
 com\secj3303\model\Counsellor.class
@@ -87,12 +86,10 @@ com\secj3303\model\StudentEngagement.class
 com\secj3303\controller\ContentManagementController.class
 com\secj3303\dao\ReplyDaoImpl.class
 com\secj3303\model\AssessmentModels$Assessment.class
-com\secj3303\service\PersistentGamificationService.class
 com\secj3303\model\AdminData$FlaggedContentItem.class
 com\secj3303\model\ContentManagementModels$ContentItem.class
 com\secj3303\dao\CounsellorDaoHibernate.class
 com\secj3303\model\DashboardData.class
-com\secj3303\service\PersistentGamificationService$DummyUser.class
 com\secj3303\dao\MoodEntryDao.class
 com\secj3303\dao\CounsellorDao.class
 com\secj3303\service\AssessmentService.class
