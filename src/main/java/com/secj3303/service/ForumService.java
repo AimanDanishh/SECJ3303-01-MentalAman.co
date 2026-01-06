@@ -49,7 +49,8 @@ public class ForumService {
     }
     
     public int createPost(Post post) {
-        
+        // Calculate total posts for "all" category
+        updateAllCategoryCount();
         return postDao.save(post);
     }
     
@@ -87,13 +88,35 @@ public class ForumService {
     
     public List<Map<String, String>> getCategoriesWithCounts() {
         List<Category> categories = categoryDao.findAll();
+        
+        // Update all category count with total posts
+        updateAllCategoryCount();
+        
         return categories.stream()
-                .map(cat -> Map.of(
-                    "id", cat.getId(),
-                    "label", cat.getLabel(),
-                    "count", String.valueOf(postDao.countByCategory(cat.getId()))
-                ))
+                .map(cat -> {
+                    int count;
+                    if ("all".equals(cat.getId())) {
+                        // Get total post count for "all" category
+                        count = (int) postDao.findAll().stream().count();
+                    } else {
+                        count = postDao.countByCategory(cat.getId());
+                    }
+                    return Map.of(
+                        "id", cat.getId(),
+                        "label", cat.getLabel(),
+                        "count", String.valueOf(count)
+                    );
+                })
                 .collect(Collectors.toList());
+    }
+    
+    private void updateAllCategoryCount() {
+        Category allCategory = categoryDao.findById("all");
+        if (allCategory != null) {
+            int totalPosts = (int) postDao.findAll().stream().count();
+            allCategory.setCount(totalPosts);
+            categoryDao.update(allCategory);
+        }
     }
     
     public void initializeDummyData() {
@@ -152,6 +175,9 @@ public class ForumService {
         postDao.save(post3);
         postDao.save(post4);
         postDao.save(post5);
+        
+        // Update category counts
+        updateAllCategoryCount();
 
         // Create replies for post1
         Post savedPost1 = postDao.findById(post1Id);

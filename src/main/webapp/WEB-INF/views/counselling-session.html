@@ -73,9 +73,11 @@
             </div>
 
             <!-- View (Default) -->
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900 mb-2">Counselling Sessions</h1>
-                <p class="text-slate-600 mb-6">Manage your scheduled counselling sessions</p>
+            <div class="p-8">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-slate-900 mb-2">Counselling Sessions</h1>
+                    <p class="text-slate-600 mb-6">Manage your scheduled counselling sessions</p>
+                </div>
 
                 <!-- Include role-specific content -->
                 <th:block th:replace="~{counselling-student :: student-content}"></th:block>
@@ -88,74 +90,28 @@
     <script>
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // Show/hide location field based on session type - WITH NULL CHECK
+            // Initialize Lucide icons
+            lucide.createIcons();
+
+            // Show/hide location field based on session type
             const sessionTypeRadios = document.querySelectorAll('input[name="sessionType"]');
             if (sessionTypeRadios.length > 0) {
                 sessionTypeRadios.forEach(radio => {
                     radio.addEventListener('change', function() {
-                        const locationField = document.getElementById('locationField');
-                        if (locationField) {
-                            if (this.value === 'physical') {
-                                locationField.classList.remove('hidden');
-                                const locationSelect = locationField.querySelector('select');
-                                if (locationSelect) locationSelect.required = true;
-                            } else {
-                                locationField.classList.add('hidden');
-                                const locationSelect = locationField.querySelector('select');
-                                if (locationSelect) locationSelect.required = false;
-                            }
-                        }
-                    });
-                });
-            }
-
-            // Session type selection - WITH NULL CHECK  
-            if (sessionTypeRadios.length > 0) {
-                sessionTypeRadios.forEach(radio => {
-                    const label = radio.closest('label');
-                    if (!label) return; // Skip if no label found
-                    
-                    radio.addEventListener('change', function() {
-                        // Remove selection from all session type options
-                        document.querySelectorAll('input[name="sessionType"]').forEach(r => {
-                            const parentLabel = r.closest('label');
-                            if (parentLabel) {
-                                parentLabel.classList.remove('border-blue-500', 'bg-blue-50');
-                                parentLabel.classList.add('border-slate-200');
-                            }
-                        });
-                        
-                        // Add selection to clicked option
-                        label.classList.add('border-blue-500', 'bg-blue-50');
-                        label.classList.remove('border-slate-200');
-                        
-                        // Show/hide location field
-                        const locationField = document.getElementById('locationField');
-                        if (locationField) {
-                            if (this.value === 'physical') {
-                                locationField.classList.remove('hidden');
-                                const locationSelect = locationField.querySelector('select');
-                                if (locationSelect) locationSelect.required = true;
-                            } else {
-                                locationField.classList.add('hidden');
-                                const locationSelect = locationField.querySelector('select');
-                                if (locationSelect) locationSelect.required = false;
-                            }
-                        }
+                        toggleLocationField(this);
                     });
                     
                     // Initialize selection if one is already checked
                     if (radio.checked) {
-                        label.classList.add('border-blue-500', 'bg-blue-50');
-                        label.classList.remove('border-slate-200');
+                        updateVisualSelection(radio);
                     }
                 });
             }
 
-            // Time slot selection - ONLY RUN IF CONTAINER EXISTS
+            // Time slot selection
             const timeSlotContainer = document.getElementById('timeSlotsContainer');
             if (timeSlotContainer) {
-                const timeSlots = timeSlotContainer.querySelectorAll('div');
+                const timeSlots = timeSlotContainer.querySelectorAll('.time-slot-option');
                 timeSlots.forEach(slot => {
                     slot.addEventListener('click', function() {
                         // Remove selection from all time slots
@@ -172,7 +128,7 @@
                         const radio = this.querySelector('input[type="radio"]');
                         if (radio) radio.checked = true;
                         
-                        // Set hidden inputs
+                        // Set hidden inputs if they exist
                         const selectedDateInput = document.getElementById('selectedDate');
                         const selectedTimeInput = document.getElementById('selectedTime');
                         if (selectedDateInput && selectedTimeInput) {
@@ -180,99 +136,32 @@
                             selectedTimeInput.value = this.getAttribute('data-time');
                         }
                     });
+                    
+                    // Initialize selection if one is already checked
+                    const radio = slot.querySelector('input[type="radio"]');
+                    if (radio && radio.checked) {
+                        slot.classList.add('border-blue-500', 'bg-blue-50');
+                        slot.classList.remove('border-slate-200');
+                    }
                 });
             }
 
-            // Form validation - ONLY FOR BOOKING FORM
+            // Form validation for booking form
             const bookingForm = document.getElementById('bookingForm');
             if (bookingForm) {
                 bookingForm.addEventListener('submit', function(e) {
-                    const counsellor = this.querySelector('select[name="selectedCounsellor"]');
                     const sessionType = this.querySelector('input[name="sessionType"]:checked');
-                    const timeSlot = this.querySelector('input[name="selectedTimeSlot"]:checked');
+                    const timeSlot = this.querySelector('input[name="selectedSlot"]:checked');
                     const reason = this.querySelector('textarea[name="bookingReason"]');
                     
-                    // Check if this is really the booking form (has these specific fields)
-                    if (counsellor && sessionType && timeSlot && reason) {
-                        if (!counsellor.value || !reason.value.trim()) {
-                            e.preventDefault();
-                            alert('Please fill in all required fields marked with *');
-                            return false;
-                        }
+                    if (!sessionType || !timeSlot || !reason || !reason.value.trim()) {
+                        e.preventDefault();
+                        alert('Please fill in all required fields marked with *');
+                        return false;
                     }
                     return true;
                 });
             }
-            // Initialize Lucide icons
-            lucide.createIcons();
-
-            // Handle follow-up session booking
-            function handleFollowUpBooking() {
-                const followUpButtons = document.querySelectorAll('.follow-up-btn');
-                
-                followUpButtons.forEach(button => {
-                    button.addEventListener('click', function(e) {
-                        e.preventDefault(); // Prevent immediate navigation
-                        
-                        const counsellorName = this.getAttribute('data-counsellor');
-                        if (counsellorName) {
-                            // Store the counsellor name in sessionStorage
-                            sessionStorage.setItem('followUpCounsellor', counsellorName);
-                            
-                            // Then navigate to the booking page
-                            const href = this.getAttribute('href');
-                            window.location.href = href + (href.includes('?') ? '&' : '?') + 'followup=true';
-                        }
-                    });
-                });
-                
-                // Check if we need to auto-select a counsellor
-                function checkForFollowUpCounsellor() {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const isFollowUp = urlParams.get('followup') === 'true';
-                    
-                    if (isFollowUp) {
-                        const storedCounsellor = sessionStorage.getItem('followUpCounsellor');
-                        if (storedCounsellor) {
-                            // Wait for the booking modal to be fully loaded
-                            setTimeout(() => {
-                                autoSelectCounsellor(storedCounsellor);
-                                // Clear the stored value after use
-                                sessionStorage.removeItem('followUpCounsellor');
-                            }, 300);
-                        }
-                    }
-                }
-                
-                function autoSelectCounsellor(counsellorName) {
-                    const counsellorSelect = document.querySelector('select[name="selectedCounsellor"]');
-                    if (counsellorSelect) {
-                        // Find and select the option
-                        for (let option of counsellorSelect.options) {
-                            if (option.value === counsellorName || 
-                                option.text.includes(counsellorName)) {
-                                option.selected = true;
-                                
-                                // Trigger change event if needed
-                                const event = new Event('change', { bubbles: true });
-                                counsellorSelect.dispatchEvent(event);
-                                
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Check for follow-up when page loads
-                checkForFollowUpCounsellor();
-                
-                // Also check when modal might open (if modals are shown/hidden with JavaScript)
-                if (window.location.search.includes('modal=book')) {
-                    checkForFollowUpCounsellor();
-                }
-            }
-            
-            handleFollowUpBooking();
 
             // Reschedule modal time slot selection
             const rescheduleContainer = document.getElementById('rescheduleTimeSlotsContainer');
@@ -295,15 +184,6 @@
                         const radio = this.querySelector('input[type="radio"]');
                         if (radio) {
                             radio.checked = true;
-                            radio.focus(); // Fix focus issue for validation
-                        }
-                        
-                        // Also update hidden inputs
-                        const dateInput = document.getElementById('rescheduleNewDate');
-                        const timeInput = document.getElementById('rescheduleNewTime');
-                        if (dateInput && timeInput) {
-                            dateInput.value = this.getAttribute('data-date');
-                            timeInput.value = this.getAttribute('data-time');
                         }
                     });
                     
@@ -315,21 +195,85 @@
                     }
                 });
             }
-            
-            // Fix for form submission validation
-            const rescheduleForm = document.querySelector('form[th\\:action*="reschedule"]');
-            if (rescheduleForm) {
-                rescheduleForm.addEventListener('submit', function(e) {
-                    const selectedSlot = this.querySelector('input[name="newTimeSlot"]:checked');
-                    if (!selectedSlot) {
-                        e.preventDefault();
-                        alert('Please select a time slot');
-                        return false;
-                    }
-                    return true;
-                });
-            }
+        });
 
+        // Define toggleLocationField function in global scope
+        function toggleLocationField(radio) {
+            const locationField = document.getElementById('locationField');
+            if (locationField) {
+                if (radio.value === 'In-person') {
+                    locationField.classList.remove('hidden');
+                    // Make location required for in-person sessions
+                    const locationSelect = locationField.querySelector('select[name="sessionLocation"]');
+                    if (locationSelect) locationSelect.required = true;
+                } else {
+                    locationField.classList.add('hidden');
+                    // Remove requirement for non-in-person sessions
+                    const locationSelect = locationField.querySelector('select[name="sessionLocation"]');
+                    if (locationSelect) {
+                        locationSelect.required = false;
+                        locationSelect.value = '';
+                    }
+                }
+            }
+            
+            // Update visual selection
+            updateVisualSelection(radio);
+        }
+
+        // Update visual selection for session type buttons
+        function updateVisualSelection(selectedRadio) {
+            // Remove selection from all session type options
+            document.querySelectorAll('input[name="sessionType"]').forEach(radio => {
+                const parentLabel = radio.closest('label');
+                if (parentLabel) {
+                    parentLabel.classList.remove('border-blue-500', 'bg-blue-50');
+                    parentLabel.classList.add('border-slate-200');
+                    
+                    // Update icon color
+                    const icon = parentLabel.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('text-blue-600');
+                        icon.classList.add('text-slate-400');
+                    }
+                    
+                    // Update text color
+                    const text = parentLabel.querySelector('p.font-medium');
+                    if (text) {
+                        text.classList.remove('text-blue-900');
+                        text.classList.add('text-slate-700');
+                    }
+                }
+            });
+            
+            // Add selection to selected option
+            const selectedLabel = selectedRadio.closest('label');
+            if (selectedLabel) {
+                selectedLabel.classList.add('border-blue-500', 'bg-blue-50');
+                selectedLabel.classList.remove('border-slate-200');
+                
+                // Update icon color
+                const selectedIcon = selectedLabel.querySelector('i');
+                if (selectedIcon) {
+                    selectedIcon.classList.add('text-blue-600');
+                    selectedIcon.classList.remove('text-slate-400');
+                }
+                
+                // Update text color
+                const selectedText = selectedLabel.querySelector('p.font-medium');
+                if (selectedText) {
+                    selectedText.classList.add('text-blue-900');
+                    selectedText.classList.remove('text-slate-700');
+                }
+            }
+        }
+
+        // Initialize session type selection on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkedRadio = document.querySelector('input[name="sessionType"]:checked');
+            if (checkedRadio) {
+                toggleLocationField(checkedRadio);
+            }
         });
     </script>
 </body>

@@ -5,26 +5,32 @@
 </head>
 <body>
 
-<th:block th:fragment="content(user)">
+<th:block th:fragment="content(
+    modules,
+    completedCount,
+    inProgressCount,
+    totalModules,
+    selectedModule,
+    selectedLesson,
+    showQuiz,
+    quizScore,
+    achievement,
+    user
+)">
     <div class="p-8">
-        <!-- Header -->
+
+        <!-- ================= HEADER ================= -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-slate-900 mb-2">Learning Modules</h1>
             <p class="text-slate-600">Access comprehensive mental health literacy content</p>
         </div>
 
-        <!-- Achievement Toast -->
-        <div th:if="${achievement}" class="fixed top-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-4 rounded-lg shadow-2xl z-50 animate-pulse transition-opacity duration-300">
-            <p class="font-bold text-lg" th:text="${achievement}"></p>
-            <p class="text-sm">You earned 100 points!</p>
-        </div>
-
-        <!-- Progress Overview -->
+        <!-- ================= PROGRESS OVERVIEW ================= -->
         <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
                     <p class="text-slate-600 mb-2">Total Modules</p>
-                    <p class="text-3xl font-bold text-slate-900" th:text="${totalModules}"></p>
+                    <p class="text-3xl font-bold" th:text="${totalModules}"></p>
                 </div>
                 <div>
                     <p class="text-slate-600 mb-2">Completed</p>
@@ -36,174 +42,166 @@
                 </div>
                 <div>
                     <p class="text-slate-600 mb-2">Total Time</p>
-                    <p class="text-3xl font-bold text-slate-900">5.5 Hours</p>
+                    <p class="text-3xl font-bold">5.5 Hours</p>
                 </div>
             </div>
         </div>
 
-        <!-- Modules Grid -->
+        <!-- ================= MODULE GRID ================= -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
             <div th:each="module : ${modules}">
-                <a th:href="${module.isLocked()} ? '#' : @{/learning/module(moduleId=${module.id})}"
-                   th:classappend="${module.isLocked()} ? 'opacity-60 pointer-events-none' : 'cursor-pointer hover:shadow-lg'"
+                <!-- ENTIRE CARD IS THE LINK -->
+                <a th:href="${module.locked} ? '#' : @{/learning/module(moduleId=${module.id})}"
+                   th:classappend="${module.locked} ? 'opacity-50 pointer-events-none' : 'hover:shadow-lg cursor-pointer'"
                    class="block bg-white rounded-xl shadow-md border border-slate-200 transition-shadow">
 
                     <div class="p-6">
-                        <div class="flex items-start justify-between mb-2">
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-0.5 text-sm font-medium text-slate-800" th:text="${module.category}"></span>
-                            <div th:if="${module.isLocked()}">
-                                <script>document.write('<i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>');</script>
-                            </div>
-                            <div th:if="${module.isQuizPassed()}">
-                                <script>document.write('<i data-lucide="trophy" class="w-5 h-5 text-yellow-500"></i>');</script>
-                            </div>
+
+                        <!-- TAG + ICON -->
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm bg-slate-100 px-3 py-1 rounded-full"
+                                  th:text="${module.category}"></span>
+
+                            <span th:if="${module.quizPassed}" class="text-yellow-500">🏆</span>
+                            <span th:if="${module.locked}" class="text-slate-400">🔒</span>
                         </div>
 
-                        <h3 class="text-xl font-bold text-slate-900 flex items-start gap-2 mb-2">
-                            <script>document.write('<i data-lucide="book-open" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-1"></i>');</script>
-                            <span th:text="${module.title}"></span>
-                        </h3>
+                        <!-- TITLE -->
+                        <h3 class="text-xl font-bold mb-2" th:text="${module.title}"></h3>
                         <p class="text-slate-600 mb-4" th:text="${module.description}"></p>
 
-                        <div th:if="${!module.isLocked() and module.getProgress() > 0}" class="mb-4">
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="text-slate-600">Progress</span>
-                                <span class="text-slate-900 font-medium" th:text="${module.progress} + '%'"></span>
+                        <!-- PROGRESS -->
+                        <div th:if="${module.progress > 0}" class="mb-4">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Progress</span>
+                                <span th:text="${module.progress + '%'}"></span>
                             </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2">
-                                <div class="bg-blue-600 h-2 rounded-full" th:style="'width: ' + ${module.progress} + '%'"></div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-4 text-sm text-slate-600 mb-4">
-                            <div class="flex items-center gap-1">
-                                <script>document.write('<i data-lucide="clock" class="w-4 h-4"></i>');</script>
-                                <span th:text="${module.duration}"></span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <script>document.write('<i data-lucide="play-circle" class="w-4 h-4"></i>');</script>
-                                <span th:text="${module.lessons.size() + ' lessons'}"></span>
+                            <div class="w-full bg-slate-200 h-2 rounded-full">
+                                <div class="bg-blue-600 h-2 rounded-full"
+                                     th:style="'width:' + ${module.progress} + '%'"></div>
                             </div>
                         </div>
 
-                        <div th:if="${!module.isLocked()}">
-                            <button class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                                <script>document.write('<i data-lucide="play-circle" class="w-4 h-4"></i>');</script>
-                                <span th:text="${module.progress > 0 ? 'Continue Learning' : 'Start Module'}"></span>
-                            </button>
+                        <!-- META -->
+                        <div class="flex justify-between text-sm text-slate-600 mb-4">
+                            <span th:text="${module.duration}"></span>
+                            <span th:text="${module.lessons.size() + ' lessons'}"></span>
                         </div>
-                        <div th:if="${module.isLocked()}">
-                            <button class="w-full py-2 px-4 bg-slate-200 text-slate-500 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-                                <script>document.write('<i data-lucide="lock" class="w-4 h-4"></i>');</script>
-                                <span>Complete previous modules</span>
-                            </button>
+
+                        <!-- CTA (NOT A BUTTON) -->
+                        <div th:if="${!module.locked}"
+                             class="w-full py-2 bg-blue-600 text-white rounded-lg text-center
+                                    hover:bg-blue-700 transition">
+                            <span th:text="${module.progress > 0 ? 'Continue Learning' : 'Start Module'}"></span>
                         </div>
+
+                        <div th:if="${module.locked}"
+                             class="w-full py-2 bg-slate-200 text-slate-500 rounded-lg text-center">
+                            Locked
+                        </div>
+
                     </div>
                 </a>
             </div>
         </div>
 
-        <!-- Lesson / Quiz Modal -->
-        <div th:if="${selectedModule != null}" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40 overflow-y-auto">
-            <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+        <!-- ================= MODULE MODAL ================= -->
+        <div th:if="${selectedModule != null}"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
+
+            <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+
+                <!-- HEADER -->
+                <div class="p-6 border-b flex justify-between">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-900" th:text="${selectedModule.title}"></h2>
+                        <h2 class="text-2xl font-bold" th:text="${selectedModule.title}"></h2>
                         <p class="text-slate-600" th:text="${selectedModule.description}"></p>
                     </div>
-                    <a th:href="@{/learning}" class="text-slate-400 hover:text-slate-600">
-                        <script>document.write('<i data-lucide="x" class="w-6 h-6"></i>');</script>
-                    </a>
+                    <a th:href="@{/learning}" class="text-xl">✖</a>
                 </div>
 
+                <!-- BODY -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-                    <!-- Lessons List -->
-                    <div class="lg:col-span-1">
-                        <h3 class="font-semibold text-slate-900 mb-4">Lessons</h3>
-                        <div class="space-y-2">
-                            <a th:each="lesson, lessonStat : ${selectedModule.lessons}" 
-                               th:href="@{/learning/module(moduleId=${selectedModule.id}, lessonId=${lesson.id})}"
-                               th:classappend="${selectedLesson != null and selectedLesson.id == lesson.id} 
-                                    ? 'bg-blue-50 border-2 border-blue-500' 
-                                    : 'bg-slate-50 border-2 border-transparent hover:bg-slate-100'"
-                               class="w-full p-3 rounded-lg text-left transition-colors flex flex-col">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-medium text-slate-900 text-sm" th:text="${lessonStat.index + 1} + '. ' + ${lesson.title}"></span>
-                                    <div th:if="${lesson.isCompleted()}">
-                                        <script>document.write('<i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>');</script>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 text-xs text-slate-600">
-                                    <div th:if="${lesson.type == 'video'}"><script>document.write('<i data-lucide="play-circle" class="w-3 h-3"></i>');</script></div>
-                                    <div th:if="${lesson.type == 'infographic'}"><script>document.write('<i data-lucide="image" class="w-3 h-3"></i>');</script></div>
-                                    <span th:text="${lesson.duration}"></span>
-                                </div>
-                            </a>
 
-                            <!-- Quiz Button -->
-                            <a th:if="${selectedModule.quiz.size() > 0}"
-                               th:href="@{/learning/module(moduleId=${selectedModule.id}, showQuiz=true)}"
-                               class="w-full p-3 rounded-lg text-left bg-purple-50 border-2 border-purple-200 hover:bg-purple-100 transition-colors flex flex-col">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-medium text-purple-900 text-sm">📝 Module Quiz</span>
-                                    <div th:if="${selectedModule.isQuizPassed()}">
-                                        <span class="inline-flex items-center rounded-full bg-green-500 px-2 py-0.5 text-xs font-medium text-white">Passed</span>
-                                    </div>
-                                </div>
-                                <p class="text-xs text-purple-700" th:text="${selectedModule.quiz.size() + ' questions'}"></p>
-                            </a>
-                        </div>
+                    <!-- LESSON LIST -->
+                    <div>
+                        <h3 class="font-semibold mb-4">Lessons</h3>
+
+                        <a th:each="lesson : ${selectedModule.lessons}"
+                           th:href="@{/learning/module(moduleId=${selectedModule.id}, lessonId=${lesson.id})}"
+                           class="block p-3 mb-2 rounded-lg bg-slate-50 hover:bg-slate-100">
+
+                            <div class="flex justify-between">
+                                <span th:text="${lesson.title}"></span>
+                                <span th:if="${lesson.completed}">✔</span>
+                            </div>
+
+                            <small class="text-slate-600" th:text="${lesson.duration}"></small>
+                        </a>
+
+                        <a th:if="${selectedModule.quiz.size() > 0}"
+                           th:href="@{/learning/module(moduleId=${selectedModule.id}, showQuiz=true)}"
+                           class="block p-3 bg-purple-100 rounded-lg text-purple-800">
+                            📝 Module Quiz
+                        </a>
                     </div>
 
-                    <!-- Content Area -->
+                    <!-- CONTENT -->
                     <div class="lg:col-span-2">
+
+                        <!-- LESSON -->
                         <div th:if="${!showQuiz and selectedLesson != null}">
-                            <h3 class="text-xl font-bold text-slate-900 mb-4" th:text="${selectedLesson.title}"></h3>
-                            <div th:if="${selectedLesson.type == 'video'}" class="mb-4">
-                                <div class="aspect-video bg-slate-900 rounded-lg overflow-hidden mb-4">
-                                    <iframe th:src="${selectedLesson.url}" class="w-full h-full"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowfullscreen>
-                                    </iframe>
-                                </div>
-                            </div>
-                            <div th:if="${selectedLesson.type == 'infographic'}" class="mb-4">
-                                <img th:src="${selectedLesson.url}" th:alt="${selectedLesson.title}" class="w-full rounded-lg shadow-lg mb-4"/>
-                            </div>
+                            <h3 class="text-xl font-bold mb-4"
+                                th:text="${selectedLesson.title}"></h3>
+
+                            <iframe th:if="${selectedLesson.type == 'video'}"
+                                    th:src="${selectedLesson.url}"
+                                    class="w-full aspect-video rounded-lg mb-4"></iframe>
+
+                            <img th:if="${selectedLesson.type == 'infographic'}"
+                                 th:src="${selectedLesson.url}"
+                                 class="w-full rounded-lg mb-4"/>
+
                             <form th:action="@{/learning/complete-lesson}" method="post">
-                                <input type="hidden" name="moduleId" th:value="${selectedModule.id}" />
-                                <input type="hidden" name="lessonId" th:value="${selectedLesson.id}" />
-                                <button type="submit" th:disabled="${selectedLesson.isCompleted()}"
-                                        th:classappend="${selectedLesson.isCompleted()} 
-                                            ? 'bg-green-100 text-green-700 cursor-not-allowed' 
-                                            : 'bg-blue-600 text-white hover:bg-blue-700'"
-                                        class="w-full py-3 px-4 rounded-lg font-medium transition-colors">
-                                    <span th:if="${selectedLesson.isCompleted()}" class="flex items-center justify-center gap-2">
-                                        <script>document.write('<i data-lucide="check-circle" class="w-5 h-5"></i>');</script>
-                                        Completed
-                                    </span>
-                                    <span th:unless="${selectedLesson.isCompleted()}">Mark as Complete</span>
+                                <input type="hidden" name="moduleId" th:value="${selectedModule.id}">
+                                <button type="submit"
+                                        class="w-full py-3 bg-blue-600 text-white rounded-lg">
+                                    Mark as Complete
                                 </button>
                             </form>
                         </div>
 
-                        <!-- Quiz Content -->
-                        <div th:if="${showQuiz and selectedModule.quiz.size() > 0}">
-                            <h3 class="text-xl font-bold text-slate-900 mb-2">Module Quiz</h3>
-                            <form th:action="@{/learning/submit-quiz}" method="post">
-                                <input type="hidden" name="moduleId" th:value="${selectedModule.id}" />
-                                <div th:each="question, qStat : ${selectedModule.quiz}" class="p-4 bg-slate-50 rounded-lg mb-4">
-                                    <p class="font-medium text-slate-900 mb-2" th:text="${qStat.index + 1} + '. ' + ${question.question}"></p>
-                                    <div th:each="option, oStat : ${question.options}" class="flex items-center gap-2 mb-2">
-                                        <input type="radio" th:name="'question-' + ${question.id}" th:value="${oStat.index}" required/>
-                                        <span th:text="${option}"></span>
+                        <!-- QUIZ -->
+                        <div th:if="${showQuiz}">
+                            <h3 class="text-xl font-bold mb-4">Module Quiz</h3>
+                            
+                            <div th:if="${selectedModule.quiz == null or selectedModule.quiz.isEmpty()}">
+                                <p class="text-slate-600 mb-4">No quiz available for this module.</p>
+                            </div>
+                            
+                            <form th:if="${selectedModule.quiz != null and !selectedModule.quiz.isEmpty()}"
+                                th:action="@{/learning/submit-quiz}" method="post">
+                                <input type="hidden" name="moduleId" th:value="${selectedModule.id}">
+                                <div th:each="q, iter : ${selectedModule.quiz}" class="mb-6">
+                                    <p class="font-semibold mb-2" th:text="${iter.index + 1 + '. ' + q.question}"></p>
+                                    <div th:each="opt, s : ${q.options}" class="ml-4">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio"
+                                                th:name="'question-' + ${q.id}"
+                                                th:value="${s.index}"
+                                                required
+                                                class="mr-2">
+                                            <span th:text="${opt}"></span>
+                                        </label>
                                     </div>
                                 </div>
-                                <button type="submit" class="w-full py-3 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                                <button class="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
                                     Submit Quiz
                                 </button>
                             </form>
                         </div>
+                        
                     </div>
                 </div>
             </div>
@@ -211,10 +209,6 @@
 
     </div>
 </th:block>
-
-<script>
-    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-</script>
 
 </body>
 </html>

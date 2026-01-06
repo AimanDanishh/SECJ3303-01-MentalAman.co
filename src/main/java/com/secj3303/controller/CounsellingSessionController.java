@@ -1,286 +1,341 @@
 package com.secj3303.controller;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.servlet.http.HttpSession;
-
+import com.secj3303.model.CounsellingSession;
+import com.secj3303.model.Counsellor;
+import com.secj3303.model.TimeSlot;
+import com.secj3303.model.User;
+import com.secj3303.service.CounsellingSessionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.secj3303.model.CounsellingSessionModels;
-import com.secj3303.model.CounsellingSessionModels.Counsellor;
-import com.secj3303.model.CounsellingSessionModels.Session;
-import com.secj3303.model.User;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/counselling")
 public class CounsellingSessionController {
 
-    private static final String SESSIONS_KEY = "counsellingSessions";
-    private static final String DEFAULT_VIEW = "counselling";
+    @Autowired
+    private CounsellingSessionService sessionService;
 
-    private List<Session> getSessions(HttpSession session) {
-        List<Session> sessions = (List<Session>) session.getAttribute(SESSIONS_KEY);
-        if (sessions == null) {
-            sessions = CounsellingSessionModels.getInitialSessions();
-            session.setAttribute(SESSIONS_KEY, sessions);
-        }
-        return sessions;
-    }
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mm a");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    private Optional<Session> findSession(List<Session> sessions, int id) {
-        return sessions.stream().filter(s -> s.getId() == id).findFirst();
-    }
-
-    // --- Main View & Modal State Handler (GET) ---
-
+    // ---------------------------
+    // Dashboard
+    // ---------------------------
     @GetMapping
-    public String sessionDashboard(
-        @RequestParam(required = false) Integer detailId,
-        @RequestParam(required = false) String modal,
-        Model model,
-        Authentication authentication,
-        HttpSession httpSession // Renamed to avoid confusion with Session model
-    ) {
-        // Get user from session
+    public String sessionDashboard(Model model, Authentication authentication,
+                                @RequestParam(required = false) Integer detailId,
+                                @RequestParam(required = false) String modal,
+                                @RequestParam(required = false) String counsellorId) {
+        
+        // Build user from authentication
+        User user = buildUser(authentication);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        model.addAttribute("currentView", "counselling");
+
+        // Fetch data
+        List<CounsellingSession> sessions = sessionService.getAllSessions();
+        model.addAttribute("sessions", sessions);
+
+        List<Counsellor> counsellors = sessionService.getAllCounsellors();
+        model.addAttribute("counsellorList", counsellors);
+
+        // Get selected counsellor - check if we're in reschedule mode first
+        Counsellor selectedCounsellor = null;
+        
+        if ("reschedule".equals(modal) && detailId != null) {
+            // For reschedule modal, get counsellor from the selected session
+            Optional<CounsellingSession> sessionOpt = sessions.stream()
+                    .filter(s -> s.getId().equals(detailId))
+                    .findFirst();
+            
+            if (sessionOpt.isPresent()) {
+                selectedCounsellor = sessionOpt.get().getCounsellor();
+                model.addAttribute("selectedCounsellorId", selectedCounsellor.getId());
+            }
+        } else if (counsellorId != null) {
+            // For booking modal or when counsellorId is explicitly provided
+            selectedCounsellor = sessionService.getCounsellorById(counsellorId);
+            model.addAttribute("selectedCounsellorId", counsellorId);
+        }
+        
+        // Generate available time slots
+        List<TimeSlot> slots = Collections.emptyList();
+        if (selectedCounsellor != null) {
+            slots = sessionService.generateAvailableSlotsForCounsellor(selectedCounsellor);
+        }
+        model.addAttribute("availableTimeSlots", slots);
+
+        // Initialize modal states
+        initializeModalStates(model);
+
+        // Handle modal display based on parameters
+        handleModalDisplay(model, detailId, modal, sessions);
+
+        return "counselling-session";
+    }
+
+    // ---------------------------
+    // Confirm attendance
+    // ---------------------------
+    @PostMapping("/confirm/{id}")
+    public String confirmSession(@PathVariable Integer id, RedirectAttributes redirect) {
+        try {
+            sessionService.confirmSession(id);
+            redirect.addFlashAttribute("alert", "✓ Attendance confirmed!");
+            redirect.addFlashAttribute("alertType", "success");
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("alert", "Error: " + e.getMessage());
+            redirect.addFlashAttribute("alertType", "error");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("alert", "An unexpected error occurred");
+            redirect.addFlashAttribute("alertType", "error");
+        }
+        return "redirect:/counselling";
+    }
+
+    // ---------------------------
+    // Cancel session
+    // ---------------------------
+    @PostMapping("/cancel/{id}")
+    public String cancelSession(@PathVariable Integer id,
+                                @RequestParam String cancellationReason,
+                                RedirectAttributes redirect) {
+        
+        try {
+            sessionService.cancelSession(id, cancellationReason);
+            redirect.addFlashAttribute("alert", "✓ Session cancelled successfully.");
+            redirect.addFlashAttribute("alertType", "success");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirect.addFlashAttribute("alert", e.getMessage());
+            redirect.addFlashAttribute("alertType", "error");
+            redirect.addAttribute("detailId", id);
+            redirect.addAttribute("modal", "cancel");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("alert", "An unexpected error occurred");
+            redirect.addFlashAttribute("alertType", "error");
+        }
+        return "redirect:/counselling";
+    }
+
+    // ---------------------------
+    // Reschedule session
+    // ---------------------------
+    @PostMapping("/reschedule/{id}")
+    public String rescheduleSession(@PathVariable Integer id,
+                                    @RequestParam String selectedSlot,  // Changed from separate date/time
+                                    @RequestParam(required = false) String rescheduleNotes,
+                                    RedirectAttributes redirect) {
+        
+        try {
+            // Parse the slot identifier (format: "2024-01-15|09:00")
+            String[] slotParts = selectedSlot.split("\\|");
+            if (slotParts.length != 2) {
+                throw new IllegalArgumentException("Invalid slot format");
+            }
+            
+            LocalDate date = LocalDate.parse(slotParts[0], DATE_FORMATTER);
+            LocalTime time = LocalTime.parse(slotParts[1]);  // Should be in ISO format (HH:mm)
+            
+            // Call service with the parsed date and time
+            sessionService.rescheduleSession(id, date, time);
+            
+            // Optionally update notes if provided
+            if (rescheduleNotes != null && !rescheduleNotes.trim().isEmpty()) {
+                CounsellingSession session = sessionService.getSessionById(id);
+                String currentNotes = session.getNotes() != null ? session.getNotes() + "\n" : "";
+                session.setNotes(currentNotes + "Reschedule note: " + rescheduleNotes.trim());
+                sessionService.updateSession(session);
+            }
+            
+            redirect.addFlashAttribute("alert", 
+                "✓ Reschedule request sent! New time: " + 
+                date.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) + 
+                " at " + time.format(TIME_FORMATTER));
+            redirect.addFlashAttribute("alertType", "success");
+            
+        } catch (DateTimeParseException e) {
+            redirect.addFlashAttribute("alert", "Invalid date or time format in slot selection");
+            redirect.addFlashAttribute("alertType", "error");
+            redirect.addAttribute("detailId", id);
+            redirect.addAttribute("modal", "reschedule");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirect.addFlashAttribute("alert", e.getMessage());
+            redirect.addFlashAttribute("alertType", "error");
+            redirect.addAttribute("detailId", id);
+            redirect.addAttribute("modal", "reschedule");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("alert", "An unexpected error occurred");
+            redirect.addFlashAttribute("alertType", "error");
+        }
+        return "redirect:/counselling";
+    }
+
+    // ---------------------------
+    // Book session
+    // ---------------------------
+    @PostMapping("/book")
+    public String bookSession(@RequestParam String counsellorId,
+                            @RequestParam String selectedSlot,  // ← CHANGED THIS
+                            @RequestParam String bookingReason,
+                            @RequestParam String sessionType,
+                            @RequestParam(required = false) String sessionLocation,
+                            Authentication authentication,
+                            RedirectAttributes redirect) {
+        
         User user = buildUser(authentication);
         
-        // Add user to model (REQUIRED for app-layout)
-        model.addAttribute("user", user);
-        model.addAttribute("userRole", user.getRole()); // Use actual user role
+        if (!"student".equals(user.getRole())) {
+            redirect.addFlashAttribute("alert", "Only students can book counselling sessions.");
+            redirect.addFlashAttribute("alertType", "error");
+            return "redirect:/counselling?modal=book";
+        }
         
-        model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("sessions", getSessions(httpSession));
-        model.addAttribute("availableTimeSlots", CounsellingSessionModels.AVAILABLE_SLOTS);
-        model.addAttribute("counsellorList", CounsellingSessionModels.COUNSELLOR_LIST);
+        try {
+            // Parse slot exactly like reschedule does
+            String[] slotParts = selectedSlot.split("\\|");
+            if (slotParts.length != 2) {
+                throw new IllegalArgumentException("Invalid slot format");
+            }
+            
+            LocalDate date = LocalDate.parse(slotParts[0]);  // Use default ISO format
+            LocalTime time = LocalTime.parse(slotParts[1]);  // Use default ISO format
+            
+            // Call service - make sure it accepts these parameters
+            sessionService.bookSession(counsellorId, date, time, 
+                                    sessionType, sessionLocation, bookingReason);
+            
+            redirect.addFlashAttribute("alert", "✓ Session booked successfully!");
+            redirect.addFlashAttribute("alertType", "success");
+            
+        } catch (Exception e) {
+            redirect.addFlashAttribute("alert", "Error: " + e.getMessage());
+            redirect.addFlashAttribute("alertType", "error");
+            redirect.addAttribute("modal", "book");
+        }
+        
+        return "redirect:/counselling";
+    }
 
-        // Handle Modal States
+    // ---------------------------
+    // Mark session as completed
+    // ---------------------------
+    @PostMapping("/complete/{id}")
+    public String completeSession(@PathVariable Integer id,
+                                  @RequestParam String reportContent,
+                                  RedirectAttributes redirect) {
+        
+        try {
+            sessionService.markSessionAsCompleted(id, reportContent);
+            redirect.addFlashAttribute("alert", "✓ Session marked as completed with report.");
+            redirect.addFlashAttribute("alertType", "success");
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("alert", e.getMessage());
+            redirect.addFlashAttribute("alertType", "error");
+        } catch (Exception e) {
+            redirect.addFlashAttribute("alert", "An unexpected error occurred");
+            redirect.addFlashAttribute("alertType", "error");
+        }
+        return "redirect:/counselling";
+    }
+
+    // ---------------------------
+    // Helper Methods
+    // ---------------------------
+    private User buildUser(Authentication authentication) {
+        User user = new User();
+        if (authentication != null && authentication.isAuthenticated()) {
+            user.setEmail(authentication.getName());
+            user.setName(authentication.getName().split("@")[0]);
+            if (authentication.getAuthorities() != null && 
+                authentication.getAuthorities().iterator().hasNext()) {
+                String authority = authentication.getAuthorities().iterator().next().getAuthority();
+                user.setRole(authority.replace("ROLE_", "").toLowerCase());
+            } else {
+                user.setRole("guest");
+            }
+        } else {
+            user.setName("Guest");
+            user.setRole("guest");
+        }
+        return user;
+    }
+
+    private void initializeModalStates(Model model) {
         model.addAttribute("showDetailsModal", false);
         model.addAttribute("showCancelModal", false);
         model.addAttribute("showRescheduleModal", false);
         model.addAttribute("showReportModal", false);
         model.addAttribute("showUploadModal", false);
         model.addAttribute("showBookingModal", false);
+        model.addAttribute("showCompleteModal", false);
+    }
 
+    private void handleModalDisplay(Model model, Integer detailId, String modal, 
+                                List<CounsellingSession> sessions) {
         if (detailId != null) {
-            Optional<Session> sessionOpt = findSession(getSessions(httpSession), detailId);
-            sessionOpt.ifPresent(s -> {
-                model.addAttribute("selectedSession", s);
-                if (modal == null) {
+            Optional<CounsellingSession> sessionOpt = sessions.stream()
+                    .filter(s -> s.getId().equals(detailId))
+                    .findFirst();
+            
+            if (sessionOpt.isPresent()) {
+                CounsellingSession session = sessionOpt.get();
+                model.addAttribute("selectedSession", session);
+                
+                // For reschedule modal, we might need to add the counsellor to the model
+                if ("reschedule".equals(modal)) {
+                    model.addAttribute("showRescheduleModal", true);
+                    model.addAttribute("selectedCounsellorId", session.getCounsellor().getId());
+                } else if ("cancel".equals(modal)) {
+                    model.addAttribute("showCancelModal", true);
+                } else if ("details".equals(modal) || modal == null) {
                     model.addAttribute("showDetailsModal", true);
-                } else {
-                    switch (modal) {
-                        case "details": 
-                            model.addAttribute("showDetailsModal", true); 
-                            break;
-                        case "cancel": 
-                            model.addAttribute("showCancelModal", true); 
-                            break;
-                        case "reschedule": 
-                            model.addAttribute("showRescheduleModal", true); 
-                            break;
-                        case "report": 
-                            model.addAttribute("showReportModal", true); 
-                            break;
-                        case "upload": 
-                            model.addAttribute("showUploadModal", true); 
-                            break;
-                    }
+                } else if ("report".equals(modal)) {
+                    model.addAttribute("showReportModal", true);
+                } else if ("upload".equals(modal)) {
+                    model.addAttribute("showUploadModal", true);
+                } else if ("complete".equals(modal)) {
+                    model.addAttribute("showCompleteModal", true);
                 }
-            });
+            }
         } else if ("book".equals(modal)) {
             model.addAttribute("showBookingModal", true);
         }
-
-        return "counselling-session";
-    }
-    
-    // --- Session Action Handlers (POSTs) ---
-
-    @PostMapping("/confirm/{id}")
-    public String handleConfirm(@PathVariable int id, 
-                              HttpSession httpSession,
-                              Authentication authentication,
-                              RedirectAttributes redirect) {
-        
-        // Check authentication
-        User user = buildUser(authentication);
-        
-        findSession(getSessions(httpSession), id).ifPresent(s -> {
-            s.setStudentConfirmed(true);
-            s.setStatus("confirmed");
-            redirect.addFlashAttribute("alert", "✓ Attendance confirmed! You will receive a reminder 1 hour before the session.");
-            redirect.addFlashAttribute("alertType", "success");
-        });
-        return "redirect:/counselling";
     }
 
-    @PostMapping("/cancel/{id}")
-    public String handleCancel(@PathVariable int id, 
-                             @RequestParam String cancellationReason, 
-                             HttpSession httpSession, 
-                             Authentication authentication,
-                             RedirectAttributes redirect) {
-        
-        // Check authentication
-        User user = buildUser(authentication);
-        
-        if (cancellationReason.trim().isEmpty()) {
-            redirect.addFlashAttribute("alert", "Please provide a cancellation reason.");
-            redirect.addFlashAttribute("alertType", "error");
-            redirect.addAttribute("detailId", id);
-            redirect.addAttribute("modal", "cancel");
-            return "redirect:/counselling";
+    private LocalTime parseTimeString(String timeString) throws DateTimeParseException {
+        try {
+            // Try ISO format first (HH:mm)
+            return LocalTime.parse(timeString);
+        } catch (DateTimeParseException e1) {
+            try {
+                // Try formatted time (h:mm a)
+                return LocalTime.parse(timeString, TIME_FORMATTER);
+            } catch (DateTimeParseException e2) {
+                // If it contains a pipe, extract time part
+                if (timeString.contains("|")) {
+                    String timePart = timeString.split("\\|")[1];
+                    return LocalTime.parse(timePart); // Should be in ISO format
+                }
+                // If it contains a dash, extract start time
+                if (timeString.contains("-")) {
+                    String startTime = timeString.split("-")[0].trim();
+                    return LocalTime.parse(startTime, TIME_FORMATTER);
+                }
+                throw e2;
+            }
         }
-
-        findSession(getSessions(httpSession), id).ifPresent(s -> {
-            s.setStatus("cancelled");
-            s.setCancellationReason(cancellationReason);
-            redirect.addFlashAttribute("alert", "✓ Session cancelled. " + s.getCounsellor() + " has been notified.");
-            redirect.addFlashAttribute("alertType", "success");
-        });
-        return "redirect:/counselling";
-    }
-
-    @PostMapping("/reschedule/{id}")
-    public String handleReschedule(@PathVariable int id, 
-                                 @RequestParam String newDate, 
-                                 @RequestParam String newTime, 
-                                 HttpSession httpSession, 
-                                 Authentication authentication,
-                                 RedirectAttributes redirect) {
-        
-        // Check authentication
-        User user = buildUser(authentication);
-        
-        findSession(getSessions(httpSession), id).ifPresent(s -> {
-            s.setStatus("pending-reschedule");
-            s.setDate(newDate);
-            s.setTime(newTime);
-            redirect.addFlashAttribute("alert", "✓ Reschedule request sent! New time: " + newDate + " at " + newTime);
-            redirect.addFlashAttribute("alertType", "success");
-        });
-        return "redirect:/counselling";
-    }
-    
-    @PostMapping("/report/upload/{id}")
-    public String handleReportUpload(@PathVariable int id, 
-                                   @RequestParam String reportContent, 
-                                   HttpSession httpSession, 
-                                   Authentication authentication,
-                                   RedirectAttributes redirect) {
-        
-        // Check authentication
-        User user = buildUser(authentication);
-        
-        // Check if user is counsellor or admin
-        if (!user.getRole().equals("counsellor") && !user.getRole().equals("administrator")) {
-            redirect.addFlashAttribute("alert", "You don't have permission to upload reports.");
-            redirect.addFlashAttribute("alertType", "error");
-            return "redirect:/counselling";
-        }
-        
-        if (reportContent.trim().isEmpty()) {
-            redirect.addFlashAttribute("alert", "Report content cannot be empty.");
-            redirect.addFlashAttribute("alertType", "error");
-            redirect.addAttribute("detailId", id);
-            redirect.addAttribute("modal", "upload");
-            return "redirect:/counselling";
-        }
-        
-        findSession(getSessions(httpSession), id).ifPresent(s -> {
-            s.setReportAvailable(true);
-            s.setReportContent(reportContent);
-            redirect.addFlashAttribute("alert", "✓ Report uploaded successfully! The student has been notified.");
-            redirect.addFlashAttribute("alertType", "success");
-        });
-        return "redirect:/counselling";
-    }
-
-    @PostMapping("/book")
-    public String handleBookNewSession(@RequestParam String selectedCounsellor, 
-                                     @RequestParam String selectedDate,
-                                     @RequestParam String selectedTime,
-                                     @RequestParam String bookingReason,
-                                     @RequestParam String sessionType,
-                                     @RequestParam(required = false) String sessionLocation,
-                                     HttpSession httpSession, 
-                                     Authentication authentication,
-                                     RedirectAttributes redirect) {
-
-        // Check authentication
-        User user = buildUser(authentication);
-        
-        // Check if user is student (only students can book sessions)
-        if (!user.getRole().equals("student")) {
-            redirect.addFlashAttribute("alert", "Only students can book counselling sessions.");
-            redirect.addFlashAttribute("alertType", "error");
-            return "redirect:/counselling?modal=book";
-        }
-
-        // Find Counsellor details
-        Optional<Counsellor> counsellorOpt = CounsellingSessionModels.COUNSELLOR_LIST.stream()
-            .filter(c -> c.name.equals(selectedCounsellor))
-            .findFirst();
-        
-        if (counsellorOpt.isEmpty()) {
-            redirect.addFlashAttribute("alert", "Invalid counsellor selected.");
-            redirect.addFlashAttribute("alertType", "error");
-            return "redirect:/counselling?modal=book";
-        }
-        
-        Counsellor counsellor = counsellorOpt.get();
-        List<Session> sessions = getSessions(httpSession);
-        AtomicInteger maxId = new AtomicInteger(sessions.stream()
-            .mapToInt(Session::getId)
-            .max()
-            .orElse(0));
-
-        String sessionTypeText = "online".equals(sessionType) ? "Video Call" : 
-                                (sessionLocation != null ? sessionLocation : "In-Person");
-
-        Session newSession = new Session();
-        newSession.setId(maxId.incrementAndGet());
-        newSession.setCounsellor(counsellor.name);
-        newSession.setCounsellorId(counsellor.id);
-        newSession.setSpecialty(counsellor.specialty);
-        newSession.setDate(selectedDate);
-        newSession.setTime(selectedTime);
-        newSession.setType(sessionTypeText);
-        newSession.setStatus("scheduled");
-        newSession.setStudentConfirmed(false);
-        newSession.setNotes(bookingReason);
-
-        sessions.add(0, newSession);
-        httpSession.setAttribute(SESSIONS_KEY, sessions);
-        
-        redirect.addFlashAttribute("alert", "✓ Session Booked Successfully! Counsellor: " + counsellor.name + " on " + selectedDate + " at " + selectedTime);
-        redirect.addFlashAttribute("alertType", "success");
-        return "redirect:/counselling";
-    }
-
-    // Helper
-    private User buildUser(Authentication authentication) {
-        User user = new User();
-        user.setEmail(authentication.getName());
-        user.setName(authentication.getName().split("@")[0]);
-        user.setRole(
-            authentication.getAuthorities()
-                .iterator()
-                .next()
-                .getAuthority()
-                .replace("ROLE_", "")
-                .toLowerCase()
-        );
-        return user;
     }
 }

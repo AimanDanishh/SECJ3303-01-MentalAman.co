@@ -47,22 +47,30 @@
                                             th:text="${entry.mood}">
                                         </span>
                                     </div>
-                                    <p th:if="${entry.notes}" class="text-slate-600 text-sm" th:text="${entry.notes}"></p>
-                                    <p class="text-xs text-slate-500 mt-2">
-                                        <span th:if="${entry.timestamp != null}">
-                                            <span th:text="${#temporals.format(#temporals.createDateTime(entry.timestamp), 'hh:mm a')}"></span>
-                                        </span>
+                                    <!-- Notes with proper null and empty check -->
+                                    <p th:if="${entry.notes != null and !#strings.isEmpty(entry.notes)}" 
+                                       class="text-slate-600 text-sm" 
+                                       th:text="${entry.notes}"></p>
+                                    
+                                    <!-- Timestamp with safer parsing -->
+                                    <p th:if="${entry.timestamp != null}" class="text-xs text-slate-500 mt-2">
+                                        <span th:text="*{entry.timestamp != null ? #temporals.format(entry.timestamp, 'hh:mm a') : ''}"></span>
                                     </p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 ml-4">
                                 <a th:href="@{/mood(view='entry', editId=${entry.id})}"
-                                   class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                   class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+                                   title="Edit">
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </a>
-                                <form th:action="@{/mood/delete/{id}(id=${entry.id})}" method="post" 
-                                      onsubmit="return confirm('Are you sure you want to delete this entry?');">
-                                    <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                <form th:action="@{/mood/delete/{id}(id=${entry.id})}" 
+                                      method="post" 
+                                      class="inline"
+                                      th:onsubmit="'return confirm(\'Are you sure you want to delete this mood entry?\');'">
+                                    <button type="submit" 
+                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                                            title="Delete">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </form>
@@ -72,6 +80,7 @@
                 </div>
             </div>
 
+            <!-- Empty state -->
             <div th:unless="${totalEntries > 0}" class="text-center py-12">
                 <i data-lucide="heart" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
                 <p class="text-slate-600">No mood entries yet</p>
@@ -79,5 +88,3 @@
             </div>
         </div>
     </div>
-</body>
-</html>

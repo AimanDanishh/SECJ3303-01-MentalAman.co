@@ -85,6 +85,7 @@ public class PeerSupportController {
     @PostMapping("/create")
     public String handleCreatePost(
             @ModelAttribute("newPostFormData") Post newPost,
+            Authentication authentication,
             RedirectAttributes redirect
     ) {
         ContentCheckResult titleCheck = PeerSupportModels.checkContentForHarmfulText(newPost.getTitle());
@@ -107,9 +108,13 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        // Set default values
-        newPost.setAuthor("Anonymous User");
-        newPost.setAuthorInitials("AU");
+        // Set author name based on user role
+        User user = buildUser(authentication);
+        String authorName = getAnonymousNameByRole(user.getRole());
+        String authorInitials = getAuthorInitialsByRole(user.getRole());
+
+        newPost.setAuthor(authorName);
+        newPost.setAuthorInitials(authorInitials);
         newPost.setTime("Just now");
         newPost.setLikes(0);
         newPost.setTrending(false);
@@ -129,6 +134,7 @@ public class PeerSupportController {
     public String handleSubmitReply(
             @PathVariable int postId,
             @RequestParam String replyText,
+            Authentication authentication,
             RedirectAttributes redirect
     ) {
         if (replyText.trim().isEmpty()) {
@@ -138,7 +144,6 @@ public class PeerSupportController {
             return "redirect:/forum";
         }
 
-        // Note: Changed from ContentCheckResult to PeerSupportModels.ContentCheckResult
         PeerSupportModels.ContentCheckResult contentCheck = PeerSupportModels.checkContentForHarmfulText(replyText);
 
         if (!contentCheck.isClean) {
@@ -152,8 +157,14 @@ public class PeerSupportController {
         if (post != null) {
             Reply reply = new Reply();
             reply.setPost(post);
-            reply.setAuthor("Anonymous User");
-            reply.setAuthorInitials("AU");
+            
+            // Set author name based on user role
+            User user = buildUser(authentication);
+            String authorName = getAnonymousNameByRole(user.getRole());
+            String authorInitials = getAuthorInitialsByRole(user.getRole());
+            
+            reply.setAuthor(authorName);
+            reply.setAuthorInitials(authorInitials);
             reply.setTime("Just now");
             reply.setContent(replyText);
             reply.setLikes(0);
@@ -244,5 +255,35 @@ public class PeerSupportController {
                         .toLowerCase()
         );
         return user;
+    }
+    
+    private String getAnonymousNameByRole(String role) {
+        switch (role.toUpperCase()) {
+            case "STUDENT":
+                return "Anonymous Student";
+            case "FACULTY":
+                return "Anonymous Faculty";
+            case "COUNSELLOR":
+                return "Anonymous Counsellor";
+            case "ADMINISTRATOR":
+                return "Anonymous Admin";
+            default:
+                return "Anonymous User";
+        }
+    }
+    
+    private String getAuthorInitialsByRole(String role) {
+        switch (role.toUpperCase()) {
+            case "STUDENT":
+                return "AS";
+            case "FACULTY":
+                return "AF";
+            case "COUNSELLOR":
+                return "AC";
+            case "ADMINISTRATOR":
+                return "AA";
+            default:
+                return "AU";
+        }
     }
 }

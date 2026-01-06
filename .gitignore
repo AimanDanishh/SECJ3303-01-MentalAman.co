@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 target/
 .classpath
 .project
 .settings/
+=======
+# Ignore the 'target' folder in the root directory
+/target/
+>>>>>>> 64523966e3377be4852fc7c4a09fe2f968107fd8
