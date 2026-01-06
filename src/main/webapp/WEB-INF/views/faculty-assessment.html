@@ -17,6 +17,25 @@
         .bg-blue-600 { background-color: var(--color-primary); }
         .hover\:bg-blue-700:hover { background-color: #173dff; }
         .text-blue-600 { color: var(--color-primary); }
+        
+        /* Add overlay styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans">
@@ -54,10 +73,10 @@
                 </div>
 
                 <!-- Report Modal -->
-                            <div th:if="${selectedReport != null and selectedStudent != null}"
-                                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                                <th:block th:replace="~{faculty-report :: report-list}"></th:block>
-                            </div>
+                <div th:if="${selectedReport != null and selectedStudent != null and showReportModal}"
+                     class="modal-overlay">
+                    <th:block th:replace="~{faculty-report :: report-list}"></th:block>
+                </div>
             </main>
         </div>
     </div>
@@ -69,21 +88,55 @@
         // Navigate to student detail view
         window.location.href = '/digitalmentalhealth/assessment?selectStudentId=' + studentId;
     }
+    
+    // Function to close modal
+    function closeModal() {
+        // If we're on a student detail page, go back to student details
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('selectStudentId');
+        if (studentId) {
+            window.location.href = '/digitalmentalhealth/assessment?selectStudentId=' + studentId;
+        } else {
+            window.location.href = '/digitalmentalhealth/assessment';
+        }
+    }
+    
+    // Function to close modal when clicking outside
+    function setupModalClose() {
+        const modalOverlay = document.querySelector('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            // Also close on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modalOverlay) {
+                    closeModal();
+                }
+            });
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         lucide.createIcons();
         
+        // Set up modal closing
+        setupModalClose();
+        
         // Event listeners for search and filter
         const searchInput = document.getElementById('searchInput');
         const riskFilter = document.getElementById('riskFilter');
-        const searchForm = document.querySelector('form'); // Get the form
+        const searchForm = document.querySelector('form');
         
         // Remove the input event listener for instant search
         // Add keydown event for Enter key
         if (searchInput) {
             searchInput.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // Prevent form submission if inside form
+                    event.preventDefault();
                     submitSearch();
                 }
             });
@@ -94,9 +147,6 @@
                 submitSearch();
             });
         }
-        
-        // Add a search button (optional)
-        // Or you can keep the hidden submit button and make it visible
     });
     
     function submitSearch() {
@@ -119,6 +169,6 @@
         
         window.location.href = url;
     }
-</script>
+    </script>
 </body>
 </html>

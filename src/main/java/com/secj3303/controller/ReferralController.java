@@ -35,13 +35,67 @@ public class ReferralController {
     // --- Mock Data Setup ---
 
     private List<Student> getMockStudents() {
-        return Arrays.asList(
-            new Student(1, "Emma Wilson", "emma.wilson@university.edu", "S2021001", "Computer Science", "Year 3", "B-", 78, "2 days ago"),
-            new Student(2, "Michael Chen", "michael.chen@university.edu", "S2021002", "Engineering", "Year 2", "C", 65, "1 week ago"),
-            new Student(3, "Sarah Johnson", "sarah.johnson@university.edu", "S2021003", "Psychology", "Year 4", "A", 95, "1 hour ago"),
-            new Student(4, "David Martinez", "david.martinez@university.edu", "S2021004", "Business", "Year 1", "C+", 72, "4 days ago"),
-            new Student(5, "Olivia Brown", "olivia.brown@university.edu", "S2021005", "Medicine", "Year 3", "B+", 88, "1 day ago")
+        Student s1 = new Student(
+            "Emma Wilson",
+            "emma.wilson@university.edu",
+            "S2021001",
+            "Computer Science",
+            "Year 3",
+            "B-",
+            78,
+            "2 days ago"
         );
+        s1.setRiskLevel("moderate");
+
+        Student s2 = new Student(
+            "Michael Chen",
+            "michael.chen@university.edu",
+            "S2021002",
+            "Engineering",
+            "Year 2",
+            "C",
+            65,
+            "1 week ago"
+        );
+        s2.setRiskLevel("high");
+
+        Student s3 = new Student(
+            "Sarah Johnson",
+            "sarah.johnson@university.edu",
+            "S2021003",
+            "Psychology",
+            "Year 4",
+            "A",
+            95,
+            "1 hour ago"
+        );
+        s3.setRiskLevel("low");
+
+        Student s4 = new Student(
+            "David Martinez",
+            "david.martinez@university.edu",
+            "S2021004",
+            "Business",
+            "Year 1",
+            "C+",
+            72,
+            "4 days ago"
+        );
+        s4.setRiskLevel("moderate");
+
+        Student s5 = new Student(
+            "Olivia Brown",
+            "olivia.brown@university.edu",
+            "S2021005",
+            "Medicine",
+            "Year 3",
+            "B+",
+            88,
+            "1 day ago"
+        );
+        s5.setRiskLevel("low");
+
+        return Arrays.asList(s1, s2, s3, s4, s5);
     }
     
     private List<Referral> getReferrals(HttpSession session) {
