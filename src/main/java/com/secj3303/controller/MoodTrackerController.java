@@ -1,45 +1,30 @@
 package com.secj3303.controller;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.servlet.http.HttpSession;
-
+import com.secj3303.dao.MoodEntryDao;
+import com.secj3303.model.MoodEntry;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.secj3303.model.MoodEntry;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Controller
 @RequestMapping("/mood")
 public class MoodTrackerController {
 
-    private static final String HISTORY_KEY = "moodEntries";
-    private static final String DEFAULT_VIEW = "assessment";
+    private final MoodEntryDao moodEntryDao;
+    
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
-    private List<MoodEntry> getMoodEntries(HttpSession session) {
-        List<MoodEntry> entries = (List<MoodEntry>) session.getAttribute(HISTORY_KEY);
-        if (entries == null) {
-            entries = MoodEntry.getInitialMoodEntries();
-            session.setAttribute(HISTORY_KEY, entries);
-        }
-        return entries;
+    // Constructor injection
+    public MoodTrackerController(MoodEntryDao moodEntryDao) {
+        this.moodEntryDao = moodEntryDao;
     }
     
     // --- Main View Handler ---
@@ -47,28 +32,26 @@ public class MoodTrackerController {
     public String moodTrackerDashboard(
         @RequestParam(defaultValue = "entry") String view,
         @RequestParam(required = false) Integer editId,
-        Model model, HttpSession session
+        Model model,
+        Authentication authentication
     ) {
-        // Get user from session
-        Object userObj = session.getAttribute("user");
-        if (userObj == null) {
+        // Check authentication
+        if (authentication == null || !authentication.isAuthenticated()) {
             return "redirect:/login";
         }
 
+        // Get user from Spring Security authentication
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
+        
+        // Store user in model
+        model.addAttribute("user", username);
+        model.addAttribute("userDetails", userDetails);
         model.addAttribute("activeTab", "mood");
-        model.addAttribute("currentView", DEFAULT_VIEW);
         
-        List<MoodEntry> entries = getMoodEntries(session);
+        // Get all mood entries for the user
+        List<MoodEntry> entries = moodEntryDao.findByUsername(username);
         
-        // Sort entries by date descending for history and streak calculation
-        entries.sort((e1, e2) -> {
-            try {
-                return e2.getDate().compareTo(e1.getDate());
-            } catch (Exception ex) {
-                return 0;
-            }
-        });
-
         // --- Calculate Stats ---
         Map<String, Object> moodStats = MoodEntry.getMoodStats(entries);
         model.addAttribute("currentStreak", MoodEntry.calculateStreak(entries));
@@ -83,17 +66,17 @@ public class MoodTrackerController {
             model.addAttribute("mostFrequentCount", moodStats.get("mostFrequentCount"));
             model.addAttribute("mostFrequentMoodData", moodStats.get("mostFrequentMoodData"));
         } else {
-            // Provide default values if stats calculation fails
-            model.addAttribute("last7Days", new ArrayList<MoodEntry>());  // Empty list
+            // Provide default values
+            model.addAttribute("last7Days", new ArrayList<MoodEntry>());
             model.addAttribute("moodCounts", new HashMap<String, Integer>());
             model.addAttribute("mostFrequentMoodId", "neutral");
-            model.addAttribute("totalEntriesLast7Days", 0);  // Set to 0, not entries.size()
+            model.addAttribute("totalEntriesLast7Days", 0);
             model.addAttribute("mostFrequentCount", 0);
             model.addAttribute("mostFrequentMoodData", new HashMap<String, String>());
         }
 
         // --- View State ---
-        model.addAttribute("currentView", DEFAULT_VIEW);
+        model.addAttribute("currentView", "assessment");
         model.addAttribute("view", view);
         model.addAttribute("moodEntries", entries);
         model.addAttribute("moodDefinitions", MoodEntry.MOOD_DEFINITIONS);
@@ -104,8 +87,8 @@ public class MoodTrackerController {
         MoodEntry formData = new MoodEntry();
         
         if (editId != null) {
-            Optional<MoodEntry> entryOpt = entries.stream().filter(e -> e.getId() == editId).findFirst();
-            if (entryOpt.isPresent()) {
+            Optional<MoodEntry> entryOpt = moodEntryDao.findById(editId);
+            if (entryOpt.isPresent() && entryOpt.get().getUsername().equals(username)) {
                 isEditing = true;
                 editingEntry = entryOpt.get();
                 formData = editingEntry;
@@ -115,25 +98,28 @@ public class MoodTrackerController {
         model.addAttribute("isEditing", isEditing);
         model.addAttribute("editingEntry", editingEntry);
         model.addAttribute("formData", formData);
-        
-        // Add user to model
-        model.addAttribute("user", userObj);
-
-        // Debug: Print what's being passed to template
-System.out.println("DEBUG - totalEntriesLast7Days: " + model.getAttribute("totalEntriesLast7Days"));
-System.out.println("DEBUG - moodCounts: " + model.getAttribute("moodCounts"));
-System.out.println("DEBUG - view: " + view);
-
-// Make sure the view attribute is set
-model.addAttribute("view", view);
 
         return "mood-tracker";
     }
 
     // --- Form Submission Handler ---
     @PostMapping("/submit")
-    public String handleSubmit(@ModelAttribute MoodEntry formData, HttpSession session, RedirectAttributes redirect) {
-        List<MoodEntry> entries = getMoodEntries(session);
+    public String handleSubmit(
+        @ModelAttribute MoodEntry formData,
+        RedirectAttributes redirect,
+        Authentication authentication
+    ) {
+        // Check authentication
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        
+        // Get current user
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
+        
+        // Set username on the form data
+        formData.setUsername(username);
         
         // --- Validation ---
         String errorMessage = null;
@@ -146,27 +132,37 @@ model.addAttribute("view", view);
             errorMessage = "Notes are too long (max 500 chars).";
         }
         
+        // Parse the date
+        LocalDate entryDate = null;
+        if (formData.getDate() != null && !formData.getDate().isEmpty()) {
+            try {
+                entryDate = LocalDate.parse(formData.getDate());
+            } catch (Exception e) {
+                errorMessage = "Invalid date format.";
+            }
+        }
+        
         // Check for existing entry on this date if not editing
-        if (formData.getId() == 0 && entries.stream().anyMatch(e -> e.getDate().equals(formData.getDate()))) {
-            errorMessage = "You already have a mood entry for this date. Please edit the existing entry or choose a different date.";
+        if (formData.getId() == null && entryDate != null) {
+            boolean exists = moodEntryDao.existsByUsernameAndDate(username, entryDate);
+            if (exists) {
+                errorMessage = "You already have a mood entry for this date. Please edit the existing entry or choose a different date.";
+            }
+        }
+        
+        // Check if editing someone else's entry
+        if (formData.getId() != null) {
+            Optional<MoodEntry> existing = moodEntryDao.findById(formData.getId());
+            if (existing.isPresent() && !existing.get().getUsername().equals(username)) {
+                errorMessage = "You can only edit your own mood entries.";
+            }
         }
 
         if (errorMessage != null) {
-            redirect.addFlashAttribute("errorMessage", errorMessage);
-            redirect.addFlashAttribute("showError", true);
+            redirect.addFlashAttribute("alert", errorMessage);
+            redirect.addFlashAttribute("alertType", "error");
             redirect.addFlashAttribute("formData", formData);
-            if (formData.getId() != 0) {
-                redirect.addAttribute("editId", formData.getId());
-            }
-            return "redirect:/mood";
-        }
-        
-        // Simulate database error (10% chance)
-        if (ThreadLocalRandom.current().nextDouble() < 0.1) {
-            redirect.addFlashAttribute("errorMessage", "Your mood entry couldn't be saved. Please try again later.");
-            redirect.addFlashAttribute("showError", true);
-            redirect.addFlashAttribute("formData", formData);
-            if (formData.getId() != 0) {
+            if (formData.getId() != null) {
                 redirect.addAttribute("editId", formData.getId());
             }
             return "redirect:/mood";
@@ -175,50 +171,65 @@ model.addAttribute("view", view);
         // --- Save/Update Logic ---
         String successMessage;
         
-        if (formData.getId() != 0) {
+        if (formData.getId() != null) {
             // Update existing entry
-            entries.stream()
-                .filter(e -> e.getId() == formData.getId())
-                .findFirst()
-                .ifPresent(entry -> {
-                    entry.setMood(formData.getMood());
-                    entry.setNotes(formData.getNotes());
-                    entry.setDate(formData.getDate());
-                    entry.setTimestamp(LocalDateTime.now().toString());
-                });
-            successMessage = "Mood entry updated successfully!";
+            Optional<MoodEntry> existingOpt = moodEntryDao.findById(formData.getId());
+            if (existingOpt.isPresent()) {
+                MoodEntry existing = existingOpt.get();
+                existing.setMood(formData.getMood());
+                existing.setNotes(formData.getNotes());
+                existing.setEntryDate(entryDate);
+                existing.setTimestamp(LocalDateTime.now());
+                moodEntryDao.update(existing);
+                successMessage = "Mood entry updated successfully!";
+            } else {
+                redirect.addFlashAttribute("alert", "Entry not found.");
+                redirect.addFlashAttribute("alertType", "error");
+                return "redirect:/mood";
+            }
         } else {
             // Create new entry
-            AtomicInteger maxId = new AtomicInteger(entries.stream()
-                .mapToInt(MoodEntry::getId)
-                .max()
-                .orElse(0));
-            formData.setId(maxId.incrementAndGet());
-            formData.setTimestamp(LocalDateTime.now().toString());
-            entries.add(0, formData);
+            formData.setEntryDate(entryDate);
+            formData.setTimestamp(LocalDateTime.now());
+            moodEntryDao.save(formData);
             successMessage = "Mood entry saved successfully!";
         }
 
-        session.setAttribute(HISTORY_KEY, entries);
-        redirect.addFlashAttribute("successMessage", successMessage);
-        redirect.addFlashAttribute("showSuccess", true);
+        redirect.addFlashAttribute("alert", successMessage);
+        redirect.addFlashAttribute("alertType", "success");
         return "redirect:/mood";
     }
     
     // --- Delete Handler ---
     @PostMapping("/delete/{id}")
-    public String handleDelete(@PathVariable int id, HttpSession session, RedirectAttributes redirect) {
-        List<MoodEntry> entries = getMoodEntries(session);
+    public String handleDelete(
+        @PathVariable Integer id,
+        RedirectAttributes redirect,
+        Authentication authentication
+    ) {
+        // Check authentication
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
         
-        boolean removed = entries.removeIf(e -> e.getId() == id);
+        // Get current user
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
         
-        if (removed) {
-            session.setAttribute(HISTORY_KEY, entries);
-            redirect.addFlashAttribute("successMessage", "Mood entry deleted successfully.");
-            redirect.addFlashAttribute("showSuccess", true);
+        // Check if the entry belongs to the user
+        Optional<MoodEntry> entryOpt = moodEntryDao.findById(id);
+        if (entryOpt.isPresent() && entryOpt.get().getUsername().equals(username)) {
+            boolean deleted = moodEntryDao.delete(id);
+            if (deleted) {
+                redirect.addFlashAttribute("alert", "Mood entry deleted successfully.");
+                redirect.addFlashAttribute("alertType", "success");
+            } else {
+                redirect.addFlashAttribute("alert", "Entry could not be deleted.");
+                redirect.addFlashAttribute("alertType", "error");
+            }
         } else {
-            redirect.addFlashAttribute("errorMessage", "Entry not found or could not be deleted.");
-            redirect.addFlashAttribute("showError", true);
+            redirect.addFlashAttribute("alert", "Entry not found or you don't have permission to delete it.");
+            redirect.addFlashAttribute("alertType", "error");
         }
         
         redirect.addAttribute("view", "history");

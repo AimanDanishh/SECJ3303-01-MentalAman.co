@@ -1,5 +1,6 @@
 package com.secj3303.model;
 
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -7,22 +8,57 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Entity
+@Table(name = "mood_entries")
 public class MoodEntry {
-    private int id;
-    private String date;
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    
+    @Column(name = "entry_date", nullable = false)
+    private LocalDate entryDate;
+    
+    @Column(name = "mood_type", nullable = false, length = 50)
     private String mood;
+    
+    @Column(name = "notes", length = 500)
     private String notes;
-    private String timestamp;
+    
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime timestamp;
+    
+    @Column(name = "username", nullable = false, length = 100)
+    private String username;
     
     // Default constructor
-    public MoodEntry() {}
+    public MoodEntry() {
+        this.timestamp = LocalDateTime.now();
+    }
+    
+    // Parameterized constructor
+    public MoodEntry(LocalDate entryDate, String mood, String notes, String username) {
+        this.entryDate = entryDate;
+        this.mood = mood;
+        this.notes = notes;
+        this.username = username;
+        this.timestamp = LocalDateTime.now();
+    }
     
     // Getters and setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
     
-    public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
+    public LocalDate getEntryDate() { return entryDate; }
+    public void setEntryDate(LocalDate entryDate) { this.entryDate = entryDate; }
+    
+    // For backward compatibility with existing code
+    public String getDate() { 
+        return entryDate != null ? entryDate.toString() : null; 
+    }
+    public void setDate(String date) { 
+        this.entryDate = date != null ? LocalDate.parse(date) : null; 
+    }
     
     public String getMood() { return mood; }
     public void setMood(String mood) { this.mood = mood; }
@@ -30,10 +66,18 @@ public class MoodEntry {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     
-    public String getTimestamp() { return timestamp; }
-    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+    public LocalDateTime getTimestamp() { return timestamp; }
+    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     
-    // Mood definitions
+    // For backward compatibility with existing code
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp != null ? LocalDateTime.parse(timestamp) : LocalDateTime.now();
+    }
+    
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    
+    // Mood definitions (static constant)
     public static final List<Map<String, String>> MOOD_DEFINITIONS = new ArrayList<>();
     
     static {
@@ -88,24 +132,6 @@ public class MoodEntry {
         ));
     }
     
-    // Get initial mood entries
-    public static List<MoodEntry> getInitialMoodEntries() {
-        List<MoodEntry> entries = new ArrayList<>();
-        
-        // Add sample entries for the last 5 days
-        for (int i = 0; i < 5; i++) {
-            MoodEntry entry = new MoodEntry();
-            entry.setId(i + 1);
-            entry.setDate(LocalDate.now().minusDays(i).toString());
-            entry.setMood(i % 2 == 0 ? "happy" : "neutral");
-            entry.setNotes("Sample mood entry " + (i + 1));
-            entry.setTimestamp(LocalDateTime.now().minusDays(i).toString());
-            entries.add(entry);
-        }
-        
-        return entries;
-    }
-    
     // Calculate mood statistics
     public static Map<String, Object> getMoodStats(List<MoodEntry> entries) {
         Map<String, Object> stats = new HashMap<>();
@@ -124,18 +150,14 @@ public class MoodEntry {
         
         // Count moods from last 7 days only
         for (MoodEntry entry : entries) {
-            try {
-                LocalDate entryDate = LocalDate.parse(entry.getDate());
-                // Check if entry is within last 7 days (inclusive)
-                if (!entryDate.isBefore(sevenDaysAgo) && !entryDate.isAfter(today)) {
-                    last7DaysEntries.add(entry);
-                    
-                    if (entry.getMood() != null && moodCounts.containsKey(entry.getMood())) {
-                        moodCounts.put(entry.getMood(), moodCounts.get(entry.getMood()) + 1);
-                    }
+            LocalDate entryDate = entry.getEntryDate();
+            // Check if entry is within last 7 days (inclusive)
+            if (!entryDate.isBefore(sevenDaysAgo) && !entryDate.isAfter(today)) {
+                last7DaysEntries.add(entry);
+                
+                if (entry.getMood() != null && moodCounts.containsKey(entry.getMood())) {
+                    moodCounts.put(entry.getMood(), moodCounts.get(entry.getMood()) + 1);
                 }
-            } catch (Exception e) {
-                // Skip invalid dates
             }
         }
         
@@ -171,7 +193,7 @@ public class MoodEntry {
         stats.put("last7Days", last7DaysEntries);
         stats.put("moodCounts", moodCounts);
         stats.put("mostFrequentMoodId", mostFrequentMoodId);
-        stats.put("totalEntriesLast7Days", last7DaysEntries.size()); // FIXED: Use last7DaysEntries.size()
+        stats.put("totalEntriesLast7Days", last7DaysEntries.size());
         stats.put("mostFrequentCount", mostFrequentCount);
         stats.put("mostFrequentMoodData", mostFrequentMoodData);
         
@@ -186,27 +208,15 @@ public class MoodEntry {
         LocalDate currentDate = LocalDate.now();
         
         // Sort by date descending
-        entries.sort((e1, e2) -> {
-            try {
-                LocalDate date1 = LocalDate.parse(e1.getDate());
-                LocalDate date2 = LocalDate.parse(e2.getDate());
-                return date2.compareTo(date1);
-            } catch (Exception e) {
-                return 0;
-            }
-        });
+        entries.sort((e1, e2) -> e2.getEntryDate().compareTo(e1.getEntryDate()));
         
         for (MoodEntry entry : entries) {
-            try {
-                LocalDate entryDate = LocalDate.parse(entry.getDate());
-                
-                if (entryDate.equals(currentDate.minusDays(streak))) {
-                    streak++;
-                } else {
-                    break;
-                }
-            } catch (Exception e) {
-                // Skip invalid dates
+            LocalDate entryDate = entry.getEntryDate();
+            
+            if (entryDate.equals(currentDate.minusDays(streak))) {
+                streak++;
+            } else {
+                break;
             }
         }
         

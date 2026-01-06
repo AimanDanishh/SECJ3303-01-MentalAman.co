@@ -33,6 +33,7 @@ com\secj3303\model\QuizQuestion.class
 com\secj3303\model\DashboardData$StatItem.class
 com\secj3303\service\CounsellingSessionService.class
 com\secj3303\model\DashboardData$ActivityItem.class
+com\secj3303\dao\MoodEntryDaoHibernate.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
 com\secj3303\model\CarePlanModels.class
 com\secj3303\model\CounsellingSession$SessionStatus.class
@@ -70,6 +71,7 @@ com\secj3303\controller\CarePlanController$UserDTO.class
 com\secj3303\model\DashboardData.class
 com\secj3303\dao\PersonDao.class
 com\secj3303\model\GamificationData$Achievement.class
+com\secj3303\dao\MoodEntryDao.class
 com\secj3303\dao\CounsellorDao.class
 com\secj3303\service\AssessmentService.class
 com\secj3303\model\User.class

@@ -56,8 +56,8 @@
         <main class="p-6">
             <!-- Flash Alert Message -->
             <div th:if="${alert}" 
-                 th:classappend="${alertType == 'success'} ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
-                 class="mb-6 p-4 border rounded-lg flex items-start gap-3 fade-in">
+                th:classappend="${alertType == 'success'} ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
+                class="mb-6 p-4 border rounded-lg flex items-start gap-3 fade-in">
                 <i data-lucide="check-circle" th:if="${alertType == 'success'}" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>
                 <i data-lucide="alert-circle" th:unless="${alertType == 'success'}" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>
                 <span th:text="${alert}"></span>
@@ -73,9 +73,11 @@
             </div>
 
             <!-- View (Default) -->
-            <div>
-                <h1 class="text-xl font-bold text-slate-900 mb-2">Self-Assessment Tools</h1>
-                <p class="text-slate-600 mb-6">Complete confidential assessments to evaluate your mental health status</p>
+            <div class="p-8">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-slate-900 mb-2">Self-Assessment Tools</h1>
+                    <p class="text-slate-600 mb-6">Complete confidential assessments to evaluate your mental health status</p>
+                </div>
 
                 <!-- Tab Navigation -->
                 <div class="flex items-center gap-2 mb-6">
@@ -192,6 +194,18 @@
                 });
             }, 5000);
         });
+
+        // Initialize Lucide icons after the fragment loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+        
+        // Initialize icons when fragment is dynamically loaded
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     </script>
 </body>
 </html>
