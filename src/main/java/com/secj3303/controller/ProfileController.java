@@ -11,17 +11,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.secj3303.model.User;
-import com.secj3303.repository.UserRepository;
+import com.secj3303.dao.PersonDao;
+import com.secj3303.model.Person;
 
 @Controller
 @RequestMapping("/profile")
 public class ProfileController {
 
-    private final UserRepository userRepository;
+    private final PersonDao personDao;
 
-    public ProfileController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public ProfileController(PersonDao personDao) {
+        this.personDao = personDao;
     }
 
     // =========================
@@ -30,17 +30,10 @@ public class ProfileController {
     @InitBinder("user")
     protected void initBinder(WebDataBinder binder) {
         binder.setAllowedFields(
-            "email",
             "name",
-            "phone",
-            "location",
-            "dateOfBirth",
-            "emergencyContact",
-            "bio",
-            "emailNotifications",
-            "pushNotifications",
-            "weeklyReport",
-            "anonymousMode"
+            "yob",
+            "weight",
+            "height"
         );
     }
 
@@ -54,10 +47,12 @@ public class ProfileController {
             Model model) {
 
         String email = authentication.getName();
-        User user = userRepository.findById(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Person person = personDao.findByEmail(email);
+        if (person == null) {
+            throw new RuntimeException("Person not found");
+        }
 
-        model.addAttribute("user", user);
+        model.addAttribute("user", person); // keep attribute name
         model.addAttribute("currentView", "profile");
         model.addAttribute("isEditing", edit != null && edit);
 
@@ -69,43 +64,21 @@ public class ProfileController {
     // =========================
     @PostMapping("/update")
     public String updateProfile(
-            @ModelAttribute("user") User formUser,
+            @ModelAttribute("user") Person formPerson,
             Authentication authentication) {
 
         String email = authentication.getName();
-        User user = userRepository.findById(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Person person = personDao.findByEmail(email);
+        if (person == null) {
+            throw new RuntimeException("Person not found");
+        }
 
-        user.setName(formUser.getName());
-        user.setPhone(formUser.getPhone());
-        user.setLocation(formUser.getLocation());
-        user.setDateOfBirth(formUser.getDateOfBirth());
-        user.setEmergencyContact(formUser.getEmergencyContact());
-        user.setBio(formUser.getBio());
+        person.setName(formPerson.getName());
+        person.setYob(formPerson.getYob());
+        person.setWeight(formPerson.getWeight());
+        person.setHeight(formPerson.getHeight());
 
-        userRepository.save(user);
-
-        return "redirect:/profile";
-    }
-
-    // =========================
-    // Update Preferences
-    // =========================
-    @PostMapping("/preferences")
-    public String updatePreferences(
-            @ModelAttribute("user") User formUser,
-            Authentication authentication) {
-
-        String email = authentication.getName();
-        User user = userRepository.findById(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setEmailNotifications(formUser.isEmailNotifications());
-        user.setPushNotifications(formUser.isPushNotifications());
-        user.setWeeklyReport(formUser.isWeeklyReport());
-        user.setAnonymousMode(formUser.isAnonymousMode());
-
-        userRepository.save(user);
+        personDao.update(person);
 
         return "redirect:/profile";
     }

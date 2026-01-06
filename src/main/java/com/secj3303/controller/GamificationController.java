@@ -6,8 +6,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.secj3303.dao.PersonDao;
 import com.secj3303.model.GamificationData;
-import com.secj3303.model.User;
+import com.secj3303.model.Person;
 
 @Controller
 @RequestMapping("/gamification")
@@ -15,28 +16,29 @@ public class GamificationController {
 
     private static final String DEFAULT_VIEW = "gamification";
 
+    private final PersonDao personDao;
+
+    public GamificationController(PersonDao personDao) {
+        this.personDao = personDao;
+    }
+
     @GetMapping
     public String gamificationDashboard(Authentication authentication, Model model) {
 
         // =========================
-        // Build logged-in user (Spring Security)
+        // Load logged-in PERSON from DB
         // =========================
-        User user = new User();
-        user.setEmail(authentication.getName());
-        user.setName(authentication.getName().split("@")[0]);
-        user.setRole(
-                authentication.getAuthorities()
-                        .iterator()
-                        .next()
-                        .getAuthority()
-                        .replace("ROLE_", "")
-                        .toLowerCase()
-        );
+        String email = authentication.getName();
+        Person person = personDao.findByEmail(email);
+
+        if (person == null) {
+            throw new RuntimeException("Person not found: " + email);
+        }
 
         // =========================
         // Gamification Data
         // =========================
-        model.addAttribute("user", user);
+        model.addAttribute("user", person); // keep attribute name for UI
 
         model.addAttribute("userPoints", GamificationData.USER_POINTS);
         model.addAttribute("nextLevelPoints", GamificationData.NEXT_LEVEL_POINTS);

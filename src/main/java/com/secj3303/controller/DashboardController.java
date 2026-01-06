@@ -6,9 +6,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.secj3303.dao.PersonDao;
 import com.secj3303.model.DashboardData;
-import com.secj3303.model.User;
-import com.secj3303.repository.UserRepository;
+import com.secj3303.model.Person;
 
 @Controller
 @RequestMapping("/dashboard")
@@ -16,26 +16,28 @@ public class DashboardController {
 
     private static final String DEFAULT_VIEW = "dashboard";
 
-    private final UserRepository userRepository;
+    private final PersonDao personDao;
 
-    public DashboardController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public DashboardController(PersonDao personDao) {
+        this.personDao = personDao;
     }
 
     @GetMapping
     public String dashboardView(Authentication authentication, Model model) {
 
-        // Logged-in user email
+        // Logged-in user email (from Spring Security)
         String email = authentication.getName();
 
-        // Load REAL user from DB
-        User user = userRepository.findById(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // Load REAL person from DB
+        Person person = personDao.findByEmail(email);
+        if (person == null) {
+            throw new RuntimeException("Person not found: " + email);
+        }
 
         // Layout attributes
         model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("user", user);
-        model.addAttribute("userName", user.getName());
+        model.addAttribute("user", person);          // keep name "user" for UI compatibility
+        model.addAttribute("userName", person.getName());
 
         // Dashboard data (demo / computed)
         model.addAttribute("studentStats", DashboardData.getStudentStats());
