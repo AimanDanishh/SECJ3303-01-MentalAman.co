@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.secj3303.dao.LearningModuleDao;
+import com.secj3303.dao.ModuleProgressDao;
 import com.secj3303.model.LearningModule;
 import com.secj3303.model.Lesson;
 import com.secj3303.model.ModuleProgress;
 import com.secj3303.model.QuizQuestion;
 import com.secj3303.model.User;
-import com.secj3303.repository.LearningModuleRepository;
-import com.secj3303.repository.ModuleProgressRepository;
 import com.secj3303.service.LearningService;
 
 @Controller
@@ -29,15 +29,15 @@ public class LearningController {
     private static final String APP_LAYOUT = "app-layout";
     private static final String VIEW_NAME = "learning";
 
-    private final LearningModuleRepository moduleRepo;
-    private final ModuleProgressRepository progressRepo;
+    private final LearningModuleDao moduleDao;
+    private final ModuleProgressDao progressDao;
     private final LearningService learningService;
 
-    public LearningController(LearningModuleRepository moduleRepo,
-                              ModuleProgressRepository progressRepo,
+    public LearningController(LearningModuleDao moduleDao,
+                              ModuleProgressDao progressDao,
                               LearningService learningService) {
-        this.moduleRepo = moduleRepo;
-        this.progressRepo = progressRepo;
+        this.moduleDao = moduleDao;
+        this.progressDao = progressDao;
         this.learningService = learningService;
     }
 
@@ -45,7 +45,7 @@ public class LearningController {
     @GetMapping
     public String dashboard(Authentication auth, Model model) {
 
-        List<LearningModule> modules = moduleRepo.findAllWithLessonsAndQuiz();
+        List<LearningModule> modules = moduleDao.findAllWithLessonsAndQuiz();
         updateDashboardStats(modules, auth.getName(), model);
 
         model.addAttribute("currentView", VIEW_NAME);
@@ -56,14 +56,14 @@ public class LearningController {
         return APP_LAYOUT;
     }
 
-    // ================= MODULE / LESSON VIEW =================
+    // ================= MODULE / LESSON =================
     @GetMapping("/module")
     public String viewModule(@RequestParam Long moduleId,
                              @RequestParam(required = false) Long lessonId,
                              Authentication auth,
                              Model model) {
 
-        LearningModule module = moduleRepo.findByIdWithDetails(moduleId)
+        LearningModule module = moduleDao.findByIdWithDetails(moduleId)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
         List<Lesson> lessons = module.getLessons().stream()
@@ -75,17 +75,18 @@ public class LearningController {
                 .findFirst()
                 .orElse(lessons.isEmpty() ? null : lessons.get(0));
 
-        ModuleProgress progress = progressRepo
+        ModuleProgress progress = progressDao
                 .findByUserEmailAndModuleId(auth.getName(), moduleId)
                 .orElse(null);
 
-        if (progress != null) {
-            module.setProgress(progress.getProgress());
-            module.setQuizPassed(progress.isQuizPassed());
-        }
+        int progressValue = progress != null ? progress.getProgress() : 0;
+        module.setProgress(progressValue);
 
-        updateDashboardStats(moduleRepo.findAllWithLessonsAndQuiz(),
-                auth.getName(), model);
+        updateDashboardStats(
+                moduleDao.findAllWithLessonsAndQuiz(),
+                auth.getName(),
+                model
+        );
 
         model.addAttribute("currentView", VIEW_NAME);
         model.addAttribute("user", buildUser(auth));
@@ -96,21 +97,43 @@ public class LearningController {
         return APP_LAYOUT;
     }
 
+    // ================= MARK LESSON COMPLETE =================
+    @PostMapping("/lesson/complete")
+    public String completeLesson(@RequestParam Long moduleId,
+                                 @RequestParam Long lessonId,
+                                 Authentication auth) {
+
+        learningService.completeLesson(auth.getName(), moduleId);
+
+        return "redirect:/learning/module?moduleId=" + moduleId + "&lessonId=" + lessonId;
+    }
+
     // ================= QUIZ PAGE =================
     @GetMapping("/quiz")
     public String quiz(@RequestParam Long moduleId,
                        Authentication auth,
                        Model model) {
 
-        LearningModule module = moduleRepo.findByIdWithDetails(moduleId)
+        ModuleProgress progress = progressDao
+                .findByUserEmailAndModuleId(auth.getName(), moduleId)
+                .orElse(null);
+
+        if (progress == null || progress.getProgress() < 100) {
+            return "redirect:/learning/module?moduleId=" + moduleId;
+        }
+
+        LearningModule module = moduleDao.findByIdWithDetails(moduleId)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
         List<QuizQuestion> questions = module.getQuiz().stream()
                 .sorted(Comparator.comparing(QuizQuestion::getId))
                 .collect(Collectors.toList());
 
-        updateDashboardStats(moduleRepo.findAllWithLessonsAndQuiz(),
-                auth.getName(), model);
+        updateDashboardStats(
+                moduleDao.findAllWithLessonsAndQuiz(),
+                auth.getName(),
+                model
+        );
 
         model.addAttribute("module", module);
         model.addAttribute("quizQuestions", questions);
@@ -129,15 +152,14 @@ public class LearningController {
                              Authentication auth,
                              Model model) {
 
-        LearningModule module = moduleRepo.findByIdWithDetails(moduleId)
-                .orElseThrow();
+        LearningModule module = moduleDao.findByIdWithDetails(moduleId)
+                .orElseThrow(() -> new RuntimeException("Module not found"));
 
         List<QuizQuestion> questions = module.getQuiz().stream()
                 .sorted(Comparator.comparing(QuizQuestion::getId))
                 .collect(Collectors.toList());
 
         int correct = 0;
-
         for (QuizQuestion q : questions) {
             String ans = answers.get("question-" + q.getId());
             if (ans != null && Integer.parseInt(ans) == q.getCorrectAnswer()) {
@@ -153,8 +175,11 @@ public class LearningController {
             learningService.completeModule(auth.getName(), moduleId);
         }
 
-        updateDashboardStats(moduleRepo.findAllWithLessonsAndQuiz(),
-                auth.getName(), model);
+        updateDashboardStats(
+                moduleDao.findAllWithLessonsAndQuiz(),
+                auth.getName(),
+                model
+        );
 
         model.addAttribute("score", score);
         model.addAttribute("module", module);
@@ -177,7 +202,7 @@ public class LearningController {
 
         for (LearningModule m : modules) {
             ModuleProgress p =
-                    progressRepo.findByUserEmailAndModuleId(email, m.getId())
+                    progressDao.findByUserEmailAndModuleId(email, m.getId())
                             .orElse(null);
 
             int val = p != null ? p.getProgress() : 0;

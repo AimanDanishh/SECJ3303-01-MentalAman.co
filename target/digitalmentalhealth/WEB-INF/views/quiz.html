@@ -48,12 +48,12 @@
             <!-- OPTIONS -->
             <div class="space-y-3">
                 <label th:each="opt, optStat : ${q.options}"
-                       class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                    class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
 
                     <input type="radio"
-                           th:name="'question-' + ${q.id}"
-                           th:value="${optStat.index}"
-                           required>
+                        th:name="|question-${q.id}|"
+                        th:value="${optStat.index}"
+                        required>
 
                     <span th:text="${opt}"></span>
                 </label>

@@ -3,87 +3,75 @@ package com.secj3303.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.secj3303.dao.LearningModuleDao;
+import com.secj3303.dao.ModuleProgressDao;
 import com.secj3303.model.LearningModule;
 import com.secj3303.model.ModuleProgress;
-import com.secj3303.repository.LearningModuleRepository;
-import com.secj3303.repository.ModuleProgressRepository;
 
 @Service
 @Transactional
 public class LearningService {
 
-    private final ModuleProgressRepository progressRepo;
-    private final LearningModuleRepository moduleRepo;
+    private final ModuleProgressDao progressDao;
+    private final LearningModuleDao moduleDao;
 
-    public LearningService(ModuleProgressRepository progressRepo, 
-                           LearningModuleRepository moduleRepo) {
-        this.progressRepo = progressRepo;
-        this.moduleRepo = moduleRepo;
+    public LearningService(ModuleProgressDao progressDao,
+                           LearningModuleDao moduleDao) {
+        this.progressDao = progressDao;
+        this.moduleDao = moduleDao;
     }
 
-    // ========================================================================
-    // INCREMENT LESSON PROGRESS (Dynamic Calculation)
-    // ========================================================================
-    public void incrementProgress(String userEmail, Long moduleId) {
+    // ======================================================
+    // MARK LESSON AS COMPLETE (MODULE-LEVEL ONLY)
+    // ======================================================
+    public void completeLesson(String userEmail, Long moduleId) {
 
-        // 1. Fetch the module to know how many lessons it has
-        LearningModule module = moduleRepo.findById(moduleId)
+        LearningModule module = moduleDao.findById(moduleId)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
         int totalLessons = module.getLessons().size();
         if (totalLessons == 0) return;
 
-        // 2. Fetch or Create the progress record for this user
-        ModuleProgress progress = progressRepo
+        ModuleProgress progress = progressDao
                 .findByUserEmailAndModuleId(userEmail, moduleId)
                 .orElseGet(() -> {
                     ModuleProgress p = new ModuleProgress();
                     p.setUserEmail(userEmail);
-                    p.setModuleId(moduleId);
+                    p.setModule(module);      // ✅ FIXED
                     p.setProgress(0);
                     p.setQuizPassed(false);
                     return p;
                 });
 
-        // 3. Dynamic Calculation: 
-        // We calculate what percentage one single lesson represents
-        int currentProgress = progress.getProgress();
-        int increment = (int) Math.ceil(100.0 / totalLessons);
-        
-        int newProgress = Math.min(currentProgress + increment, 100);
-        
-        // Safety check: if it's the last lesson, make sure it hits exactly 100
-        // (This prevents rounding issues like ending at 99%)
-        progress.setProgress(newProgress);
+        // Prevent exceeding 100%
+        if (progress.getProgress() >= 100) return;
 
-        progressRepo.save(progress);
+        int increment = (int) Math.ceil(100.0 / totalLessons);
+        int newProgress = Math.min(progress.getProgress() + increment, 100);
+
+        progress.setProgress(newProgress);
+        progressDao.save(progress);
     }
 
-    // ========================================================================
-    // COMPLETE MODULE (Used when Quiz is Passed)
-    // ========================================================================
+    // ======================================================
+    // COMPLETE MODULE (QUIZ PASSED)
+    // ======================================================
     public void completeModule(String userEmail, Long moduleId) {
 
-        ModuleProgress progress = progressRepo
+        LearningModule module = moduleDao.findById(moduleId)
+                .orElseThrow(() -> new RuntimeException("Module not found"));
+
+        ModuleProgress progress = progressDao
                 .findByUserEmailAndModuleId(userEmail, moduleId)
                 .orElseGet(() -> {
                     ModuleProgress p = new ModuleProgress();
                     p.setUserEmail(userEmail);
-                    p.setModuleId(moduleId);
+                    p.setModule(module);      // ✅ FIXED
                     return p;
                 });
 
         progress.setProgress(100);
         progress.setQuizPassed(true);
-
-        progressRepo.save(progress);
-        
-        // Optional: Unlock next module logic
-        unlockNextModule(moduleId);
-    }
-    
-    private void unlockNextModule(Long currentModuleId) {
-        // You can implement logic here to find moduleId + 1 
-        // and set locked = false in the database
+        progressDao.save(progress);
     }
 }

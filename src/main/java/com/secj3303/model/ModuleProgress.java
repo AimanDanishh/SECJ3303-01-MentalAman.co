@@ -2,15 +2,22 @@ package com.secj3303.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "module_progress",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"user_email", "module_id"}))
+@Table(
+    name = "module_progress",
+    uniqueConstraints = @UniqueConstraint(
+        columnNames = {"user_email", "module_id"}
+    )
+)
 public class ModuleProgress {
 
     @Id
@@ -20,13 +27,15 @@ public class ModuleProgress {
     @Column(name = "user_email", nullable = false)
     private String userEmail;
 
-    @Column(name = "module_id", nullable = false)
-    private Long moduleId;
+    // ✅ PROPER ENTITY RELATIONSHIP
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "module_id", nullable = false)
+    private LearningModule module;
 
     private int progress;          // 0–100
     private boolean quizPassed;
 
-    // getters & setters
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
@@ -44,12 +53,12 @@ public class ModuleProgress {
         this.userEmail = userEmail;
     }
 
-    public Long getModuleId() {
-        return moduleId;
+    public LearningModule getModule() {
+        return module;
     }
 
-    public void setModuleId(Long moduleId) {
-        this.moduleId = moduleId;
+    public void setModule(LearningModule module) {
+        this.module = module;
     }
 
     public int getProgress() {
@@ -67,5 +76,4 @@ public class ModuleProgress {
     public void setQuizPassed(boolean quizPassed) {
         this.quizPassed = quizPassed;
     }
-
 }

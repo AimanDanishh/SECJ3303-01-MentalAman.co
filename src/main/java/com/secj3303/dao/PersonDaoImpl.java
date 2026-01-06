@@ -30,6 +30,20 @@ public class PersonDaoImpl implements PersonDao {
     }
 
     @Override
+    public Person findByEmail(String email) {
+        try {
+            return entityManager.createQuery(
+                "SELECT p FROM Person p WHERE p.email = :email",
+                Person.class
+            )
+            .setParameter("email", email)
+            .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
     public int insert(Person person) {
         entityManager.persist(person);
         return 1; // Hibernate manages ID automatically
