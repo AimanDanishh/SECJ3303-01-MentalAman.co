@@ -10,6 +10,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -27,16 +28,18 @@ public class LearningModule {
     private String category;
     private boolean locked;
 
+    // Use @OrderBy to ensure the Set is sorted by ID when loaded from DB
     @OneToMany(mappedBy = "module",
-           cascade = CascadeType.ALL,
-           fetch = FetchType.LAZY)
+               cascade = CascadeType.ALL,
+               fetch = FetchType.LAZY)
+    @OrderBy("id ASC") 
     private Set<Lesson> lessons = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "module",
-            cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY)
+                cascade = CascadeType.ALL,
+                fetch = FetchType.LAZY)
+    @OrderBy("id ASC")
     private Set<QuizQuestion> quiz = new LinkedHashSet<>();
-
 
     // =========================
     // TRANSIENT (UI-ONLY FIELDS)
@@ -46,28 +49,6 @@ public class LearningModule {
 
     @Transient
     private boolean quizPassed;
-
-    // =========================
-    // getters & setters
-    // =========================
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public void setProgress(int progress) {
-        this.progress = progress;
-    }
-
-    public boolean isQuizPassed() {
-        return quizPassed;
-    }
-
-    public void setQuizPassed(boolean quizPassed) {
-        this.quizPassed = quizPassed;
-    }
-
-    // existing getters & setters below
 
     public Long getId() {
         return id;
@@ -133,4 +114,22 @@ public class LearningModule {
         this.quiz = quiz;
     }
 
+    public int getProgress() {
+        return progress;
+    }
+
+    public void setProgress(int progress) {
+        this.progress = progress;
+    }
+
+    public boolean isQuizPassed() {
+        return quizPassed;
+    }
+
+    public void setQuizPassed(boolean quizPassed) {
+        this.quizPassed = quizPassed;
+    }
+
+    // ... getters & setters ...
+    
 }

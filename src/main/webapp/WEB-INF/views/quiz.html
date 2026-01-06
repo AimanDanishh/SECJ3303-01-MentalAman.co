@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<th:block th:fragment="content">
+
+<div class="max-w-4xl mx-auto p-8">
+
+    <!-- TITLE -->
+    <h1 class="text-3xl font-bold mb-8 text-center"
+        th:text="${module.title} + ' - Quiz'">
+    </h1>
+
+    <!-- ================= RESULT ================= -->
+    <div th:if="${score != null}" class="text-center">
+        <h2 class="text-4xl font-bold mb-4">Score: [[${score}]]%</h2>
+
+        <p class="mb-6"
+           th:text="${score >= 70 ? 'Congratulations! You passed 🎉' : 'You did not pass. Please try again 😔'}">
+        </p>
+
+        <a th:href="@{/learning}"
+           class="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-bold">
+            Back to Learning
+        </a>
+    </div>
+
+    <!-- ================= QUIZ FORM ================= -->
+    <form th:if="${score == null}"
+          th:action="@{/learning/quiz/submit}"
+          method="post"
+          class="space-y-10">
+
+        <input type="hidden" name="moduleId" th:value="${module.id}">
+
+        <!-- QUESTIONS -->
+        <div th:each="q, qStat : ${quizQuestions}"
+             class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+
+            <p class="font-bold text-lg mb-6">
+                [[${qStat.count}]]. [[${q.question}]]
+            </p>
+
+            <!-- OPTIONS -->
+            <div class="space-y-3">
+                <label th:each="opt, optStat : ${q.options}"
+                       class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+
+                    <input type="radio"
+                           th:name="'question-' + ${q.id}"
+                           th:value="${optStat.index}"
+                           required>
+
+                    <span th:text="${opt}"></span>
+                </label>
+            </div>
+
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit"
+                class="w-full py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition">
+            Submit Quiz
+        </button>
+    </form>
+
+</div>
+
+</th:block>
+
+</body>
+</html>

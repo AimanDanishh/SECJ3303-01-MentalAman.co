@@ -44,6 +44,7 @@ com\secj3303\model\Person.class
 com\secj3303\model\GamificationData$Badge.class
 com\secj3303\model\ModuleProgress.class
 com\secj3303\dao\PersonDaoImpl.class
+com\secj3303\model\UserGamificationStats.class
 com\secj3303\model\APIKey.class
 com\secj3303\model\GamificationData.class
 com\secj3303\repository\UserRepository.class
@@ -59,6 +60,7 @@ com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
 com\secj3303\repository\ModuleProgressRepository.class
+com\secj3303\dao\ModuleProgressDao.class
 com\secj3303\model\CarePlanModels$CarePlanActivity.class
 com\secj3303\controller\AICoachController.class
 com\secj3303\model\QuizQuestion.class
