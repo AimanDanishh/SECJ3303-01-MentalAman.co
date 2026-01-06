@@ -6,9 +6,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+<<<<<<< HEAD
 import com.secj3303.dao.GamificationDao;
 import com.secj3303.model.GamificationUserStats;
 import com.secj3303.model.User;
+=======
+import com.secj3303.dao.PersonDao;
+import com.secj3303.model.GamificationData;
+import com.secj3303.model.Person;
+>>>>>>> e1dbf7d97e0bd40c40d01fdd2cb5bd4081e90f83
 
 @Controller
 @RequestMapping("/gamification")
@@ -19,6 +25,12 @@ public class GamificationController {
 
     public GamificationController(GamificationDao gamificationDao) {
         this.gamificationDao = gamificationDao;
+    }
+
+    private final PersonDao personDao;
+
+    public GamificationController(PersonDao personDao) {
+        this.personDao = personDao;
     }
 
     @GetMapping
@@ -39,6 +51,7 @@ public class GamificationController {
                             .toLowerCase()
             );
 
+<<<<<<< HEAD
             String userEmail = authentication.getName();
             
             // =========================
@@ -84,6 +97,22 @@ public class GamificationController {
             System.out.println("--- GAMIFICATION PAGE REQUESTED ---");
             System.out.println("User Points: " + stats.getPoints());
             System.out.println("User Level: " + stats.getLevel());
+=======
+        // =========================
+        // Load logged-in PERSON from DB
+        // =========================
+        String email = authentication.getName();
+        Person person = personDao.findByEmail(email);
+
+        if (person == null) {
+            throw new RuntimeException("Person not found: " + email);
+        }
+
+        // =========================
+        // Gamification Data
+        // =========================
+        model.addAttribute("user", person); // keep attribute name for UI
+>>>>>>> e1dbf7d97e0bd40c40d01fdd2cb5bd4081e90f83
 
             return "app-layout";
             
