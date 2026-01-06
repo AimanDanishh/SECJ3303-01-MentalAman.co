@@ -1,7 +1,6 @@
 com\secj3303\model\Referral.class
 com\secj3303\controller\AdminController.class
 com\secj3303\controller\MentalHealthController.class
-com\secj3303\repository\LearningModuleRepository.class
 com\secj3303\controller\PersonController.class
 com\secj3303\controller\GamificationController.class
 com\secj3303\model\AssessmentModels$Question.class
@@ -9,6 +8,7 @@ com\secj3303\model\DashboardData$EventItem.class
 com\secj3303\model\PeerSupportModels.class
 com\secj3303\model\CarePlanModels$RiskAssessment.class
 com\secj3303\model\CarePlanModels$UserData.class
+com\secj3303\dao\LessonDao.class
 com\secj3303\controller\LearningController.class
 com\secj3303\model\LearningModule.class
 com\secj3303\model\Student.class
@@ -19,6 +19,7 @@ com\secj3303\model\Post.class
 com\secj3303\model\DashboardData$StatItem.class
 com\secj3303\dao\PostDaoImpl.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
+com\secj3303\dao\ModuleProgressDaoHibernate.class
 com\secj3303\model\AdminData.class
 com\secj3303\model\AssessmentModels.class
 com\secj3303\controller\BmiController.class
@@ -30,6 +31,7 @@ com\secj3303\model\MoodEntry.class
 com\secj3303\dao\ReplyDao.class
 com\secj3303\service\AnalyticsService.class
 com\secj3303\controller\PeerSupportController.class
+com\secj3303\dao\LessonDaoHibernate.class
 com\secj3303\model\TimeSlot.class
 com\secj3303\controller\SelfAssessmentController.class
 com\secj3303\config\LearningContentInitializer.class
@@ -37,6 +39,7 @@ com\secj3303\controller\CarePlanController$UserDTO.class
 com\secj3303\dao\PersonDao.class
 com\secj3303\model\GamificationData$Achievement.class
 com\secj3303\model\User.class
+com\secj3303\dao\LearningModuleDaoHibernate.class
 com\secj3303\model\AdminData$ContentModule.class
 com\secj3303\model\Category.class
 com\secj3303\dao\ReportDaoImpl.class
@@ -59,7 +62,7 @@ com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
 com\secj3303\model\CounsellingSession$1.class
-com\secj3303\repository\ModuleProgressRepository.class
+com\secj3303\dao\ModuleProgressDao.class
 com\secj3303\model\CarePlanModels$CarePlanActivity.class
 com\secj3303\controller\AICoachController.class
 com\secj3303\model\QuizQuestion.class
@@ -95,4 +98,5 @@ com\secj3303\dao\PostDao.class
 com\secj3303\dao\CounsellingSessionDao.class
 com\secj3303\model\ContentManagementModels.class
 com\secj3303\model\AssessmentModels$StudentData.class
+com\secj3303\dao\LearningModuleDao.class
 com\secj3303\model\AssessmentModels$MoodEntry.class

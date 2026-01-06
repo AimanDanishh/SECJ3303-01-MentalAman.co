@@ -7,131 +7,236 @@ import java.util.Set;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.secj3303.dao.LearningModuleDao;
 import com.secj3303.model.LearningModule;
 import com.secj3303.model.Lesson;
 import com.secj3303.model.QuizQuestion;
-import com.secj3303.repository.LearningModuleRepository;
 
 @Component
-public class LearningDataInitializer implements ApplicationListener<ContextRefreshedEvent> {
+@Transactional
+public class LearningDataInitializer
+        implements ApplicationListener<ContextRefreshedEvent> {
 
     private boolean initialized = false;
-    private final LearningModuleRepository moduleRepo;
+    private final LearningModuleDao moduleDao;
 
-    public LearningDataInitializer(LearningModuleRepository moduleRepo) {
-        this.moduleRepo = moduleRepo;
+    public LearningDataInitializer(LearningModuleDao moduleDao) {
+        this.moduleDao = moduleDao;
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        if (initialized) return;
-        if (moduleRepo.count() > 0) return;
 
+        // ✅ DAO-safe "count" check
+        if (initialized || !moduleDao.findAllWithLessonsAndQuiz().isEmpty()) {
+            return;
+        }
         initialized = true;
 
         // =================================================
-        // MODULE 1
+        // MODULE 1: STRESS & ANXIETY
         // =================================================
         LearningModule m1 = new LearningModule();
         m1.setTitle("Understanding Stress and Anxiety");
-        m1.setDescription("Learn about common mental health challenges faced by students");
+        m1.setDescription("Understand how stress and anxiety affect the mind and body");
         m1.setDuration("45 min");
         m1.setCategory("Fundamentals");
         m1.setLocked(false);
 
-        // Using LinkedHashSet to ensure order is preserved during the save process
         Set<Lesson> lessons1 = new LinkedHashSet<>();
 
-        Lesson l11 = new Lesson();
-        l11.setTitle("What is Stress?");
-        l11.setDuration("8 min");
-        l11.setType("video");
-        l11.setUrl("https://www.youtube.com/embed/dQw4w9WgXcQ");
-        l11.setModule(m1);
-        l11.setCompleted(false);
-        lessons1.add(l11);
+        lessons1.add(createLesson(
+                "What Is Stress?",
+                "7 min",
+                "video",
+                "https://www.youtube.com/embed/hnpQrMqDoqE",
+                m1
+        ));
 
-        Lesson l12 = new Lesson();
-        l12.setTitle("Types of Anxiety Disorders");
-        l12.setDuration("10 min");
-        l12.setType("infographic");
-        l12.setUrl("https://via.placeholder.com/800x1200");
-        l12.setModule(m1);
-        l12.setCompleted(false);
-        lessons1.add(l12);
+        lessons1.add(createLesson(
+                "What Is Anxiety?",
+                "9 min",
+                "video",
+                "https://www.youtube.com/embed/z-IR48Mb3W0",
+                m1
+        ));
 
-        Lesson l13 = new Lesson();
-        l13.setTitle("Stress vs Anxiety");
-        l13.setDuration("12 min");
-        l13.setType("video");
-        l13.setUrl("https://www.youtube.com/embed/dQw4w9WgXcQ");
-        l13.setModule(m1);
-        l13.setCompleted(false);
-        lessons1.add(l13);
+        lessons1.add(createLesson(
+                "Stress vs Anxiety Explained",
+                "10 min",
+                "video",
+                "https://www.youtube.com/embed/YsWz4jZ7M1Q",
+                m1
+        ));
 
         m1.setLessons(lessons1);
 
         Set<QuizQuestion> quiz1 = new LinkedHashSet<>();
 
-        QuizQuestion q11 = new QuizQuestion();
-        q11.setQuestion("What is the primary difference between stress and anxiety?");
-        // Options stay as List.of because QuizQuestion model uses List for @ElementCollection
-        q11.setOptions(List.of(
-                "Stress is short-term, anxiety is long-term",
-                "Stress has a specific trigger, anxiety may not",
-                "They are the same thing"
+        quiz1.add(createQuiz(
+                "Which statement best describes anxiety?",
+                List.of(
+                        "A short-term response to pressure",
+                        "A constant feeling of worry without a clear trigger",
+                        "A physical illness only"
+                ),
+                1,
+                m1
         ));
-        q11.setCorrectAnswer(1);
-        q11.setModule(m1);
-        quiz1.add(q11);
+
+        quiz1.add(createQuiz(
+                "Stress usually occurs when:",
+                List.of(
+                        "There is no identifiable cause",
+                        "A specific demand or pressure is present",
+                        "You are always relaxed"
+                ),
+                1,
+                m1
+        ));
 
         m1.setQuiz(quiz1);
-        moduleRepo.save(m1);
+        moduleDao.save(m1);
 
         // =================================================
-        // MODULE 2
+        // MODULE 2: MINDFULNESS & MEDITATION
         // =================================================
         LearningModule m2 = new LearningModule();
         m2.setTitle("Mindfulness and Meditation Basics");
-        m2.setDescription("Develop practical mindfulness skills for daily life");
+        m2.setDescription("Learn how mindfulness improves focus and emotional balance");
         m2.setDuration("60 min");
         m2.setCategory("Practice");
         m2.setLocked(false);
 
         Set<Lesson> lessons2 = new LinkedHashSet<>();
 
-        Lesson l21 = new Lesson();
-        l21.setTitle("Introduction to Mindfulness");
-        l21.setDuration("10 min");
-        l21.setType("video");
-        l21.setUrl("https://www.youtube.com/embed/dQw4w9WgXcQ");
-        l21.setModule(m2);
-        lessons2.add(l21);
+        lessons2.add(createLesson(
+                "Introduction to Mindfulness",
+                "8 min",
+                "video",
+                "https://www.youtube.com/embed/inpok4MKVLM",
+                m2
+        ));
+
+        lessons2.add(createLesson(
+                "Benefits of Mindfulness",
+                "6 min",
+                "video",
+                "https://www.youtube.com/embed/w6T02g5hnT4",
+                m2
+        ));
+
+        lessons2.add(createLesson(
+                "Guided Breathing Exercise",
+                "10 min",
+                "video",
+                "https://www.youtube.com/embed/SEfs5TJZ6Nk",
+                m2
+        ));
 
         m2.setLessons(lessons2);
 
         Set<QuizQuestion> quiz2 = new LinkedHashSet<>();
-        QuizQuestion q21 = new QuizQuestion();
-        q21.setQuestion("What is the goal of mindfulness?");
-        q21.setOptions(List.of("Eliminate thoughts", "Be present in the moment", "Sleep faster"));
-        q21.setCorrectAnswer(1);
-        q21.setModule(m2);
-        quiz2.add(q21);
+
+        quiz2.add(createQuiz(
+                "What is the main goal of mindfulness?",
+                List.of(
+                        "To stop thinking completely",
+                        "To stay present and aware",
+                        "To avoid emotions"
+                ),
+                1,
+                m2
+        ));
+
+        quiz2.add(createQuiz(
+                "Mindfulness practice can help reduce:",
+                List.of(
+                        "Awareness",
+                        "Stress and emotional reactivity",
+                        "Memory"
+                ),
+                1,
+                m2
+        ));
 
         m2.setQuiz(quiz2);
-        moduleRepo.save(m2);
+        moduleDao.save(m2);
 
         // =================================================
-        // MODULES 3–6 (Empty Content)
+        // SIMPLE MODULES
         // =================================================
-        moduleRepo.save(createSimpleModule("Building Resilience", "Strengthen your ability...", "50 min", "Skills", false));
-        moduleRepo.save(createSimpleModule("Depression Awareness", "Understanding depression...", "55 min", "Awareness", false));
-        moduleRepo.save(createSimpleModule("Social Connection & Support", "Building healthy relationships", "40 min", "Social", false));
-        moduleRepo.save(createSimpleModule("Advanced Coping Strategies", "Advanced techniques...", "70 min", "Advanced", true));
+        moduleDao.save(createSimpleModule(
+                "Building Resilience",
+                "Learn how to adapt and recover from challenges",
+                "50 min",
+                "Skills",
+                false
+        ));
+
+        moduleDao.save(createSimpleModule(
+                "Depression Awareness",
+                "Recognize symptoms and understand treatment options",
+                "55 min",
+                "Awareness",
+                false
+        ));
+
+        moduleDao.save(createSimpleModule(
+                "Social Connection & Support",
+                "Build healthy relationships and support systems",
+                "40 min",
+                "Social",
+                false
+        ));
+
+        moduleDao.save(createSimpleModule(
+                "Advanced Coping Strategies",
+                "Advanced techniques for long-term wellbeing",
+                "70 min",
+                "Advanced",
+                true
+        ));
     }
 
-    private LearningModule createSimpleModule(String title, String description, String duration, String category, boolean locked) {
+    // =================================================
+    // HELPER METHODS (UNCHANGED)
+    // =================================================
+    private Lesson createLesson(String title, String duration,
+                                String type, String url,
+                                LearningModule module) {
+
+        Lesson lesson = new Lesson();
+        lesson.setTitle(title);
+        lesson.setDuration(duration);
+        lesson.setType(type);
+        lesson.setUrl(url);
+        lesson.setModule(module);
+        lesson.setCompleted(false);
+        return lesson;
+    }
+
+    private QuizQuestion createQuiz(String question,
+                                    List<String> options,
+                                    int correctAnswer,
+                                    LearningModule module) {
+
+        QuizQuestion quiz = new QuizQuestion();
+        quiz.setQuestion(question);
+        quiz.setOptions(options);
+        quiz.setCorrectAnswer(correctAnswer);
+        quiz.setModule(module);
+        return quiz;
+    }
+
+    private LearningModule createSimpleModule(String title,
+                                              String description,
+                                              String duration,
+                                              String category,
+                                              boolean locked) {
+
         LearningModule m = new LearningModule();
         m.setTitle(title);
         m.setDescription(description);

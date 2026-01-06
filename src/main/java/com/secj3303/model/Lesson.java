@@ -1,12 +1,14 @@
 package com.secj3303.model;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "lesson")
@@ -21,14 +23,15 @@ public class Lesson {
     private String type;
     private String url;
 
-    @ManyToOne
-    @JoinColumn(name = "module_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "module_id", nullable = false)
     private LearningModule module;
 
-    //@Transient
+    // ✅ NOT persisted (user-specific state)
+    @Transient
     private boolean completed;
 
-    // getters & setters
+    // ================= GETTERS & SETTERS =================
 
     public Long getId() {
         return id;
@@ -85,5 +88,4 @@ public class Lesson {
     public void setCompleted(boolean completed) {
         this.completed = completed;
     }
-
 }
