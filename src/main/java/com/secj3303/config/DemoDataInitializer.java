@@ -4,53 +4,54 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.secj3303.model.User;
-import com.secj3303.repository.UserRepository;
+import com.secj3303.dao.PersonDao;
+import com.secj3303.model.Person;
 
 @Component
 public class DemoDataInitializer {
 
-    private final UserRepository userRepository;
+    private final PersonDao personDao;
 
-    public DemoDataInitializer(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public DemoDataInitializer(PersonDao personDao) {
+        this.personDao = personDao;
     }
 
     @EventListener(ContextRefreshedEvent.class)
     public void init() {
 
-        createUserIfNotExists(
+        createPersonIfNotExists(
             "student@demo.com", "Demo Student", "STUDENT");
 
-        createUserIfNotExists(
+        createPersonIfNotExists(
             "faculty@demo.com", "Demo Faculty", "FACULTY");
 
-        createUserIfNotExists(
+        createPersonIfNotExists(
             "counsellor@demo.com", "Demo Counsellor", "COUNSELLOR");
 
-        createUserIfNotExists(
+        createPersonIfNotExists(
             "admin@demo.com", "System Admin", "ADMINISTRATOR");
     }
 
-    private void createUserIfNotExists(String email, String name, String role) {
+    private void createPersonIfNotExists(String email, String name, String role) {
 
-        if (userRepository.existsById(email)) {
+        // Check by email
+        Person existing = personDao.findByEmail(email);
+        if (existing != null) {
             return;
         }
 
-        User user = new User();
-        user.setEmail(email);
-        user.setName(name);
-        user.setRole(role);
-        user.setPassword("{noop}demo123"); // IMPORTANT
-        user.setEnabled(true);
+        Person person = new Person();
+        person.setEmail(email);
+        person.setName(name);
+        person.setRole(role);
+        person.setPassword("{noop}demo123"); // IMPORTANT for Spring Security
+        person.setEnabled(true);
 
-        // default preferences
-        user.setEmailNotifications(true);
-        user.setPushNotifications(true);
-        user.setWeeklyReport(true);
-        user.setAnonymousMode(false);
+        // Optional profile defaults
+        person.setYob(2000);
+        person.setWeight(65.0);
+        person.setHeight(1.70);
 
-        userRepository.save(user);
+        personDao.insert(person);
     }
 }

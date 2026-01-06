@@ -16,10 +16,31 @@ import javax.persistence.Table;
 @Table(name = "person")
 public class Person {
 
+    // =====================
+    // PRIMARY KEY
+    // =====================
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // =====================
+    // AUTHENTICATION FIELDS
+    // =====================
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
+    private String role; // ADMIN, MEMBER
+
+    @Column(nullable = false)
+    private boolean enabled = true;
+
+    // =====================
+    // PROFILE / BMI FIELDS
+    // =====================
     @Column(nullable = false)
     private String name;
 
@@ -31,11 +52,15 @@ public class Person {
     private String category;
 
     // =====================
-    // Constructors
+    // CONSTRUCTORS
     // =====================
     public Person() {}
 
-    public Person(String name, Integer yob, Double weight, Double height) {
+    public Person(String email, String password, String role,
+                  String name, Integer yob, Double weight, Double height) {
+        this.email = email;
+        this.password = password;
+        this.role = role;
         this.name = name;
         this.yob = yob;
         this.weight = weight;
@@ -44,7 +69,7 @@ public class Person {
     }
 
     // =====================
-    // JPA Lifecycle Hooks
+    // JPA LIFECYCLE
     // =====================
     @PrePersist
     @PreUpdate
@@ -53,16 +78,14 @@ public class Person {
     }
 
     // =====================
-    // Business Logic
+    // BUSINESS LOGIC
     // =====================
-    public void calculateAgeAndBMI() {
+    private void calculateAgeAndBMI() {
 
-        // Calculate age
         if (yob != null) {
             this.age = Year.now().getValue() - yob;
         }
 
-        // Calculate BMI
         if (height != null && height > 0 && weight != null) {
             double rawBmi = weight / (height * height);
             DecimalFormat df = new DecimalFormat("#.#");
@@ -86,14 +109,42 @@ public class Person {
     }
 
     // =====================
-    // Getters & Setters
+    // GETTERS & SETTERS
     // =====================
     public Integer getId() {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getName() {
@@ -115,11 +166,6 @@ public class Person {
 
     public Integer getAge() {
         return age;
-    }
-
-    // Hibernate manages this automatically
-    private void setAge(Integer age) {
-        this.age = age;
     }
 
     public Double getWeight() {
@@ -144,26 +190,24 @@ public class Person {
         return bmi;
     }
 
-    // Hibernate sets this via lifecycle hook
-    private void setBmi(Double bmi) {
-        this.bmi = bmi;
-    }
-
     public String getCategory() {
         return category;
     }
 
-    private void setCategory(String category) {
-        this.category = category;
-    }
-
     // =====================
-    // Debugging
+    // DEBUG
     // =====================
     @Override
     public String toString() {
-        return "Person [id=" + id + ", name=" + name + ", yob=" + yob +
-               ", age=" + age + ", weight=" + weight + ", height=" + height +
-               ", bmi=" + bmi + ", category=" + category + "]";
+        return "Person [id=" + id +
+               ", email=" + email +
+               ", role=" + role +
+               ", name=" + name +
+               ", yob=" + yob +
+               ", age=" + age +
+               ", weight=" + weight +
+               ", height=" + height +
+               ", bmi=" + bmi +
+               ", category=" + category + "]";
     }
 }
