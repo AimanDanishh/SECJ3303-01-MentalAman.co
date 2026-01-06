@@ -233,7 +233,7 @@
                         <!-- Action Buttons based on status and role -->
                         <div class="flex flex-col gap-3">
                         <!-- Student: Confirm Attendance for scheduled sessions -->
-                        <div th:if="${userRole == 'student' and selectedSession.status == 'scheduled' and !selectedSession.studentConfirmed}">
+                        <div th:if="${userRole == 'student' and selectedSession.status.name == 'SCHEDULED' and !selectedSession.studentConfirmed}">
                             <form th:action="@{'/counselling/confirm/' + ${selectedSession.id}}" method="post">
                             <button type="submit"
                                     class="w-full py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
@@ -384,7 +384,7 @@
                                 <div th:if="${availableTimeSlots == null or availableTimeSlots.isEmpty()}" 
                                     class="p-6 text-center border-2 border-dashed border-slate-300 rounded-lg">
                                     <i data-lucide="calendar-x" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
-                                    <p class="text-slate-600">No available time slots found for the selected counsellor.</p>
+                                    <p class="text-slate-600">No available time slots found at this moments.</p>
                                     <p class="text-sm text-slate-500 mt-1">Please try another counsellor or check back later.</p>
                                 </div>
                             </div>
@@ -625,7 +625,7 @@
                                     </label>
                                     <div class="p-6 text-center border-2 border-dashed border-slate-300 rounded-lg">
                                         <i data-lucide="calendar-x" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
-                                        <p class="text-slate-600">No available time slots at thid moments.</p>
+                                        <p class="text-slate-600">No available time slots at this moments.</p>
                                         <p class="text-sm text-slate-500 mt-1">Please select another counsellor or check back later.</p>
                                     </div>
                                 </div>

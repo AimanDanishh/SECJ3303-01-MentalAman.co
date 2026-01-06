@@ -35,9 +35,9 @@ public class CounsellingSessionController {
     // ---------------------------
     @GetMapping
     public String sessionDashboard(Model model, Authentication authentication,
-                                   @RequestParam(required = false) Integer detailId,
-                                   @RequestParam(required = false) String modal,
-                                   @RequestParam(required = false) Integer counsellorId) {
+                                @RequestParam(required = false) Integer detailId,
+                                @RequestParam(required = false) String modal,
+                                @RequestParam(required = false) String counsellorId) {
         
         // Build user from authentication
         User user = buildUser(authentication);
@@ -52,14 +52,26 @@ public class CounsellingSessionController {
         List<Counsellor> counsellors = sessionService.getAllCounsellors();
         model.addAttribute("counsellorList", counsellors);
 
-         // Get selected counsellor
+        // Get selected counsellor - check if we're in reschedule mode first
         Counsellor selectedCounsellor = null;
-        if (counsellorId != null) {
+        
+        if ("reschedule".equals(modal) && detailId != null) {
+            // For reschedule modal, get counsellor from the selected session
+            Optional<CounsellingSession> sessionOpt = sessions.stream()
+                    .filter(s -> s.getId().equals(detailId))
+                    .findFirst();
+            
+            if (sessionOpt.isPresent()) {
+                selectedCounsellor = sessionOpt.get().getCounsellor();
+                model.addAttribute("selectedCounsellorId", selectedCounsellor.getId());
+            }
+        } else if (counsellorId != null) {
+            // For booking modal or when counsellorId is explicitly provided
             selectedCounsellor = sessionService.getCounsellorById(counsellorId);
             model.addAttribute("selectedCounsellorId", counsellorId);
         }
         
-        // Generate available time slots ONLY if counsellor is selected
+        // Generate available time slots
         List<TimeSlot> slots = Collections.emptyList();
         if (selectedCounsellor != null) {
             slots = sessionService.generateAvailableSlotsForCounsellor(selectedCounsellor);
@@ -175,7 +187,7 @@ public class CounsellingSessionController {
     // Book session
     // ---------------------------
     @PostMapping("/book")
-    public String bookSession(@RequestParam Integer counsellorId,
+    public String bookSession(@RequestParam String counsellorId,
                             @RequestParam String selectedSlot,  // ← CHANGED THIS
                             @RequestParam String bookingReason,
                             @RequestParam String sessionType,
@@ -272,7 +284,7 @@ public class CounsellingSessionController {
     }
 
     private void handleModalDisplay(Model model, Integer detailId, String modal, 
-                                   List<CounsellingSession> sessions) {
+                                List<CounsellingSession> sessions) {
         if (detailId != null) {
             Optional<CounsellingSession> sessionOpt = sessions.stream()
                     .filter(s -> s.getId().equals(detailId))
@@ -282,12 +294,14 @@ public class CounsellingSessionController {
                 CounsellingSession session = sessionOpt.get();
                 model.addAttribute("selectedSession", session);
                 
-                if (modal == null || "details".equals(modal)) {
-                    model.addAttribute("showDetailsModal", true);
+                // For reschedule modal, we might need to add the counsellor to the model
+                if ("reschedule".equals(modal)) {
+                    model.addAttribute("showRescheduleModal", true);
+                    model.addAttribute("selectedCounsellorId", session.getCounsellor().getId());
                 } else if ("cancel".equals(modal)) {
                     model.addAttribute("showCancelModal", true);
-                } else if ("reschedule".equals(modal)) {
-                    model.addAttribute("showRescheduleModal", true);
+                } else if ("details".equals(modal) || modal == null) {
+                    model.addAttribute("showDetailsModal", true);
                 } else if ("report".equals(modal)) {
                     model.addAttribute("showReportModal", true);
                 } else if ("upload".equals(modal)) {

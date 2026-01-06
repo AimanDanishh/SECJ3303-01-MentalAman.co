@@ -7,6 +7,6 @@ public interface CounsellorDao {
     void save(Counsellor counsellor);
     void update(Counsellor counsellor);
     void delete(Counsellor counsellor);
-    Counsellor findById(Integer id);
+    Counsellor findById(String id);
     List<Counsellor> findAll();
 }

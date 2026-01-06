@@ -32,7 +32,7 @@ public class CounsellorDaoHibernate implements CounsellorDao {
     }
 
     @Override
-    public Counsellor findById(Integer id) {
+    public Counsellor findById(String id) {
         return entityManager.find(Counsellor.class, id);
     }
 

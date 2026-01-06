@@ -54,7 +54,7 @@ public class CounsellingSession implements Serializable {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "counsellor_id", nullable = false)
+    @JoinColumn(name = "counsellor_id", referencedColumnName = "counsellor_id", nullable = false)
     private Counsellor counsellor;
 
     @Column(nullable = false)

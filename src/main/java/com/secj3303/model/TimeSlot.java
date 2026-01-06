@@ -48,14 +48,14 @@ public class TimeSlot {
 
     public static List<TimeSlot> generateAvailableSlotsForCounsellor(
             List<CounsellingSession> allSessions, 
-            Integer counsellorId) {
+            String counsellorId) {
         
         return generateAvailableSlots(allSessions, counsellorId, 7);
     }
 
     public static List<TimeSlot> generateAvailableSlots(
             List<CounsellingSession> allSessions,
-            Integer counsellorId,
+            String counsellorId,
             int daysAhead) {
         
         List<TimeSlot> slots = new ArrayList<>();

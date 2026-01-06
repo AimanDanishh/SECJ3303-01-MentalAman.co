@@ -70,7 +70,7 @@ public class CounsellingSessionService {
     }
 
     @Transactional(readOnly = true)
-    public Counsellor getCounsellorById(Integer id) {
+    public Counsellor getCounsellorById(String id) {
         return counsellorDao.findById(id);
     }
 
@@ -84,7 +84,7 @@ public class CounsellingSessionService {
     }
 
     @Transactional(readOnly = true)
-    public List<TimeSlot> generateAvailableSlotsForCounsellorId(Integer counsellorId) {
+    public List<TimeSlot> generateAvailableSlotsForCounsellorId(String counsellorId) {
         List<CounsellingSession> allSessions = getAllSessions();
         return TimeSlot.generateAvailableSlotsForCounsellor(allSessions, counsellorId);
     }
@@ -93,7 +93,7 @@ public class CounsellingSessionService {
     // Custom queries needed for service methods
     // ---------------------------
     @Transactional(readOnly = true)
-    public List<CounsellingSession> findByCounsellorAndDate(Integer counsellorId, LocalDate date) {
+    public List<CounsellingSession> findByCounsellorAndDate(String counsellorId, LocalDate date) {
         Counsellor counsellor = counsellorDao.findById(counsellorId);
         if (counsellor == null) {
             return List.of();
@@ -132,7 +132,7 @@ public class CounsellingSessionService {
     // Session operations
     // ---------------------------
     @Transactional
-    public void bookSession(Integer counsellorId, LocalDate date, LocalTime start, 
+    public void bookSession(String counsellorId, LocalDate date, LocalTime start, 
                         String sessionType, String sessionLocation, String notes) {
         
         Counsellor counsellor = counsellorDao.findById(counsellorId);
@@ -210,7 +210,7 @@ public class CounsellingSessionService {
         }
         
         // Check for overlapping at new time
-        Integer counsellorId = session.getCounsellor().getId();
+        String counsellorId = session.getCounsellor().getId();
         if (!isTimeSlotAvailable(counsellorId, newDate, newTime, sessionId)) {
             throw new IllegalArgumentException("New time slot is not available");
         }
@@ -243,12 +243,12 @@ public class CounsellingSessionService {
     }
     
     @Transactional(readOnly = true)
-    public boolean isTimeSlotAvailable(Integer counsellorId, LocalDate date, LocalTime startTime) {
+    public boolean isTimeSlotAvailable(String counsellorId, LocalDate date, LocalTime startTime) {
         return isTimeSlotAvailable(counsellorId, date, startTime, null);
     }
     
     @Transactional(readOnly = true)
-    public boolean isTimeSlotAvailable(Integer counsellorId, LocalDate date, LocalTime startTime, Integer excludeSessionId) {
+    public boolean isTimeSlotAvailable(String counsellorId, LocalDate date, LocalTime startTime, Integer excludeSessionId) {
         List<CounsellingSession> sessions = findByCounsellorAndDate(counsellorId, date);
         LocalTime endTime = startTime.plusHours(1);
         
