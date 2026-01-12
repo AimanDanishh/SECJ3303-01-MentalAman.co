@@ -4,6 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -18,37 +19,79 @@ import javax.persistence.Transient;
 @Table(name = "learning_module")
 public class LearningModule {
 
+    // =========================
+    // PERSISTENT FIELDS
+    // =========================
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
-    private String description;
-    private String duration;
-    private String category;
-    private boolean locked;
 
-    // Use @OrderBy to ensure the Set is sorted by ID when loaded from DB
-    @OneToMany(mappedBy = "module",
-               cascade = CascadeType.ALL,
-               fetch = FetchType.LAZY)
-    @OrderBy("id ASC") 
+    @Column(nullable = false, length = 1000)
+    private String description;
+
+    private String duration;   // e.g. "45 minutes"
+
+    @Column(nullable = false)
+    private String category;
+
+    /**
+     * locked = true  → Draft (hidden from students)
+     * locked = false → Published
+     */
+    private boolean locked = true;
+
+    // =========================
+    // RELATIONSHIPS
+    // =========================
+
+    /**
+     * Lessons contain the actual learning content.
+     * Ordered by ID to preserve sequence.
+     */
+    @OneToMany(
+        mappedBy = "module",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    @OrderBy("id ASC")
     private Set<Lesson> lessons = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "module",
-                cascade = CascadeType.ALL,
-                fetch = FetchType.LAZY)
+    /**
+     * Quiz questions for the module.
+     */
+    @OneToMany(
+        mappedBy = "module",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
     @OrderBy("id ASC")
     private Set<QuizQuestion> quiz = new LinkedHashSet<>();
 
     // =========================
-    // TRANSIENT (UI-ONLY FIELDS)
+    // TRANSIENT (UI-ONLY)
     // =========================
+
+    /**
+     * Calculated per user from ModuleProgress
+     */
     @Transient
     private int progress;
 
+    /**
+     * Used by UI to display quiz completion state
+     */
     @Transient
     private boolean quizPassed;
+
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
 
     public Long getId() {
         return id;
@@ -130,6 +173,30 @@ public class LearningModule {
         this.quizPassed = quizPassed;
     }
 
-    // ... getters & setters ...
-    
+    // =========================
+    // OPTIONAL (GOOD PRACTICE)
+    // =========================
+
+    /**
+     * Helper methods for bidirectional consistency
+     */
+    public void addLesson(Lesson lesson) {
+        lessons.add(lesson);
+        lesson.setModule(this);
+    }
+
+    public void removeLesson(Lesson lesson) {
+        lessons.remove(lesson);
+        lesson.setModule(null);
+    }
+
+    public void addQuizQuestion(QuizQuestion question) {
+        quiz.add(question);
+        question.setModule(this);
+    }
+
+    public void removeQuizQuestion(QuizQuestion question) {
+        quiz.remove(question);
+        question.setModule(null);
+    }
 }

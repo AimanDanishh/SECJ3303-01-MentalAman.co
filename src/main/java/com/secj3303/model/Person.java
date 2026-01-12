@@ -51,6 +51,9 @@ public class Person {
     private Double bmi;
     private String category;
 
+    @Column(unique = true, length = 20)
+    private String matrixId;
+
     // =====================
     // CONSTRUCTORS
     // =====================
@@ -192,6 +195,14 @@ public class Person {
 
     public String getCategory() {
         return category;
+    }
+
+    public String getMatrixId() {
+        return matrixId;
+    }
+
+    public void setMatrixId(String matrixId) {
+        this.matrixId = matrixId;
     }
 
     // =====================

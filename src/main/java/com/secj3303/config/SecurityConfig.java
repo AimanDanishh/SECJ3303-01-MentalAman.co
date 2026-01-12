@@ -4,6 +4,7 @@ import java.util.Collections;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -15,6 +16,7 @@ import com.secj3303.model.Person;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @SuppressWarnings("deprecation")
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -65,8 +67,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
             .authorizeRequests()
                 .antMatchers("/login", "/resources/**", "/css/**", "/js/**").permitAll()
-                .antMatchers("/admin/**").hasRole("ADMIN")
-                .antMatchers("/member/**").hasRole("MEMBER")
+                .antMatchers("/admin/**").hasRole("ADMINISTRATOR")
+                .requestMatchers("/learning/manage/**").hasRole("COUNSELLOR, ADMINISTRATOR")
+                .requestMatchers("/learning/**").hasAnyRole("STUDENT", "FACULTY", "COUNSELLOR")
                 .anyRequest().authenticated()
             .and()
 

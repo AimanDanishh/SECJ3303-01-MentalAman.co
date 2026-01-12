@@ -55,9 +55,10 @@
                 <span>Dashboard</span>
             </a>
 
-            <!-- Learning Modules (STUDENT, FACULTY) -->
+            <!-- Learning Modules (STUDENT, FACULTY, COUNSELLOR) -->
             <a th:if="${#authorization.expression('hasRole(''STUDENT'')') 
-                     or #authorization.expression('hasRole(''FACULTY'')')}"
+                     or #authorization.expression('hasRole(''FACULTY'')')
+                     or #authorization.expression('hasRole(''COUNSELLOR'')')}"
                th:href="@{/learning}"
                th:classappend="${currentView == 'learning'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                class="flex items-center gap-3 px-4 py-3 rounded-lg">
@@ -96,7 +97,10 @@
             </a>
 
             <!-- Self-Assessment (All Roles) -->
-            <a th:href="@{/assessment}"
+            <a th:if="${#authorization.expression('hasRole(''STUDENT'')') 
+                     or #authorization.expression('hasRole(''FACULTY'')')
+                     or #authorization.expression('hasRole(''COUNSELLOR'')')}"
+                th:href="@{/assessment}"
                 th:classappend="${currentView == 'assessment'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
             >
@@ -143,15 +147,6 @@
                 <span>Forum Management</span>
             </a>
             
-            <!-- API Settings (Admin Only) -->
-            <a th:if="${#authorization.expression('hasRole(''ADMINISTRATOR'')')}" th:href="@{/api}"
-                th:classappend="${currentView == 'api'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-            >
-                <script>document.write('<i data-lucide="settings" class="w-5 h-5"></i>');</script>
-                <span>API Settings</span>
-            </a>
-            
             <!-- At-Risk Referral (Faculty Only) -->
             <a th:if="${#authorization.expression('hasRole(''FACULTY'')')}" th:href="@{/referral}"
                 th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
@@ -159,15 +154,6 @@
             >
                 <script>document.write('<i data-lucide="alert-triangle" class="w-5 h-5"></i>');</script>
                 <span>At-Risk Referral</span>
-            </a>
-
-            <!-- Admin Panel (ADMIN ONLY) -->
-            <a th:if="${#authorization.expression('hasRole(''ADMINISTRATOR'')')}"
-               th:href="@{/admin}"
-               th:classappend="${currentView == 'admin'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg">
-                <script>document.write('<i data-lucide="bar-chart-3" class="w-5 h-5"></i>');</script>
-                <span>Admin Panel</span>
             </a>
 
         </nav>
