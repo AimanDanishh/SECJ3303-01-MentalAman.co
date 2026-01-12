@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<th:block th:fragment="content">
+
+<div class="p-8 bg-slate-50 min-h-screen">
+
+    <!-- ================= QUIZ MODE ================= -->
+    <th:block th:if="${quizQuestions != null}">
+        <div th:replace="quiz :: content"></div>
+    </th:block>
+
+    <!-- ================= NORMAL MODE ================= -->
+    <th:block th:if="${quizQuestions == null}">
+
+        <!-- HEADER -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">Learning Modules</h1>
+            <p class="text-slate-600">Access comprehensive mental health literacy content</p>
+        </div>
+
+        <!-- STATS -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                    <p class="text-sm text-slate-500">Total Modules</p>
+                    <p class="text-3xl font-bold" th:text="${totalModules}"></p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">Completed</p>
+                    <p class="text-3xl font-bold text-green-600"
+                       th:text="${completedCount}"></p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">In Progress</p>
+                    <p class="text-3xl font-bold text-blue-600"
+                       th:text="${inProgressCount}"></p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-500">Total Points</p>
+                    <p class="text-3xl font-bold text-purple-600" 
+                       th:text="${userPoints != null ? userPoints : 0}">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODULE LIST ================= -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+            <div th:each="module : ${modules}">
+                <div class="bg-white rounded-2xl border shadow-sm p-6 flex flex-col relative">
+
+                    <!-- LOCK OVERLAY (NO LESSONS) -->
+                    <div th:if="${#lists.isEmpty(module.lessons)}"
+                         class="absolute inset-0 bg-white/80 rounded-2xl flex flex-col items-center justify-center z-10">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-12 w-12 text-slate-400 mb-3"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M12 11c1.657 0 3 1.343 3 3v1a3 3 0 11-6 0v-1c0-1.657 1.343-3 3-3z"/>
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M17 11V7a5 5 0 00-10 0v4"/>
+                        </svg>
+                        <p class="text-slate-500 font-semibold">Coming Soon</p>
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-2"
+                        th:text="${module.title}"></h3>
+
+                    <p class="text-slate-600 text-sm mb-4"
+                       th:text="${module.description}"></p>
+
+                    <!-- PROGRESS BAR -->
+                    <div class="mb-4">
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full"
+                                 th:style="'width:' + ${module.progress} + '%'"></div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1"
+                           th:text="${module.progress} + '%'"></p>
+                    </div>
+
+                    <!-- START -->
+                    <a th:if="${module.progress == 0 and !#lists.isEmpty(module.lessons)}"
+                    th:href="@{/learning/module(moduleId=${module.id})}"
+                    class="mt-auto w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-center hover:bg-blue-700 transition">
+                        Start
+                    </a>
+
+                    <!-- CONTINUE -->
+                    <a th:if="${module.progress > 0 and module.progress < 100}"
+                    th:href="@{/learning/module(moduleId=${module.id})}"
+                    class="mt-auto w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-center hover:bg-blue-700 transition">
+                        Continue
+                    </a>
+
+                    <!-- COMPLETED -->
+                    <a th:if="${module.progress == 100}"
+                        th:href="@{/learning/module(moduleId=${module.id})}"
+                        class="mt-auto w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-center hover:bg-blue-700 transition">
+                        Completed
+                    </a>
+                    
+                    <button th:if="${#lists.isEmpty(module.lessons)}"
+                            disabled
+                            class="mt-auto w-full py-3 bg-slate-300 text-slate-500 rounded-xl font-bold cursor-not-allowed">
+                        Locked
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= MODAL ================= -->
+        <div th:if="${selectedModule != null}"
+             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+
+            <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+
+                <!-- MODAL HEADER -->
+                <div class="p-6 border-b flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold"
+                            th:text="${selectedModule.title}"></h2>
+                        <p class="text-slate-500"
+                           th:text="${selectedModule.description}"></p>
+                    </div>
+
+                    <a th:href="@{/learning}"
+                       class="p-2 rounded-full hover:bg-slate-100 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-7 w-7 text-slate-600"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor"
+                             stroke-width="2">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- MODAL BODY -->
+                <div class="flex-grow overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    <!-- LEFT: LESSON LIST -->
+                    <div>
+                        <h3 class="font-bold mb-4">Lessons</h3>
+
+                        <a th:each="lesson, i : ${lessons}"
+                           th:href="@{/learning/module(moduleId=${selectedModule.id}, lessonId=${lesson.id})}"
+                           class="block p-3 border rounded mb-2 hover:bg-slate-50 transition"
+                           th:text="${i.count + '. ' + lesson.title}">
+                        </a>
+
+                        <!-- QUIZ BUTTON -->
+                        <a th:if="${selectedModule.progress == 100}"
+                           th:href="@{/learning/quiz(moduleId=${selectedModule.id})}"
+                           class="block mt-4 p-4 bg-purple-600 text-white rounded-xl font-bold text-center hover:bg-purple-700 transition">
+                            Take Final Quiz
+                        </a>
+
+                        <div th:if="${selectedModule.progress < 100}"
+                             class="block mt-4 p-4 bg-slate-300 text-slate-500 rounded-xl font-bold text-center cursor-not-allowed">
+                            Complete all lessons to unlock quiz
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: LESSON CONTENT -->
+                    <div class="lg:col-span-2" th:if="${selectedLesson != null}">
+                        <h3 class="text-2xl font-bold mb-4"
+                            th:text="${selectedLesson.title}"></h3>
+
+                        <iframe th:if="${selectedLesson.type == 'video'}"
+                                th:src="${selectedLesson.url}"
+                                class="w-full aspect-video rounded-xl border mb-4"></iframe>
+
+                        <img th:if="${selectedLesson.type == 'infographic'}"
+                             th:src="${selectedLesson.url}"
+                             class="w-full rounded-xl border mb-4">
+
+                        <!-- MARK COMPLETE -->
+                        <form th:if="${selectedModule.progress < 100}"
+                              th:action="@{/learning/lesson/complete}"
+                              method="post">
+                            <input type="hidden" name="moduleId"
+                                   th:value="${selectedModule.id}">
+                            <input type="hidden" name="lessonId"
+                                   th:value="${selectedLesson.id}">
+                            <button type="submit"
+                                    class="px-6 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition">
+                                Mark as Complete
+                            </button>
+                        </form>
+
+                        <p th:if="${selectedModule.progress == 100}"
+                           class="mt-4 text-green-600 font-semibold">
+                            ✔ Module Completed
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </th:block>
+</div>
+
+</th:block>
+</body>
+</html>
