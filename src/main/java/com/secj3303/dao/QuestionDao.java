@@ -1,7 +1,8 @@
 package com.secj3303.dao;
 
-import com.secj3303.model.Question;
 import java.util.List;
+
+import com.secj3303.model.Question;
 
 public interface QuestionDao extends GenericDao<Question> {
     List<Question> findByAssessmentId(Integer assessmentId);

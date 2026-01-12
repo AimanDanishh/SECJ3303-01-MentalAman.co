@@ -42,8 +42,9 @@
                        th:text="${inProgressCount}"></p>
                 </div>
                 <div>
-                    <p class="text-sm text-slate-500">Total Time</p>
-                    <p class="text-3xl font-bold">5.5 Hours</p>
+                    <p class="text-sm text-slate-500">Total Points</p>
+                    <p class="text-3xl font-bold text-purple-600" 
+                       th:text="${userPoints != null ? userPoints : 0}">0</p>
                 </div>
             </div>
         </div>
