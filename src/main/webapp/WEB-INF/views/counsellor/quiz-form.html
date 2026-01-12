@@ -11,13 +11,14 @@
           method="post"
           class="space-y-6">
 
+        <!-- MODULE ID -->
         <input type="hidden" name="moduleId" th:value="${moduleId}" />
 
         <!-- QUESTION -->
         <div>
             <label class="block font-medium mb-1">Question</label>
             <input th:field="*{question}"
-                   class="w-full border rounded px-3 py-2 h-10"
+                   class="w-full border rounded px-3 py-2"
                    required />
         </div>
 
@@ -25,17 +26,17 @@
         <div class="space-y-3">
             <label class="block font-medium">Options</label>
 
-            <input name="options[0]" class="w-full border rounded px-3 py-2 h-10" required />
-            <input name="options[1]" class="w-full border rounded px-3 py-2 h-10" required />
-            <input name="options[2]" class="w-full border rounded px-3 py-2 h-10" required />
-            <input name="options[3]" class="w-full border rounded px-3 py-2 h-10" required />
+            <input th:field="*{options[0]}" class="w-full border rounded px-3 py-2" placeholder="Option A" required />
+            <input th:field="*{options[1]}" class="w-full border rounded px-3 py-2" placeholder="Option B" required />
+            <input th:field="*{options[2]}" class="w-full border rounded px-3 py-2" placeholder="Option C" required />
+            <input th:field="*{options[3]}" class="w-full border rounded px-3 py-2" placeholder="Option D" required />
         </div>
 
-        <!-- ✅ CORRECT ANSWER (CRITICAL FIX) -->
+        <!-- CORRECT ANSWER -->
         <div>
             <label class="block font-medium mb-1">Correct Answer</label>
             <select th:field="*{correctAnswer}"
-                    class="w-full border rounded px-3 py-2 h-10 bg-white appearance-auto"
+                    class="w-full border rounded px-3 py-2"
                     required>
                 <option value="">-- Select Correct Option --</option>
                 <option value="0">Option A</option>
@@ -45,11 +46,15 @@
             </select>
         </div>
 
+        <!-- ACTIONS -->
         <div class="flex gap-4">
-            <button class="px-4 py-2 bg-blue-600 text-white rounded">
+            <button type="submit"
+                    class="px-6 py-2 bg-blue-600 text-white rounded">
                 Save Question
             </button>
-            <a th:href="@{/learning/manage/modules}" class="px-4 py-2 border rounded">
+
+            <a th:href="@{/learning/manage/modules}"
+               class="px-6 py-2 border rounded">
                 Cancel
             </a>
         </div>

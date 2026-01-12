@@ -1,5 +1,7 @@
 package com.secj3303.model;
 
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -25,6 +27,12 @@ public class Lesson {
 
     @Column(nullable = false)
     private String title;
+
+    /**
+     * Content of the lesson (added)
+     */
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String content;
 
     /**
      * e.g. "10 minutes"
@@ -55,10 +63,6 @@ public class Lesson {
     // TRANSIENT (USER-SPECIFIC)
     // =========================
 
-    /**
-     * Calculated from ModuleProgress
-     * Not stored in DB
-     */
     @Transient
     private boolean completed;
 
@@ -80,6 +84,15 @@ public class Lesson {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    // ADD THESE GETTERS AND SETTERS FOR CONTENT
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public String getDuration() {
@@ -120,5 +133,18 @@ public class Lesson {
 
     public void setCompleted(boolean completed) {
         this.completed = completed;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Lesson)) return false;
+        Lesson lesson = (Lesson) o;
+        return id != null && id.equals(lesson.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

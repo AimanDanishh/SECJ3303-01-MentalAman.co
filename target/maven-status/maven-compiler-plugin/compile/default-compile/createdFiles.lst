@@ -47,7 +47,6 @@ com\secj3303\controller\PeerSupportController.class
 com\secj3303\dao\LessonDaoHibernate.class
 com\secj3303\model\TimeSlot.class
 com\secj3303\controller\SelfAssessmentController.class
-com\secj3303\config\LearningContentInitializer.class
 com\secj3303\controller\CarePlanController$UserDTO.class
 com\secj3303\dao\PersonDao.class
 com\secj3303\model\User.class
