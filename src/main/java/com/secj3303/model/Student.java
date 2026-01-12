@@ -4,6 +4,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "students")
@@ -54,6 +55,13 @@ public class Student implements Serializable {
     @Transient
     private String badgeColor;
     
+    // NEW: Add these missing transient fields for the detail view
+    @Transient
+    private List<AssessmentResult> assessmentHistory;
+    
+    @Transient
+    private Map<String, Object> upcomingSession;
+    
     // Constructors
     public Student() {}
     
@@ -102,12 +110,18 @@ public class Student implements Serializable {
     public void setLastActivity(String lastActivity) { this.lastActivity = lastActivity; }
     
     public String getRiskLevel() { return riskLevel; }
-    public void setRiskLevel(String riskLevel) { this.riskLevel = riskLevel; }
+    public void setRiskLevel(String riskLevel) { 
+        this.riskLevel = riskLevel; 
+        // Auto-set badge color when risk level changes
+        setBadgeColor(getBadgeColorClass());
+    }
     
     public List<AssessmentResult> getAssessmentResults() { return assessmentResults; }
-    public void setAssessmentResults(List<AssessmentResult> assessmentResults) { this.assessmentResults = assessmentResults; }
+    public void setAssessmentResults(List<AssessmentResult> assessmentResults) { 
+        this.assessmentResults = assessmentResults; 
+    }
 
-    // Utility methods
+    // Existing utility methods...
     public void calculateInitials() {
         if (name == null || name.trim().isEmpty()) {
             initials = "";
@@ -130,8 +144,8 @@ public class Student implements Serializable {
         if (attendance >= 70) return "text-yellow-600";
         return "text-red-600";
     }
-
-     // Add getters and setters
+    
+    // Getters and setters for transient fields
     public Integer getAssessmentCount() { return assessmentCount; }
     public void setAssessmentCount(Integer assessmentCount) { this.assessmentCount = assessmentCount; }
     
@@ -154,16 +168,21 @@ public class Student implements Serializable {
     }
     
     public String getInitialsColor() {
+        if (riskLevel == null) return "bg-gradient-to-r from-blue-500 to-blue-600";
+        
         if ("high".equalsIgnoreCase(this.riskLevel)) {
-            return "bg-red-600";
+            return "bg-gradient-to-r from-red-500 to-red-600";
         } else if ("moderate".equalsIgnoreCase(this.riskLevel)) {
-            return "bg-yellow-600";
+            return "bg-gradient-to-r from-yellow-500 to-yellow-600";
         } else {
-            return "bg-green-600";
+            return "bg-gradient-to-r from-blue-500 to-blue-600";
         }
     }
     
-    public String getBadgeColor() {
+    // Helper method for badge color class
+    private String getBadgeColorClass() {
+        if (riskLevel == null) return "bg-green-100 text-green-700";
+        
         if ("high".equalsIgnoreCase(this.riskLevel)) {
             return "bg-red-100 text-red-700";
         } else if ("moderate".equalsIgnoreCase(this.riskLevel)) {
@@ -171,5 +190,60 @@ public class Student implements Serializable {
         } else {
             return "bg-green-100 text-green-700";
         }
+    }
+    
+    public String getBadgeColor() {
+        if (badgeColor == null) {
+            badgeColor = getBadgeColorClass();
+        }
+        return badgeColor;
+    }
+    
+    public void setBadgeColor(String badgeColor) {
+        this.badgeColor = badgeColor;
+    }
+    
+    // NEW: Getters and setters for the missing fields
+    public List<AssessmentResult> getAssessmentHistory() {
+        return assessmentHistory;
+    }
+    
+    public void setAssessmentHistory(List<AssessmentResult> assessmentHistory) {
+        this.assessmentHistory = assessmentHistory;
+        // Update assessment count when history is set
+        if (assessmentHistory != null) {
+            this.assessmentCount = assessmentHistory.size();
+        }
+    }
+    
+    public Map<String, Object> getUpcomingSession() {
+        return upcomingSession;
+    }
+    
+    public void setUpcomingSession(Map<String, Object> upcomingSession) {
+        this.upcomingSession = upcomingSession;
+    }
+    
+    // Helper method to get a value from upcomingSession safely
+    public String getSessionValue(String key) {
+        if (upcomingSession != null && upcomingSession.containsKey(key)) {
+            Object value = upcomingSession.get(key);
+            return value != null ? value.toString() : "";
+        }
+        return "";
+    }
+    
+    @Override
+    public String toString() {
+        return "Student{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                ", studentId='" + studentId + '\'' +
+                ", department='" + department + '\'' +
+                ", year='" + year + '\'' +
+                ", riskLevel='" + riskLevel + '\'' +
+                ", assessmentCount=" + assessmentCount +
+                '}';
     }
 }

@@ -5,6 +5,10 @@ import com.secj3303.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -18,6 +22,9 @@ public class AssessmentService {
     private final QuestionDao questionDao;
     private final AssessmentResultDao assessmentResultDao;
     private final AssessmentAnswerDao assessmentAnswerDao;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
     
     // Use constructor injection
     public AssessmentService(AssessmentDao assessmentDao, 
@@ -59,21 +66,49 @@ public class AssessmentService {
     }
     
     public List<Student> filterStudents(String search, String risk) {
-        List<Student> allStudents = studentDao.findAll();
+        // Build dynamic query
+        StringBuilder jpql = new StringBuilder("SELECT s FROM Student s WHERE 1=1");
+        Map<String, Object> parameters = new HashMap<>();
         
-        return allStudents.stream()
-            .filter(student -> {
-                boolean matchesSearch = search == null || search.isEmpty() ||
-                    student.getName().toLowerCase().contains(search.toLowerCase()) ||
-                    student.getStudentId().toLowerCase().contains(search.toLowerCase()) ||
-                    student.getEmail().toLowerCase().contains(search.toLowerCase());
-                
-                boolean matchesRisk = risk == null || "all".equals(risk) || 
-                    (student.getRiskLevel() != null && student.getRiskLevel().equalsIgnoreCase(risk));
-                
-                return matchesSearch && matchesRisk;
-            })
-            .collect(java.util.stream.Collectors.toList());
+        if (search != null && !search.trim().isEmpty()) {
+            jpql.append(" AND (LOWER(s.name) LIKE :search OR LOWER(s.email) LIKE :search OR s.studentId LIKE :search)");
+            parameters.put("search", "%" + search.toLowerCase() + "%");
+        }
+        
+        if (risk != null && !"all".equals(risk)) {
+            jpql.append(" AND LOWER(s.riskLevel) = :risk");
+            parameters.put("risk", risk.toLowerCase());
+        }
+        
+        jpql.append(" ORDER BY s.name");
+        
+        TypedQuery<Student> query = entityManager.createQuery(jpql.toString(), Student.class);
+        
+        // Set parameters
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+        
+        List<Student> filteredStudents = query.getResultList();
+        
+        // Set assessment count for each filtered student
+        for (Student student : filteredStudents) {
+            Long count = getAssessmentCountForStudent(student.getId());
+            student.setAssessmentCount(count != null ? count.intValue() : 0);
+        }
+        
+        return filteredStudents;
+    }
+    
+    private Long getAssessmentCountForStudent(Integer studentId) {
+        String queryStr = "SELECT COUNT(r.id) FROM AssessmentResult r WHERE r.student.id = :studentId";
+        try {
+            return entityManager.createQuery(queryStr, Long.class)
+                .setParameter("studentId", studentId)
+                .getSingleResult();
+        } catch (Exception e) {
+            return 0L;
+        }
     }
     
     @Transactional
@@ -230,60 +265,122 @@ public class AssessmentService {
     }
     
     public long getStudentCountByRiskLevel(String riskLevel) {
-        List<Student> students = studentDao.findByRiskLevel(riskLevel);
-        return students.size();
+        String queryStr = "SELECT COUNT(s) FROM Student s WHERE LOWER(s.riskLevel) = :riskLevel";
+        try {
+            return entityManager.createQuery(queryStr, Long.class)
+                .setParameter("riskLevel", riskLevel.toLowerCase())
+                .getSingleResult();
+        } catch (Exception e) {
+            return 0L;
+        }
     }
     
     @Transactional
     public void deleteAssessmentResult(Integer resultId) {
-            assessmentResultDao.delete(resultId);
+        assessmentResultDao.delete(resultId);
     }
 
     public List<Student> getAllStudentWithAssessmentCount() {
-        // Get all students
-        List<Student> students = studentDao.findAll();
+        String queryStr = """
+            SELECT s, COUNT(r.id) as assessmentCount 
+            FROM Student s 
+            LEFT JOIN AssessmentResult r ON s.id = r.student.id 
+            GROUP BY s.id, s.name, s.email, s.studentId, s.department, s.year, 
+                     s.currentGrade, s.attendance, s.lastActivity, s.riskLevel
+            ORDER BY s.name
+            """;
         
-        if (students == null || students.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        // For each student, get their assessment history and set counts
-        for (Student student : students) {
-            try {
-                // Get assessment history for this student
-                List<AssessmentResult> history = getStudentAssessmentHistory(student.getId());
+        try {
+            List<Object[]> results = entityManager.createQuery(queryStr, Object[].class).getResultList();
+            List<Student> students = new ArrayList<>();
+            
+            for (Object[] result : results) {
+                Student student = (Student) result[0];
+                Long count = (Long) result[1];
                 
-                // Set the assessment count
-                student.setAssessmentCount(history != null ? history.size() : 0);
+                // Set assessment count
+                student.setAssessmentCount(count != null ? count.intValue() : 0);
                 
-                // Set the last assessment date
-                if (history != null && !history.isEmpty()) {
-                    // Find the most recent assessment (assuming date format "MMM d, yyyy")
-                    AssessmentResult mostRecent = history.stream()
-                        .max(Comparator.comparing(r -> {
-                            try {
-                                // Parse the date string to LocalDate for comparison
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
-                                return LocalDate.parse(r.getDate(), formatter);
-                            } catch (Exception e) {
-                                // If parsing fails, return a very old date
-                                return LocalDate.MIN;
-                            }
-                        }))
-                        .orElse(history.get(0));
-                    
-                    student.setLastAssessment(mostRecent.getDate());
-                } else {
-                    student.setLastAssessment("No assessments");
+                // Set risk level based on latest assessment if available
+                if (count != null && count > 0) {
+                    try {
+                        String latestRiskQuery = """
+                            SELECT r.severity FROM AssessmentResult r 
+                            WHERE r.student.id = :studentId 
+                            ORDER BY r.date DESC 
+                            """;
+                        
+                        List<String> severities = entityManager.createQuery(latestRiskQuery, String.class)
+                            .setParameter("studentId", student.getId())
+                            .setMaxResults(1)
+                            .getResultList();
+                        
+                        if (!severities.isEmpty()) {
+                            student.setRiskLevel(severities.get(0).toLowerCase());
+                        }
+                    } catch (Exception e) {
+                        // Keep existing risk level if we can't determine new one
+                    }
                 }
                 
-            } catch (Exception e) {
-                // If there's an error, set default values
-                student.setAssessmentCount(0);
-                student.setLastAssessment("Error loading");
+                // Set assessment history as a transient field
+                List<AssessmentResult> history = getStudentAssessmentHistory(student.getId());
+                student.setAssessmentHistory(history);
+                
+                students.add(student);
             }
+            
+            return students;
+        } catch (Exception e) {
+            // Fallback to DAO method if JPQL query fails
+            List<Student> students = studentDao.findAll();
+            for (Student student : students) {
+                Long count = getAssessmentCountForStudent(student.getId());
+                student.setAssessmentCount(count != null ? count.intValue() : 0);
+                
+                List<AssessmentResult> history = getStudentAssessmentHistory(student.getId());
+                student.setAssessmentHistory(history);
+            }
+            return students;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public AssessmentResult getResultWithAssessment(Integer resultId) {
+        // Use a JPQL query with JOIN FETCH to load associations
+        String queryStr = """
+            SELECT r FROM AssessmentResult r 
+            LEFT JOIN FETCH r.assessment a 
+            LEFT JOIN FETCH a.questions 
+            LEFT JOIN FETCH r.student 
+            WHERE r.id = :resultId
+            """;
         
-        return students;
+        try {
+            return entityManager.createQuery(queryStr, AssessmentResult.class)
+                .setParameter("resultId", resultId)
+                .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+    
+    // Alternative: If you want to fetch with assessment but not questions
+    @Transactional(readOnly = true)
+    public AssessmentResult getResultById(Integer resultId) {
+        String queryStr = """
+            SELECT r FROM AssessmentResult r 
+            LEFT JOIN FETCH r.assessment 
+            LEFT JOIN FETCH r.student 
+            WHERE r.id = :resultId
+            """;
+        
+        try {
+            return entityManager.createQuery(queryStr, AssessmentResult.class)
+                .setParameter("resultId", resultId)
+                .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 }

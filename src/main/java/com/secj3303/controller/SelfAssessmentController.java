@@ -129,9 +129,9 @@ public class SelfAssessmentController {
             List<Student> students = assessmentService.getAllStudentWithAssessmentCount();
             List<Student> filteredStudents = assessmentService.filterStudents(searchQuery, filterRisk);
             
-            long highRiskCount = assessmentService.getStudentCountByRiskLevel("high");
+            long severeRiskCount = assessmentService.getStudentCountByRiskLevel("severe");
             long moderateRiskCount = assessmentService.getStudentCountByRiskLevel("moderate");
-            long lowRiskCount = assessmentService.getStudentCountByRiskLevel("low");
+            long mildRiskCount = assessmentService.getStudentCountByRiskLevel("mild");
             
             model.addAttribute("assignedStudents", students);
             model.addAttribute("filteredStudents", filteredStudents);
@@ -139,23 +139,41 @@ public class SelfAssessmentController {
             model.addAttribute("filterRisk", filterRisk);
             model.addAttribute("filteredCount", filteredStudents.size());
             model.addAttribute("totalCount", students.size());
-            model.addAttribute("highRiskCount", highRiskCount);
+            model.addAttribute("severeRiskCount", severeRiskCount);
             model.addAttribute("moderateRiskCount", moderateRiskCount);
-            model.addAttribute("lowRiskCount", lowRiskCount);
+            model.addAttribute("mildRiskCount", mildRiskCount);
             model.addAttribute("showReportModal", false);
             model.addAttribute("selectedReport", null);
             model.addAttribute("selectedStudent", null);
             
             if (selectStudentId != null) {
-                Optional<Student> student = assessmentService.getStudentById(selectStudentId);
-                student.ifPresent(s -> {
-                    model.addAttribute("selectedStudent", s);
-                    session.setAttribute(SELECTED_STUDENT_ID_KEY, s.getId());
-                    
-                    List<AssessmentResult> history = assessmentService.getStudentAssessmentHistory(s.getId());
-                    model.addAttribute("studentHistory", history);
-                });
+            Optional<Student> student = assessmentService.getStudentById(selectStudentId);
+            if (student.isPresent()) {
+                Student s = student.get();
+                
+                // Load assessment history
+                List<AssessmentResult> history = assessmentService.getStudentAssessmentHistory(s.getId());
+                
+                // Set the history on the student object
+                s.setAssessmentHistory(history);
+                
+                // Also set the assessment count
+                s.setAssessmentCount(history != null ? history.size() : 0);
+                
+                // If it's a counsellor view, set upcoming session data (mock or from DB)
+                if ("counsellor".equals(user.getRole())) {
+                    Map<String, Object> upcomingSession = new HashMap<>();
+                    upcomingSession.put("date", "2024-01-20");
+                    upcomingSession.put("time", "10:00 AM");
+                    upcomingSession.put("type", "In-person");
+                    upcomingSession.put("status", "Confirmed");
+                    s.setUpcomingSession(upcomingSession);
+                }
+                
+                model.addAttribute("selectedStudent", s);
+                session.setAttribute(SELECTED_STUDENT_ID_KEY, s.getId());
             }
+        }
             
             return "faculty-assessment";
         }
@@ -652,8 +670,118 @@ public class SelfAssessmentController {
         
         return "redirect:/assessment";
     }
-    
-    // ... Rest of your methods remain the same ...
+
+    // View Assessment Report (for everyone)
+    @GetMapping("/report/view/{resultId}")
+    public String viewReport(
+        @PathVariable Integer resultId,
+        Model model,
+        HttpSession session,
+        Authentication authentication
+    ) {
+        User user = buildUser(authentication);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        
+        // Find the result
+        AssessmentResult result = entityManager.find(AssessmentResult.class, resultId);
+        if (result == null) {
+            return "redirect:/assessment";
+        }
+        
+        // Check authorization
+        if ("student".equals(user.getRole())) {
+            // Student can only view their own reports
+            Optional<Student> studentOpt = getCurrentStudent(authentication);
+            if (studentOpt.isEmpty() || !studentOpt.get().getId().equals(result.getStudent().getId())) {
+                return "redirect:/assessment";
+            }
+        }
+        
+        model.addAttribute("selectedReport", result);
+        
+        // Get assessment details if available
+        if (result.getAssessment() != null) {
+            model.addAttribute("assessmentDescription", result.getAssessment().getDescription());
+            model.addAttribute("questionCount", result.getAssessment().getQuestions().size());
+        } else {
+            // Fallback values
+            model.addAttribute("assessmentDescription", "This assessment measures various aspects of mental health and well-being.");
+            model.addAttribute("questionCount", "N/A");
+        }
+        
+        // For faculty/counsellor view, also load the student
+        if ("faculty".equals(user.getRole()) || "counsellor".equals(user.getRole())) {
+            Optional<Student> student = assessmentService.getStudentById(result.getStudent().getId());
+            student.ifPresent(s -> {
+                List<AssessmentResult> history = assessmentService.getStudentAssessmentHistory(s.getId());
+                s.setAssessmentHistory(history);
+                s.setAssessmentCount(history != null ? history.size() : 0);
+                model.addAttribute("selectedStudent", s);
+            });
+            
+            return "faculty-assessment";
+        }
+        
+        return "assessment-report";
+    }
+
+    @GetMapping("/report/student/{studentId}/{resultId}")
+    public String viewStudentReport(
+        @PathVariable Integer studentId,
+        @PathVariable Integer resultId,
+        Model model,
+        Authentication authentication
+    ) {
+        User user = buildUser(authentication);
+        
+        // Only faculty/counsellor can view specific student reports
+        if (!"faculty".equals(user.getRole()) && !"counsellor".equals(user.getRole())) {
+            return "redirect:/assessment";
+        }
+        
+        // Use the service method to get the result with proper fetching
+        AssessmentResult result = assessmentService.getResultWithAssessment(resultId);
+        
+        if (result == null || !result.getStudent().getId().equals(studentId)) {
+            return "redirect:/assessment";
+        }
+        
+        // Load student
+        Optional<Student> student = assessmentService.getStudentById(studentId);
+        if (student.isEmpty()) {
+            return "redirect:/assessment";
+        }
+        
+        Student s = student.get();
+        List<AssessmentResult> history = assessmentService.getStudentAssessmentHistory(s.getId());
+        s.setAssessmentHistory(history);
+        s.setAssessmentCount(history != null ? history.size() : 0);
+        
+        model.addAttribute("selectedReport", result);
+        model.addAttribute("selectedStudent", s);
+        model.addAttribute("user", user);
+        model.addAttribute("userRole", user.getRole());
+        model.addAttribute("currentView", DEFAULT_VIEW);
+        
+        // Get assessment details - now it's safely loaded
+        if (result.getAssessment() != null) {
+            model.addAttribute("assessmentDescription", result.getAssessment().getDescription());
+            // Check if questions are loaded
+            if (result.getAssessment().getQuestions() != null) {
+                model.addAttribute("questionCount", result.getAssessment().getQuestions().size());
+            } else {
+                model.addAttribute("questionCount", "N/A");
+            }
+        } else {
+            // Fallback values
+            model.addAttribute("assessmentDescription", "This assessment measures various aspects of mental health and well-being.");
+            model.addAttribute("questionCount", "N/A");
+        }
+        
+        return "assessment-report";
+    }
     
     // Helper class for assessment progress
     public static class AssessmentProgress {
