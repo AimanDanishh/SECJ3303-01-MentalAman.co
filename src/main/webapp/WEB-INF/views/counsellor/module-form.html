@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="content">
+
+<div class="p-8 bg-slate-50 min-h-screen">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl border shadow-sm p-8">
+
+        <!-- HEADER -->
+        <div class="flex items-center gap-3 mb-6">
+            <span class="text-blue-600 text-xl">📘</span>
+            <h2 class="text-xl font-bold"
+                th:text="${module.id == null ? 'Create New Module' : 'Edit Module'}">
+            </h2>
+        </div>
+
+        <!-- FORM -->
+        <form th:action="@{/learning/manage/modules/save}"
+              th:object="${module}"
+              method="post"
+              class="space-y-6">
+
+            <input type="hidden" th:field="*{id}"/>
+
+            <!-- TITLE -->
+            <div>
+                <label class="block font-semibold mb-1">
+                    Title <span class="text-red-500">*</span>
+                </label>
+                <input th:field="*{title}"
+                       placeholder="Enter module title"
+                       required
+                       class="w-full border rounded-lg px-4 py-3"/>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div>
+                <label class="block font-semibold mb-1">
+                    Description <span class="text-red-500">*</span>
+                </label>
+                <textarea th:field="*{description}"
+                          rows="3"
+                          placeholder="Enter module description"
+                          required
+                          class="w-full border rounded-lg px-4 py-3"></textarea>
+            </div>
+
+            <!-- CATEGORY -->
+            <div>
+                <label class="block font-semibold mb-1">
+                    Category <span class="text-red-500">*</span>
+                </label>
+                <select th:field="*{category}"
+                        required
+                        class="w-full border rounded-lg px-4 py-3">
+                    <option value="">Select a category</option>
+                    <option value="Mental Health Basics">Mental Health Basics</option>
+                    <option value="Coping Strategies">Coping Strategies</option>
+                    <option value="Self Care">Self Care</option>
+                </select>
+            </div>
+
+            <!-- DURATION -->
+            <div>
+                <label class="block font-semibold mb-1">
+                    Duration
+                </label>
+                <input th:field="*{duration}"
+                       placeholder="e.g. 45 minutes"
+                       class="w-full border rounded-lg px-4 py-3"/>
+            </div>
+
+            <!-- STATUS (LOCKED) -->
+            <div>
+                <label class="block font-semibold mb-2">Status</label>
+                <div class="flex gap-6">
+                    <label class="flex items-center gap-2">
+                        <input type="radio"
+                               th:field="*{locked}"
+                               th:value="true"/>
+                        Save as Draft
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio"
+                               th:field="*{locked}"
+                               th:value="false"/>
+                        Publish Immediately
+                    </label>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">
+                    Draft modules are hidden from students
+                </p>
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="flex justify-between pt-6">
+                <a th:href="@{/learning/manage/modules}"
+                   class="px-6 py-3 border rounded-xl">
+                    Cancel
+                </a>
+
+                <button type="submit"
+                        class="px-8 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700">
+                    💾 Save Module
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+</th:block>
+</html>
