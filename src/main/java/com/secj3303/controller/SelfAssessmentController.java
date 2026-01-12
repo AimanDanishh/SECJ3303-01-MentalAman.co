@@ -160,16 +160,6 @@ public class SelfAssessmentController {
                 // Also set the assessment count
                 s.setAssessmentCount(history != null ? history.size() : 0);
                 
-                // If it's a counsellor view, set upcoming session data (mock or from DB)
-                if ("counsellor".equals(user.getRole())) {
-                    Map<String, Object> upcomingSession = new HashMap<>();
-                    upcomingSession.put("date", "2024-01-20");
-                    upcomingSession.put("time", "10:00 AM");
-                    upcomingSession.put("type", "In-person");
-                    upcomingSession.put("status", "Confirmed");
-                    s.setUpcomingSession(upcomingSession);
-                }
-                
                 model.addAttribute("selectedStudent", s);
                 session.setAttribute(SELECTED_STUDENT_ID_KEY, s.getId());
             }

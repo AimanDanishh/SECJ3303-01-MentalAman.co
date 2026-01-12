@@ -134,7 +134,8 @@
             </a>
 
             <!-- Content Management (Faculty, Admin) -->
-            <a th:if="${user.role == 'faculty' or user.role == 'administrator'}" th:href="@{/content}"
+            <a th:if="${#authorization.expression('hasRole(''COUNSELLOR'')') 
+                     or #authorization.expression('hasRole(''ADMINISTRATOR'')')}"th:href="@{/content}"
                 th:classappend="${currentView == 'content'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
             >
@@ -143,7 +144,7 @@
             </a>
             
             <!-- API Settings (Admin Only) -->
-            <a th:if="${user.role == 'administrator'}" th:href="@{/api}"
+            <a th:if="${#authorization.expression('hasRole(''ADMINISTRATOR'')')}" th:href="@{/api}"
                 th:classappend="${currentView == 'api'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
             >
@@ -152,7 +153,7 @@
             </a>
             
             <!-- At-Risk Referral (Faculty Only) -->
-            <a th:if="${user.role == 'faculty'}" th:href="@{/referral}"
+            <a th:if="${#authorization.expression('hasRole(''FACULTY'')')}" th:href="@{/referral}"
                 th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
             >

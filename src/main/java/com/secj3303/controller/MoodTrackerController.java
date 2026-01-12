@@ -43,9 +43,17 @@ public class MoodTrackerController {
         // Get user from Spring Security authentication
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String username = userDetails.getUsername();
+
+        // Get user role from authorities
+        String userRole = "student"; // Default role
+        if (authentication.getAuthorities() != null && !authentication.getAuthorities().isEmpty()) {
+            String authority = authentication.getAuthorities().iterator().next().getAuthority();
+            userRole = authority.replace("ROLE_", "").toLowerCase();
+        }
         
         // Store user in model
         model.addAttribute("user", username);
+        model.addAttribute("userRole", userRole);
         model.addAttribute("userDetails", userDetails);
         model.addAttribute("activeTab", "mood");
         
