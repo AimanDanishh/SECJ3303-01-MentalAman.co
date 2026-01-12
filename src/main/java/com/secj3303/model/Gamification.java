@@ -46,7 +46,7 @@ public class Gamification {
         this.xpPoints = 0;
         this.currentLevel = 1;
         this.dailyStreak = 0;
-        this.lastActivity = LocalDateTime.now();
+        this.lastActivity = null;
     }
 
     // ==========================================
