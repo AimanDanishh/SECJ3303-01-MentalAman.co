@@ -49,19 +49,28 @@
                 <!-- Dynamically include the fragment for the current view -->
                 <div class="flex-1 p-6">
                     <div th:replace="~{${currentView} :: content(
-                        modules=${modules},
-                        completedCount=${completedCount},
-                        inProgressCount=${inProgressCount},
-                        totalModules=${totalModules},
-                        selectedModule=${selectedModule},
-                        selectedLesson=${selectedLesson},
-                        showQuiz=${showQuiz},
-                        quizScore=${quizScore},
-                        lessons=${lessons},          
-                        quizQuestions=${quizQuestions}, 
-                        achievement=${achievement},
-                        user=${user}
-                    )}"></div>
+            modules=${modules},
+            completedCount=${completedCount},
+            inProgressCount=${inProgressCount},
+            totalModules=${totalModules},
+            selectedModule=${selectedModule},
+            selectedLesson=${selectedLesson},
+            showQuiz=${showQuiz},
+            quizScore=${quizScore},
+            lessons=${lessons},
+            quizQuestions=${quizQuestions},
+            achievement=${achievement},
+            user=${user},
+            students=${students},
+            referrals=${referrals},
+            reasons=${reasons},
+            selectedStudent=${selectedStudent},
+            showForm=${showForm},
+            formData=${formData},
+            showSuccess=${showSuccess},
+            showError=${showError},
+            errorMessage=${errorMessage}
+        )}"></div>
                 </div>
             </div>
         </main>
