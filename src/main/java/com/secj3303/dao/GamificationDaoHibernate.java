@@ -95,6 +95,9 @@ public class GamificationDaoHibernate implements GamificationDao {
             } else if (daysBetween > 1) {
                 g.setDailyStreak(1); // Reset if missed a day
             }
+            else if (daysBetween == 0 && g.getDailyStreak() == 0) {
+                g.setDailyStreak(1); // Fixes the "stuck at 0" issue if initialized today
+            }
         }
         g.setLastActivity(now);
     }
