@@ -46,6 +46,7 @@ public class DemoDataInitializer {
         person.setRole(role);
         person.setPassword("{noop}demo123"); // IMPORTANT for Spring Security
         person.setEnabled(true);
+        person.setMatrixId("A" + System.currentTimeMillis() % 1000000);
 
         // Optional profile defaults
         person.setYob(2000);

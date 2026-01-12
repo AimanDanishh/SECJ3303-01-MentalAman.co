@@ -1,5 +1,6 @@
 package com.secj3303.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -14,24 +15,56 @@ import javax.persistence.Transient;
 @Table(name = "lesson")
 public class Lesson {
 
+    // =========================
+    // PERSISTENT FIELDS
+    // =========================
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
+
+    /**
+     * e.g. "10 minutes"
+     */
     private String duration;
+
+    /**
+     * video | infographic | article
+     */
+    @Column(nullable = false)
     private String type;
+
+    /**
+     * URL to video / image / article
+     */
+    @Column(nullable = false, length = 1000)
     private String url;
+
+    // =========================
+    // RELATIONSHIP
+    // =========================
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
     private LearningModule module;
 
-    // ✅ NOT persisted (user-specific state)
+    // =========================
+    // TRANSIENT (USER-SPECIFIC)
+    // =========================
+
+    /**
+     * Calculated from ModuleProgress
+     * Not stored in DB
+     */
     @Transient
     private boolean completed;
 
-    // ================= GETTERS & SETTERS =================
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
 
     public Long getId() {
         return id;
