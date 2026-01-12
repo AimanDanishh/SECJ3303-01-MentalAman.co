@@ -71,12 +71,6 @@
                         <th:block th:replace="~{faculty-detaillist :: detail-list}"></th:block>
                     </div>
                 </div>
-
-                <!-- Report Modal -->
-                <div th:if="${selectedReport != null and selectedStudent != null and showReportModal}"
-                     class="modal-overlay">
-                    <th:block th:replace="~{faculty-report :: report-list}"></th:block>
-                </div>
             </main>
         </div>
     </div>

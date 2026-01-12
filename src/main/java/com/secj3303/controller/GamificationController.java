@@ -6,60 +6,52 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.secj3303.dao.PersonDao;
-import com.secj3303.model.GamificationData;
-import com.secj3303.model.Person;
+import com.secj3303.model.Gamification;
+import com.secj3303.model.User;
+import com.secj3303.service.GamificationService;
 
 @Controller
 @RequestMapping("/gamification")
 public class GamificationController {
 
-    private static final String DEFAULT_VIEW = "gamification";
+    private final GamificationService gamificationService;
 
-    private final PersonDao personDao;
-
-    public GamificationController(PersonDao personDao) {
-        this.personDao = personDao;
+    public GamificationController(GamificationService gamificationService) {
+        this.gamificationService = gamificationService;
     }
 
     @GetMapping
-    public String gamificationDashboard(Authentication authentication, Model model) {
+    public String dashboard(Authentication auth, Model model) {
+        String email = auth.getName();
+        
+        // 1. Get Profile
+        Gamification profile = gamificationService.getUserGamificationProfile(email);
+        
+        User user = new User();
+        user.setEmail(email);
+        user.setName(email.split("@")[0]);
+        
+        // 2. Populate Model
+        model.addAttribute("user", user);
+        model.addAttribute("userPoints", profile.getXpPoints());
+        model.addAttribute("currentLevel", profile.getCurrentLevel());
+        model.addAttribute("dayStreak", profile.getDailyStreak());
+        model.addAttribute("pointsToNextLevel", gamificationService.getPointsToNextLevel(profile.getXpPoints()));
+        
+        // Calculate Progress Bar
+        int levelBase = (profile.getCurrentLevel() - 1) * 200;
+        int pointsInLevel = profile.getXpPoints() - levelBase;
+        double progressPercentage = (pointsInLevel / 200.0) * 100;
+        model.addAttribute("progressPercentage", progressPercentage);
+        model.addAttribute("nextLevelPoints", (profile.getCurrentLevel() * 200));
 
-        // =========================
-        // Load logged-in PERSON from DB
-        // =========================
-        String email = authentication.getName();
-        Person person = personDao.findByEmail(email);
-
-        if (person == null) {
-            throw new RuntimeException("Person not found: " + email);
-        }
-
-        // =========================
-        // Gamification Data
-        // =========================
-        model.addAttribute("user", person); // keep attribute name for UI
-
-        model.addAttribute("userPoints", GamificationData.USER_POINTS);
-        model.addAttribute("nextLevelPoints", GamificationData.NEXT_LEVEL_POINTS);
-        model.addAttribute("currentLevel", GamificationData.CURRENT_LEVEL);
-
-        double progress =
-                (GamificationData.USER_POINTS * 100.0) /
-                GamificationData.NEXT_LEVEL_POINTS;
-
-        model.addAttribute("progressPercentage", progress);
-
-        model.addAttribute("badges", GamificationData.getBadges());
-        model.addAttribute("leaderboard", GamificationData.getLeaderboard());
-        model.addAttribute("recentAchievements", GamificationData.getRecentAchievements());
-        model.addAttribute("pointsActivities", GamificationData.getPointsActivities());
-
-        model.addAttribute("currentView", DEFAULT_VIEW);
-
-        System.out.println("--- GAMIFICATION PAGE REQUESTED ---");
-        System.out.println("Badges found: " + GamificationData.getBadges().size());
-
+        // 3. Lists (Dynamic badges, functional leaderboard)
+        model.addAttribute("badges", gamificationService.getUnlockedBadges(profile));
+        model.addAttribute("leaderboard", gamificationService.getFunctionalLeaderboard(email));
+        model.addAttribute("pointsActivities", Gamification.getPointsActivities());
+        model.addAttribute("recentAchievements", Gamification.getRecentAchievements());
+        
+        model.addAttribute("currentView", "gamification");
         return "app-layout";
     }
 }
