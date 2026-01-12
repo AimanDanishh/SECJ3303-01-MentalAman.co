@@ -7,11 +7,13 @@ C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\StudentDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\MoodEntry.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\AssessmentService.java
+C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\ModuleManagementController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentResultDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\GenericDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\CategoryDaoImpl.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Report.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\AssessmentModels.java
+C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\QuizQuestionDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\GamificationController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\config\DemoDataInitializer.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\LearningModuleDao.java
@@ -50,7 +52,6 @@ C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PersonDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\APIKey.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\MentalHealthController.java
-C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\LearningManagementController.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Category.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Lesson.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentAnswerDao.java
@@ -89,6 +90,7 @@ C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\GamificationDao.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PersonDaoImpl.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\GamificationDaoHibernate.java
+C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\QuizQuestionDaoHibernate.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\QuizQuestion.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Message.java
 C:\Users\User\Documents\INTERNET PROGRAMMING\MentalAmanco\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\PeerSupportModels.java

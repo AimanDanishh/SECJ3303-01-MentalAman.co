@@ -97,7 +97,7 @@ public class LearningDataInitializer
                 m1
         ));
 
-        m1.setQuiz(quiz1);
+        m1.setQuizzes(quiz1);
         moduleDao.save(m1);
 
         // =================================================
@@ -162,7 +162,7 @@ public class LearningDataInitializer
                 m2
         ));
 
-        m2.setQuiz(quiz2);
+        m2.setQuizzes(quiz2);
         moduleDao.save(m2);
 
         // =================================================
@@ -244,7 +244,7 @@ public class LearningDataInitializer
         m.setCategory(category);
         m.setLocked(locked);
         m.setLessons(new LinkedHashSet<>());
-        m.setQuiz(new LinkedHashSet<>());
+        m.setQuizzes(new LinkedHashSet<>());
         return m;
     }
 }
