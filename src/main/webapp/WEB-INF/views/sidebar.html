@@ -149,12 +149,7 @@
                 <span>Student Analytics</span>
             </a>
 
-            <!-- At-Risk Referral (FACULTY) -->
-            <a th:if="${#authorization.expression('hasRole(''FACULTY'')')}"
-               th:href="@{/referral}"
-               th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg">
-            <!-- Content Management (Faculty, Admin) -->
+            <!-- Forum Management (Faculty, Admin) -->
             <a th:if="${#authorization.expression('hasRole(''COUNSELLOR'')') 
                      or #authorization.expression('hasRole(''ADMINISTRATOR'')')}"th:href="@{/forum-management}"
                 th:classappend="${currentView == 'forum-management'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
