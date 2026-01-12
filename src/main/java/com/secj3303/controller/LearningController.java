@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.secj3303.dao.LearningModuleDao;
 import com.secj3303.dao.ModuleProgressDao;
+import com.secj3303.model.Gamification;
 import com.secj3303.model.LearningModule;
 import com.secj3303.model.Lesson;
 import com.secj3303.model.ModuleProgress;
 import com.secj3303.model.QuizQuestion;
 import com.secj3303.model.User;
+import com.secj3303.service.GamificationService;
 import com.secj3303.service.LearningService;
 
 @Controller
@@ -32,13 +34,16 @@ public class LearningController {
     private final LearningModuleDao moduleDao;
     private final ModuleProgressDao progressDao;
     private final LearningService learningService;
+    private final GamificationService gamificationService;
 
     public LearningController(LearningModuleDao moduleDao,
                               ModuleProgressDao progressDao,
-                              LearningService learningService) {
+                              LearningService learningService,
+                              GamificationService gamificationService) {
         this.moduleDao = moduleDao;
         this.progressDao = progressDao;
         this.learningService = learningService;
+        this.gamificationService = gamificationService;
     }
 
     // ================= DASHBOARD =================
@@ -211,11 +216,14 @@ public class LearningController {
             if (val == 100) completed++;
             else if (val > 0) inProgress++;
         }
+        Gamification profile = gamificationService.getUserGamificationProfile(email);
+        int userPoints = profile != null ? profile.getXpPoints() : 0;
 
         model.addAttribute("modules", modules);
         model.addAttribute("completedCount", completed);
         model.addAttribute("inProgressCount", inProgress);
         model.addAttribute("totalModules", modules.size());
+        model.addAttribute("userPoints", userPoints);
     }
 
     private User buildUser(Authentication auth) {

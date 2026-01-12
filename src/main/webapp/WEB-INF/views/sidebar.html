@@ -149,11 +149,29 @@
                 <span>Student Analytics</span>
             </a>
 
+<<<<<<< HEAD
             <!-- At-Risk Referral (FACULTY) -->
             <a th:if="${#authorization.expression('hasRole(''FACULTY'')')}"
                th:href="@{/referral}"
                th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                class="flex items-center gap-3 px-4 py-3 rounded-lg">
+=======
+            <!-- Content Management (Faculty, Admin) -->
+            <a th:if="${#authorization.expression('hasRole(''COUNSELLOR'')') 
+                     or #authorization.expression('hasRole(''ADMINISTRATOR'')')}"th:href="@{/forum-management}"
+                th:classappend="${currentView == 'forum-management'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
+                <script>document.write('<i data-lucide="file-edit" class="w-5 h-5"></i>');</script>
+                <span>Forum Management</span>
+            </a>
+            
+            <!-- At-Risk Referral (Faculty Only) -->
+            <a th:if="${#authorization.expression('hasRole(''FACULTY'')')}" th:href="@{/referral}"
+                th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+            >
+>>>>>>> cec84ddbe4f21dce73448e92b9debe618b98c3b3
                 <script>document.write('<i data-lucide="alert-triangle" class="w-5 h-5"></i>');</script>
                 <span>At-Risk Referral</span>
             </a>
