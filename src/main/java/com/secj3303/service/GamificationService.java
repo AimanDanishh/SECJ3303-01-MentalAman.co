@@ -1,6 +1,7 @@
 package com.secj3303.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -34,62 +35,56 @@ public class GamificationService {
         return nextLevelXp - currentXp;
     }
 
-    /**
-     * UNLOCK LOGIC: Takes the static list and flips 'earned' to true based on real stats.
-     */
     public List<Badge> getUnlockedBadges(Gamification profile) {
-        List<Badge> badges = Gamification.getBadges(); // Fetches list where all are false
+        List<Badge> badges = Gamification.getBadges(); 
         
-        // 1. First Steps (XP > 100)
-        if (profile.getXpPoints() >= 100) {
-            badges.get(0).earned = true; 
-        }
-        
-        // 2. Consistent Learner (Streak >= 7)
-        if (profile.getDailyStreak() >= 7) {
-            badges.get(1).earned = true;
-        }
-
-        // 3. Knowledge Seeker (Approx 5 modules worth of points)
-        if (profile.getXpPoints() >= 500) {
-            badges.get(4).earned = true;
-        }
+        if (profile.getXpPoints() >= 100) badges.get(0).earned = true; 
+        if (profile.getDailyStreak() >= 7) badges.get(1).earned = true;
+        if (profile.getXpPoints() >= 500) badges.get(4).earned = true;
         
         return badges;
     }
 
-    /**
-     * LEADERBOARD LOGIC: Merges real users with dummy data
-     */
     public List<LeaderboardEntry> getFunctionalLeaderboard(String currentUserEmail) {
-        List<Gamification> realUsers = gamificationDao.getLeaderboard(10);
-        List<LeaderboardEntry> staticEntries = Gamification.getStaticLeaderboard();
-        List<LeaderboardEntry> finalLeaderboard = new ArrayList<>();
-        
-        int rankCounter = 1;
+        List<LeaderboardEntry> allEntries = new ArrayList<>();
 
-        // Add Real Users
+        // 1. Convert Real Users to Entries
+        List<Gamification> realUsers = gamificationDao.getLeaderboard(20); // Get more to sort correctly
         for (Gamification g : realUsers) {
             String displayName = g.getUserEmail().split("@")[0];
             boolean isMe = g.getUserEmail().equals(currentUserEmail);
-            String badgeEmoji = getBadgeForRank(rankCounter);
             
-            finalLeaderboard.add(new LeaderboardEntry(
-                rankCounter++, displayName, g.getXpPoints(), 
-                g.getCurrentLevel(), badgeEmoji, isMe
+            // We temporarily set rank to 0, we will fix it after sorting
+            allEntries.add(new LeaderboardEntry(
+                0, displayName, g.getXpPoints(), 
+                g.getCurrentLevel(), "", isMe
             ));
         }
 
-        // Add Dummies if we have fewer than 5 users
-        if (finalLeaderboard.size() < 5) {
-            for (LeaderboardEntry dummy : staticEntries) {
-                // Prevent duplicate "You" entries if user is already ranked
-                if (!dummy.name.equals("You") && finalLeaderboard.size() < 5) {
-                    dummy.rank = rankCounter++;
-                    finalLeaderboard.add(dummy);
-                }
+        // 2. Add Dummy Users
+        List<LeaderboardEntry> staticEntries = Gamification.getStaticLeaderboard();
+        for (LeaderboardEntry dummy : staticEntries) {
+            if (!dummy.name.equals("You")) {
+                allEntries.add(dummy);
             }
         }
+
+        // 3. Sort Everything by Points (Descending)
+        allEntries.sort(Comparator.comparingInt((LeaderboardEntry e) -> e.points).reversed());
+
+        // 4. Assign Ranks & Limit to Top 10
+        List<LeaderboardEntry> finalLeaderboard = new ArrayList<>();
+        int rank = 1;
+        
+        for (LeaderboardEntry entry : allEntries) {
+            if (rank > 10) break; // Only show top 10
+            
+            entry.rank = rank; // Assign correct rank based on points
+            entry.badge = getBadgeForRank(rank); // Assign crown/medal
+            finalLeaderboard.add(entry);
+            rank++;
+        }
+
         return finalLeaderboard;
     }
     
