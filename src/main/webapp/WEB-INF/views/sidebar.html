@@ -34,7 +34,9 @@
         <div class="p-6 border-b">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <script>document.write('<i data-lucide="brain" class="w-6 h-6 text-white"></i>');</script>
+                    <script>
+                        document.write('<i data-lucide="brain" class="w-6 h-6 text-white"></i>');
+                    </script>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold">Health Hub</h1>
@@ -64,6 +66,20 @@
                class="flex items-center gap-3 px-4 py-3 rounded-lg">
                 <script>document.write('<i data-lucide="book-open" class="w-5 h-5"></i>');</script>
                 <span>Learning Modules</span>
+            </a>
+
+            <!-- Module Management (COUNSELLOR, ADMINISTRATOR) -->
+            <a th:if="${#authorization.expression('hasRole(''COUNSELLOR'')') 
+                     or #authorization.expression('hasRole(''ADMINISTRATOR'')')}"
+               th:href="@{/learning/manage/modules}"
+               th:classappend="${currentView == 'module-management'} 
+                    ? 'bg-blue-50 text-blue-600' 
+                    : 'text-slate-600 hover:bg-slate-50'"
+               class="flex items-center gap-3 px-4 py-3 rounded-lg">
+                <script>
+                    document.write('<i data-lucide="settings" class="w-5 h-5"></i>');
+                </script>
+                <span>Module Management</span>
             </a>
 
             <!-- AI Coach (STUDENT, COUNSELLOR) -->
@@ -96,19 +112,15 @@
                 <span>Peer Support</span>
             </a>
 
-            <!-- Self-Assessment (All Roles) -->
-            <a th:if="${#authorization.expression('hasRole(''STUDENT'')') 
-                     or #authorization.expression('hasRole(''FACULTY'')')
-                     or #authorization.expression('hasRole(''COUNSELLOR'')')}"
-                th:href="@{/assessment}"
-                th:classappend="${currentView == 'assessment'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-                class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-            >
+            <!-- Self-Assessment (ALL) -->
+            <a th:href="@{/assessment}"
+               th:classappend="${currentView == 'assessment'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
+               class="flex items-center gap-3 px-4 py-3 rounded-lg">
                 <script>document.write('<i data-lucide="activity" class="w-5 h-5"></i>');</script>
                 <span>Self-Assessment</span>
             </a>
 
-            <!-- Rewards (STUDENT ONLY) -->
+            <!-- Rewards (STUDENT) -->
             <a th:if="${#authorization.expression('hasRole(''STUDENT'')')}"
                th:href="@{/gamification}"
                th:classappend="${currentView == 'gamification'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
@@ -137,7 +149,7 @@
                 <span>Student Analytics</span>
             </a>
 
-            <!-- Content Management (Faculty, Admin) -->
+            <!-- Forum Management (Faculty, Admin) -->
             <a th:if="${#authorization.expression('hasRole(''COUNSELLOR'')') 
                      or #authorization.expression('hasRole(''ADMINISTRATOR'')')}"th:href="@{/forum-management}"
                 th:classappend="${currentView == 'forum-management'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"

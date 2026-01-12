@@ -75,7 +75,7 @@ public class LearningContentInitializer {
         q1.setModule(module);
         quiz.add(q1);
 
-        module.setQuiz(quiz);
+        module.setQuizzes(quiz);
 
         // =========================
         // SAVE (DAO Hibernate)

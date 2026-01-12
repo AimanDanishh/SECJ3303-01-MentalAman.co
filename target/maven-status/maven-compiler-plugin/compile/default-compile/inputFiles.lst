@@ -44,9 +44,10 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Message.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\AssessmentService.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\MoodTrackerController.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\LearningManagementController.java
+C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\QuizQuestionDao.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Question.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\CategoryDaoImpl.java
+C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\ModuleManagementController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\LessonDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\SelfAssessmentController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentAnswerDao.java
@@ -77,6 +78,7 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentAnswerDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\CounsellingSession.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\LearningController.java
+C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\QuizQuestionDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\PeerSupportModels.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\StudentService.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Lesson.java

@@ -7,11 +7,13 @@ com\secj3303\model\Gamification$Badge.class
 com\secj3303\model\DashboardData$EventItem.class
 com\secj3303\model\Gamification.class
 com\secj3303\model\PeerSupportModels.class
+com\secj3303\dao\QuizQuestionDao.class
 com\secj3303\model\CarePlanModels$RiskAssessment.class
 com\secj3303\model\CarePlanModels$UserData.class
 com\secj3303\dao\LessonDao.class
 com\secj3303\dao\AssessmentResultDao.class
 com\secj3303\config\AssessmentDataInitializer.class
+com\secj3303\dao\QuizQuestionDaoHibernate.class
 com\secj3303\controller\LearningController.class
 com\secj3303\model\LearningModule.class
 com\secj3303\model\Student.class
@@ -26,6 +28,7 @@ com\secj3303\model\DashboardData$StatItem.class
 com\secj3303\dao\PostDaoImpl.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
 com\secj3303\dao\ModuleProgressDaoHibernate.class
+com\secj3303\controller\ModuleManagementController.class
 com\secj3303\model\AdminData.class
 com\secj3303\model\AssessmentModels.class
 com\secj3303\controller\BmiController.class
@@ -65,7 +68,6 @@ com\secj3303\dao\CategoryDaoImpl.class
 com\secj3303\model\CounsellingSession.class
 com\secj3303\model\Lesson.class
 com\secj3303\controller\CounsellingSessionController.class
-com\secj3303\controller\LearningManagementController.class
 com\secj3303\controller\AnalyticsController.class
 com\secj3303\controller\ProfileController.class
 com\secj3303\dao\AssessmentDao.class
