@@ -2,7 +2,6 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentResultDao.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\ContentManagementController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\MoodEntryDaoHibernate.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\GamificationData.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\AdminData.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\config\AssessmentDataInitializer.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\GamificationDaoHibernate.java
@@ -12,7 +11,6 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Counsellor.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\MoodEntryDao.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\TimeSlot.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\GamificationLeaderboardEntry.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\ModuleProgress.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentResultDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\config\SecurityConfig.java
@@ -27,6 +25,7 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\QuizQuestion.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\User.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\AnalyticsController.java
+C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Gamification.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\QuestionDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\StudentEngagement.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\config\DemoDataInitializer.java
@@ -50,7 +49,6 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\LessonDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\SelfAssessmentController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentAnswerDao.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\GamificationBadge.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Person.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\ProfileController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\config\DataInitializer.java
@@ -58,7 +56,6 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PostDao.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\ReportDaoImpl.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\AnalyticsService.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\UserGamificationStats.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\LessonDao.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\CounsellingSessionController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\ReportDao.java
@@ -76,7 +73,6 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\PeerSupportController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\LearningService.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PersonDao.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\GamificationUserStats.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\AssessmentAnswerDaoHibernate.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\CounsellingSession.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\LearningController.java
@@ -91,10 +87,10 @@ C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\j
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PostDaoImpl.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\AssessmentModels.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\PersonDaoImpl.java
+C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\GamificationService.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\controller\AdminController.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\ContentManagementModels.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\ReplyDaoImpl.java
-C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\service\GamificationIntegrationService.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\AssessmentAnswer.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\model\Assessment.java
 C:\Users\Owner\OneDrive\Documents\UTM\Year3\SECJ3303-01-MentalAman.co\src\main\java\com\secj3303\dao\ModuleProgressDaoHibernate.java
