@@ -71,7 +71,7 @@ public class LearningModule {
         fetch = FetchType.LAZY
     )
     @OrderBy("id ASC")
-    private Set<QuizQuestion> quiz = new LinkedHashSet<>();
+    private Set<QuizQuestion> quizzes = new LinkedHashSet<>();
 
     // =========================
     // TRANSIENT (UI-ONLY)
@@ -149,12 +149,13 @@ public class LearningModule {
         this.lessons = lessons;
     }
 
-    public Set<QuizQuestion> getQuiz() {
-        return quiz;
+    // 🔥 FIXED NAME
+    public Set<QuizQuestion> getQuizzes() {
+        return quizzes;
     }
 
-    public void setQuiz(Set<QuizQuestion> quiz) {
-        this.quiz = quiz;
+    public void setQuizzes(Set<QuizQuestion> quizzes) {
+        this.quizzes = quizzes;
     }
 
     public int getProgress() {
@@ -174,12 +175,9 @@ public class LearningModule {
     }
 
     // =========================
-    // OPTIONAL (GOOD PRACTICE)
+    // HELPER METHODS
     // =========================
 
-    /**
-     * Helper methods for bidirectional consistency
-     */
     public void addLesson(Lesson lesson) {
         lessons.add(lesson);
         lesson.setModule(this);
@@ -191,12 +189,12 @@ public class LearningModule {
     }
 
     public void addQuizQuestion(QuizQuestion question) {
-        quiz.add(question);
+        quizzes.add(question);
         question.setModule(this);
     }
 
     public void removeQuizQuestion(QuizQuestion question) {
-        quiz.remove(question);
+        quizzes.remove(question);
         question.setModule(null);
     }
 }

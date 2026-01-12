@@ -130,7 +130,7 @@ public class LearningController {
         LearningModule module = moduleDao.findByIdWithDetails(moduleId)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
-        List<QuizQuestion> questions = module.getQuiz().stream()
+        List<QuizQuestion> questions = module.getQuizzes().stream()
                 .sorted(Comparator.comparing(QuizQuestion::getId))
                 .collect(Collectors.toList());
 
@@ -160,7 +160,7 @@ public class LearningController {
         LearningModule module = moduleDao.findByIdWithDetails(moduleId)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
-        List<QuizQuestion> questions = module.getQuiz().stream()
+        List<QuizQuestion> questions = module.getQuizzes().stream()
                 .sorted(Comparator.comparing(QuizQuestion::getId))
                 .collect(Collectors.toList());
 
