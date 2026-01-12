@@ -76,11 +76,15 @@ com\secj3303\dao\AssessmentDao.class
 com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
+<<<<<<< HEAD
 com\secj3303\dao\GamificationDao.class
+=======
+>>>>>>> d1a6da6a9447ae858d6d9016f6fdd37e8f04e874
 com\secj3303\dao\AssessmentDaoHibernate.class
 com\secj3303\dao\ModuleProgressDao.class
 com\secj3303\model\AssessmentAnswer.class
 com\secj3303\model\CarePlanModels$CarePlanActivity.class
+com\secj3303\controller\SelfAssessmentController$AssessmentProgress.class
 com\secj3303\controller\AICoachController.class
 com\secj3303\model\QuizQuestion.class
 com\secj3303\service\CounsellingSessionService.class
