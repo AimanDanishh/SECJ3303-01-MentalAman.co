@@ -80,7 +80,7 @@
                 </div>
 
                 <!-- Include role-specific content -->
-                <th:block th:replace="~{counselling-student :: student-content}"></th:block>
+                <th:block th:replace="~{counselling-content :: session-content}"></th:block>
             </div>
 
             </div>
@@ -220,6 +220,67 @@
             // Update visual selection
             updateVisualSelection(radio);
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const completeForm = document.querySelector('form[action*="/complete/"]');
+            if (completeForm) {
+                completeForm.addEventListener('submit', function(e) {
+                    const reportContent = document.getElementById('reportContent');
+                    if (reportContent && reportContent.value.trim().length < 50) {
+                        e.preventDefault();
+                        alert('Report content must be at least 50 characters.');
+                        reportContent.focus();
+                    }
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportContent = document.getElementById('reportContent');
+            const charCount = document.getElementById('charCount');
+            const minLengthError = document.getElementById('minLengthError');
+            
+            if (reportContent && charCount) {
+                reportContent.addEventListener('input', function() {
+                    const length = this.value.length;
+                    charCount.textContent = length + ' characters';
+                    
+                    // Show/hide min length error
+                    if (length > 0 && length < 50) {
+                        minLengthError.classList.remove('hidden');
+                        this.classList.add('border-red-300');
+                        this.classList.remove('border-slate-300');
+                        charCount.classList.add('text-red-500');
+                    } else {
+                        minLengthError.classList.add('hidden');
+                        this.classList.remove('border-red-300');
+                        this.classList.add('border-slate-300');
+                        charCount.classList.remove('text-red-500');
+                        if (length >= 50) {
+                            charCount.classList.add('text-green-500');
+                        } else {
+                            charCount.classList.remove('text-green-500');
+                        }
+                    }
+                });
+                
+                // Trigger input event to update count initially
+                reportContent.dispatchEvent(new Event('input'));
+            }
+            
+            // Form validation
+            const completeForm = document.querySelector('form[action*="/complete/"]');
+            if (completeForm) {
+                completeForm.addEventListener('submit', function(e) {
+                    const reportContent = document.getElementById('reportContent');
+                    if (reportContent && reportContent.value.trim().length < 50) {
+                        e.preventDefault();
+                        alert('Report content must be at least 50 characters.');
+                        reportContent.focus();
+                    }
+                });
+            }
+        });
 
         // Update visual selection for session type buttons
         function updateVisualSelection(selectedRadio) {

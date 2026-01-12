@@ -19,4 +19,13 @@ public interface CounsellingSessionDao {
     List<CounsellingSession> findByCounsellorAndDate(Counsellor counsellor, LocalDate date);
     List<CounsellingSession> findByStatus(com.secj3303.model.CounsellingSession.SessionStatus status);
     List<CounsellingSession> findByStudentConfirmed(boolean confirmed);
+    
+    // Student-related methods - NEW
+    List<CounsellingSession> findByStudentIdOrderByDateDescStartTimeDesc(String studentId);
+    List<CounsellingSession> findByStudentIdAndStatusOrderByDateAsc(String studentId, CounsellingSession.SessionStatus status);
+    List<CounsellingSession> findByStudentId(String studentId);
+    List<CounsellingSession> findByStudentIdAndDate(String studentId, LocalDate date);
+    List<CounsellingSession> findByStudentIdAndDateBetween(String studentId, LocalDate startDate, LocalDate endDate);
+    long countByStudentId(String studentId);
+    long countByStudentIdAndStatus(String studentId, CounsellingSession.SessionStatus status);
 }

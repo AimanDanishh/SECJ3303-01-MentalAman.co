@@ -1,4 +1,4 @@
-<div th:fragment="student-content">
+<div th:fragment="session-content">
 
                 <!-- NF2: Display list of scheduled sessions -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,10 +92,12 @@
                             <div th:unless="${sessions != null and !sessions.isEmpty()}" class="text-center py-12">
                                 <i data-lucide="calendar" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
                                 <p class="text-slate-600 mb-4">No sessions scheduled</p>
+                                <div  th:if="${userRole == 'student'}">
                                 <a th:href="@{/counselling?modal=book}"
                                 class="inline-block py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                     Book Your First Session
                                 </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -138,6 +140,7 @@
                             </div>
                             
                             <!-- Quick Actions Card -->
+                            <div  th:if="${userRole == 'student'}">
                             <div class="bg-white rounded-xl shadow-lg border border-slate-200">
                                 <div class="p-6 border-slate-200">
                                     <h3 class="text-l text-slate-600 flex items-center gap-2">Quick Actions</h3>
@@ -149,6 +152,7 @@
                                         Book New Session
                                     </a>
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -233,7 +237,7 @@
                         <!-- Action Buttons based on status and role -->
                         <div class="flex flex-col gap-3">
                         <!-- Student: Confirm Attendance for scheduled sessions -->
-                        <div th:if="${userRole == 'student' and selectedSession.status.name == 'SCHEDULED' and !selectedSession.studentConfirmed}">
+                        <div th:if="${userRole == 'counsellor' and (selectedSession.status.name == 'PENDING_RESCHEDULE' or selectedSession.status.name == 'SCHEDULED') and !selectedSession.attendanceConfirmed}">
                             <form th:action="@{'/counselling/confirm/' + ${selectedSession.id}}" method="post">
                             <button type="submit"
                                     class="w-full py-3 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
@@ -244,7 +248,7 @@
                         </div>
 
                         <!-- Reschedule & Cancel for active sessions -->
-                        <div th:if="${selectedSession.status.name != 'COMPLETED' and selectedSession.status.name != 'CANCELLED'}">
+                        <div th:if="${selectedSession.status.name != 'COMPLETED' and selectedSession.status.name != 'CANCELLED' and selectedSession.status.name != 'CONFIRMED'}">
                             <a th:href="@{'/counselling?detailId=' + ${selectedSession.id} + '&modal=reschedule'}"
                             class="w-full py-3 px-4 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors text-center block mb-3">
                             Request Reschedule
@@ -258,10 +262,10 @@
 
                         <!-- Counsellor: Upload Report for completed sessions -->
                         <div th:if="${userRole == 'counsellor' and selectedSession.status.name == 'CONFIRMED' and !selectedSession.reportAvailable}">
-                            <a th:href="@{'/counselling?detailId=' + ${selectedSession.id} + '&modal=upload'}"
+                            <a th:href="@{'/counselling?detailId=' + ${selectedSession.id} + '&modal=complete'}"
                             class="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
-                            <i data-lucide="file-text" class="w-5 h-5"></i>
-                            Upload Session Report
+                                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                Mark as Completed
                             </a>
                         </div>
 
@@ -424,69 +428,180 @@
                     </div>
                 </div>
 
-                <!-- NF9: View Report Modal (Student) -->
+                <!-- View Report Modal (Student) -->
                 <div th:if="${showReportModal and selectedSession != null and selectedSession.reportAvailable}" 
                     class="fixed inset-0 bg-black bg-opacity-100 flex items-center justify-center p-4 z-50">
                     <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
                         <!-- Modal Header -->
                         <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-slate-900">Session Report</h2>
-                        <a th:href="@{/counselling}"
-                            class="text-slate-400 hover:text-slate-600 transition-colors">
-                            <i data-lucide="x" class="w-6 h-6"></i>
-                        </a>
+                            <h2 class="text-2xl font-bold text-slate-900">Session Report</h2>
+                            <a th:href="@{/counselling}"
+                                class="text-slate-400 hover:text-slate-600 transition-colors">
+                                <i data-lucide="x" class="w-6 h-6"></i>
+                            </a>
                         </div>
 
                         <!-- Report Content -->
                         <div class="space-y-4">
-                        <!-- Counsellor Info -->
-                        <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm text-slate-600 mb-1">Counsellor</p>
-                            <p class="font-semibold text-slate-900" th:text="${selectedSession.counsellor.name}"></p>
-                        </div>
+                            <!-- Session Information -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Counsellor Info -->
+                                <div th:if="${userRole == 'student'}" class="p-4 bg-slate-50 rounded-lg">
+                                    <p class="text-sm text-slate-600 mb-1">Counsellor</p>
+                                    <p class="font-semibold text-slate-900" th:text="${selectedSession.counsellor.name}"></p>
+                                    <p class="text-xs text-slate-500 mt-1" th:text="${selectedSession.counsellor.specialty}"></p>
+                                </div>
 
-                        <!-- Session Date & Time -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm text-slate-600 mb-1">Session Date</p>
-                            <p class="font-semibold text-slate-900" th:text="${selectedSession.date}"></p>
+                                <!-- Session Date -->
+                                <div class="p-4 bg-slate-50 rounded-lg">
+                                    <p class="text-sm text-slate-600 mb-1">Session Date</p>
+                                    <p class="font-semibold text-slate-900" th:text="${#temporals.format(selectedSession.date, 'MMM d, yyyy')}"></p>
+                                    <p class="text-xs text-slate-500 mt-1" th:text="${#temporals.format(selectedSession.date, 'EEEE')}"></p>
+                                </div>
+
+                                <!-- Session Time -->
+                                <div class="p-4 bg-slate-50 rounded-lg">
+                                    <p class="text-sm text-slate-600 mb-1">Time</p>
+                                    <p class="font-semibold text-slate-900" th:text="${selectedSession.formattedTime}"></p>
+                                    <p class="text-xs text-slate-500 mt-1" th:text="${selectedSession.type.displayName}"></p>
+                                </div>
                             </div>
-                            <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm text-slate-600 mb-1">Time</p>
-                            <p class="font-semibold text-slate-900" th:text="${selectedSession.time}"></p>
+
+                            <!-- Session Report Content -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-lg font-semibold text-slate-900">Session Report</h3>
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                        Completed
+                                    </span>
+                                </div>
+                                
+                                <div class="p-5 bg-slate-50 border border-slate-200 rounded-lg">
+                                    <!-- This displays the reportContent saved from "Mark as Completed" form -->
+                                    <div class="text-slate-800 whitespace-pre-line min-h-[200px]" 
+                                        th:text="${selectedSession.reportContent}">
+                                        <!-- Report content will appear here -->
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Report Summary -->
-                        <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                            <p class="font-medium text-purple-900 mb-3">Session Summary</p>
-                            <p class="text-purple-800 text-sm whitespace-pre-line" 
-                            th:text="${selectedSession.reportContent}">
-                            </p>
-                        </div>
+                            <!-- Additional Notes (if any) -->
+                            <div th:if="${selectedSession.notes != null and !selectedSession.notes.isEmpty()}">
+                                <h4 class="font-medium text-slate-700 mb-2">Additional Notes</h4>
+                                <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <p class="text-slate-800 text-sm whitespace-pre-line" 
+                                    th:text="${selectedSession.notes}"></p>
+                                </div>
+                            </div>
 
-                        <!-- Confidential Note -->
-                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p class="text-sm text-blue-800">
-                            <i data-lucide="shield" class="w-4 h-4 inline mr-1"></i>
-                            This report is confidential and stored securely. You can review it anytime for reflection and follow-up.
-                            </p>
-                        </div>
+                            <!-- Confidential Note -->
+                            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="shield-check" class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-medium text-blue-900 mb-1">Confidential Report</p>
+                                        <p class="text-sm text-blue-800">
+                                            This report contains confidential information from your counselling session. 
+                                            It is stored securely and only accessible to you and your counsellor.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="flex gap-3 mt-6">
-                        <a th:href="@{/counselling}"
-                            class="flex-1 py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center">
-                            Close
-                        </a>
-                        
-                        <a th:href="@{/counselling?modal=book}" 
-                            th:data-counsellor="${selectedSession.counsellor}"
-                            class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center follow-up-btn">
-                            Book Follow-up Session
-                        </a>
+                        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                            <a th:href="@{/counselling}"
+                                class="flex-1 py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center flex items-center justify-center gap-2">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                                Back to Sessions
+                            </a>
+                            
+                            <!-- Only show follow-up booking if session is completed -->
+                            <a th:if="${userRole == 'student' and selectedSession.status.name == 'COMPLETED'}"
+                            th:href="@{/counselling?modal=book&amp;counsellorId={id}(id=${selectedSession.counsellor.id})}" 
+                            class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                                Book Follow-up
+                            </a>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Mark as Completed Modal -->
+                <div th:if="${showCompleteModal and selectedSession != null}" 
+                    class="fixed inset-0 bg-black bg-opacity-100 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between p-6 border-b border-slate-200">
+                            <h2 class="text-2xl font-bold text-slate-900">Mark Session as Completed</h2>
+                            <a th:href="@{'/counselling?detailId=' + ${selectedSession.id}}"
+                            class="text-slate-400 hover:text-slate-600 transition-colors">
+                                <i data-lucide="x" class="w-6 h-6"></i>
+                            </a>
+                        </div>
+
+                        <!-- Session Info -->
+                        <div class="p-6 border-b border-slate-200">
+                            <div class="mb-4 p-4 bg-slate-50 rounded-lg">
+                                <p class="text-sm text-slate-600 mb-2">You're marking session with:</p>
+                                <p class="font-semibold text-slate-900" th:text="${selectedSession.studentId}"></p>
+                                <p class="text-slate-600 text-sm">
+                                    <span th:text="${#temporals.format(selectedSession.date, 'MMM d, yyyy')}"></span>
+                                    at 
+                                    <span th:text="${selectedSession.formattedTime}"></span>
+                                </p>
+                                <p class="text-slate-600 text-sm mt-1">
+                                    Counsellor: <span class="font-medium" th:text="${selectedSession.counsellor.name}"></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Complete Form -->
+                        <form th:action="@{'/counselling/complete/' + ${selectedSession.id}}" method="post" class="p-6 space-y-6">
+                            <!-- Report Content -->
+                            <div>
+                                <label for="reportContent" class="block text-sm font-medium text-slate-700 mb-2">
+                                    Session Report <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mb-3 text-sm text-slate-600 bg-blue-50 p-3 rounded-lg">
+                                    <p class="font-medium mb-1">What to include:</p>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li>Session summary and discussion points</li>
+                                        <li>Student's progress and concerns</li>
+                                        <li>Recommendations and follow-up plan</li>
+                                        <li>Any important notes for future sessions</li>
+                                    </ul>
+                                </div>
+                                <textarea id="reportContent" 
+                                        name="reportContent" 
+                                        rows="6"
+                                        required
+                                        minlength="50"
+                                        placeholder="Provide a detailed report of the session. This will be visible to the student..."
+                                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"></textarea>
+                                <div class="flex justify-between items-center mt-2">
+                                    <div class="text-xs text-slate-500" id="charCount">Minimum 50 characters required</div>
+                                    <div class="text-xs text-red-500 hidden" id="minLengthError">
+                                        Please enter at least 50 characters
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex flex-col gap-3">
+                                <button type="submit"
+                                        class="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
+                                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                    Mark as Completed
+                                </button>
+                                
+                                <a th:href="@{'/counselling?detailId=' + ${selectedSession.id}}"
+                                class="w-full py-3 px-4 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-center block">
+                                    Go Back
+                                </a>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
