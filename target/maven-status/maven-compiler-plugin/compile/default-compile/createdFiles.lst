@@ -21,6 +21,7 @@ com\secj3303\dao\AssessmentResultDaoHibernate.class
 com\secj3303\dao\StudentDaoHibernate.class
 com\secj3303\dao\GenericDao.class
 com\secj3303\model\Post.class
+com\secj3303\controller\ForumManagementController$ReportedPostDTO.class
 com\secj3303\model\DashboardData$StatItem.class
 com\secj3303\dao\PostDaoImpl.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
@@ -71,7 +72,7 @@ com\secj3303\dao\AssessmentDao.class
 com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
-com\secj3303\model\CounsellingSession$1.class
+com\secj3303\controller\ForumManagementController.class
 com\secj3303\dao\GamificationDao.class
 com\secj3303\dao\AssessmentDaoHibernate.class
 com\secj3303\dao\ModuleProgressDao.class
@@ -86,6 +87,7 @@ com\secj3303\model\DashboardData$ActivityItem.class
 com\secj3303\model\AssessmentModels$AssessmentAnswersForm.class
 com\secj3303\dao\MoodEntryDaoHibernate.class
 com\secj3303\model\CarePlanModels.class
+com\secj3303\controller\ForumManagementController$MockUser.class
 com\secj3303\model\CounsellingSession$SessionStatus.class
 com\secj3303\dao\GamificationDaoHibernate.class
 com\secj3303\service\GamificationService.class
@@ -101,7 +103,6 @@ com\secj3303\controller\DashboardController.class
 com\secj3303\controller\CarePlanController.class
 com\secj3303\dao\ReportDao.class
 com\secj3303\model\StudentEngagement.class
-com\secj3303\controller\ContentManagementController.class
 com\secj3303\dao\ReplyDaoImpl.class
 com\secj3303\model\AdminData$FlaggedContentItem.class
 com\secj3303\model\ContentManagementModels$ContentItem.class
