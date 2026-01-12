@@ -71,7 +71,6 @@ com\secj3303\dao\AssessmentDao.class
 com\secj3303\config\DemoDataInitializer.class
 com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
-com\secj3303\model\CounsellingSession$1.class
 com\secj3303\dao\GamificationDao.class
 com\secj3303\dao\AssessmentDaoHibernate.class
 com\secj3303\dao\ModuleProgressDao.class

@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
            @Index(name = "idx_session_date", columnList = "date"),
            @Index(name = "idx_session_status", columnList = "status"),
            @Index(name = "idx_counsellor_date", columnList = "counsellor_id, date"),
-           @Index(name = "idx_student_date", columnList = "student_id, date") // Added index
+           @Index(name = "idx_student_date", columnList = "student_id, date")
        })
 public class CounsellingSession implements Serializable {
 
@@ -59,7 +59,7 @@ public class CounsellingSession implements Serializable {
     @JoinColumn(name = "counsellor_id", referencedColumnName = "counsellor_id", nullable = false)
     private Counsellor counsellor;
 
-    @Column(name = "student_id", nullable = false, length = 50) // Added student_id field
+    @Column(name = "student_id", nullable = false, length = 50)
     private String studentId;
 
     @Column(nullable = false)
@@ -100,9 +100,21 @@ public class CounsellingSession implements Serializable {
     @Column(name = "report_content", length = 2000)
     private String reportContent;
 
+    // Transient fields for student display (not stored in DB)
+    @Transient
+    private String studentName;
+
+    @Transient
+    private String studentInitials;
+
+    @Transient
+    private String studentAvatarColor;
+
+    @Transient
+    private String studentTextColor = "#ffffff";
+
     public CounsellingSession() {}
 
-    // Updated constructor
     public CounsellingSession(Counsellor counsellor, String studentId, LocalDate date, LocalTime startTime, LocalTime endTime,
                               SessionType type, String location, SessionStatus status, boolean attendanceConfirmed,
                               String notes, String cancellationReason, boolean reportAvailable, String reportContent) {
@@ -128,8 +140,8 @@ public class CounsellingSession implements Serializable {
     public Counsellor getCounsellor() { return counsellor; }
     public void setCounsellor(Counsellor counsellor) { this.counsellor = counsellor; }
 
-    public String getStudentId() { return studentId; } // Added getter
-    public void setStudentId(String studentId) { this.studentId = studentId; } // Added setter
+    public String getStudentId() { return studentId; }
+    public void setStudentId(String studentId) { this.studentId = studentId; }
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
@@ -190,6 +202,60 @@ public class CounsellingSession implements Serializable {
     public String getReportContent() { return reportContent; }
     public void setReportContent(String reportContent) { this.reportContent = reportContent; }
 
+    // Transient field getters and setters
+    public String getStudentName() { 
+        return studentName; 
+    }
+    
+    public void setStudentName(String studentName) { 
+        this.studentName = studentName; 
+    }
+
+    public String getStudentInitials() {
+        if (studentName != null && !studentName.trim().isEmpty()) {
+            String[] nameParts = studentName.trim().split("\\s+");
+            if (nameParts.length >= 2) {
+                return (nameParts[0].charAt(0) + "" + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+            } else if (nameParts.length == 1 && nameParts[0].length() >= 1) {
+                return nameParts[0].substring(0, Math.min(2, nameParts[0].length())).toUpperCase();
+            }
+        }
+        // Fallback to student ID initials
+        if (studentId != null && studentId.length() >= 2) {
+            return studentId.substring(0, 2).toUpperCase();
+        }
+        return "??";
+    }
+
+    public void setStudentInitials(String studentInitials) {
+        this.studentInitials = studentInitials;
+    }
+
+    public String getStudentAvatarColor() {
+        if (studentId == null) return "#6b7280"; // gray as fallback
+        
+        int hash = Math.abs(studentId.hashCode());
+        String[] colors = {
+            "#ef4444", "#f97316", "#f59e0b", "#eab308",
+            "#84cc16", "#22c55e", "#10b981", "#14b8a6",
+            "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1",
+            "#8b5cf6", "#a855f7", "#d946ef", "#ec4899"
+        };
+        return colors[hash % colors.length];
+    }
+
+    public void setStudentAvatarColor(String studentAvatarColor) {
+        this.studentAvatarColor = studentAvatarColor;
+    }
+
+    public String getStudentTextColor() {
+        return studentTextColor;
+    }
+
+    public void setStudentTextColor(String studentTextColor) {
+        this.studentTextColor = studentTextColor;
+    }
+
     // ------------------------
     // Business Logic Methods
     // ------------------------
@@ -214,7 +280,6 @@ public class CounsellingSession implements Serializable {
         return java.time.Duration.between(startTime, endTime);
     }
 
-    // New method to check if session belongs to a student
     public boolean belongsToStudent(String studentId) {
         return this.studentId != null && this.studentId.equals(studentId);
     }
@@ -232,7 +297,7 @@ public class CounsellingSession implements Serializable {
             case CANCELLED: return "bg-red-50 border-red-200";
             case CONFIRMED: return "bg-green-50 border-green-200";
             case PENDING_RESCHEDULE: return "bg-yellow-50 border-yellow-200";
-            default: return "bg-blue-50 border-blue-200"; // SCHEDULED
+            default: return "bg-blue-50 border-blue-200";
         }
     }
 
@@ -242,7 +307,7 @@ public class CounsellingSession implements Serializable {
             case CANCELLED: return "bg-red-200 text-red-700";
             case CONFIRMED: return "bg-green-200 text-green-700";
             case PENDING_RESCHEDULE: return "bg-yellow-200 text-yellow-700";
-            default: return "bg-blue-200 text-blue-700"; // SCHEDULED
+            default: return "bg-blue-200 text-blue-700";
         }
     }
 
@@ -252,7 +317,7 @@ public class CounsellingSession implements Serializable {
             case CANCELLED: return "bg-red-200 text-red-700";
             case CONFIRMED: return "bg-green-200 text-green-700";
             case PENDING_RESCHEDULE: return "bg-yellow-200 text-yellow-700";
-            default: return "bg-blue-200 text-blue-700"; // SCHEDULED
+            default: return "bg-blue-200 text-blue-700";
         }
     }
 
@@ -262,7 +327,7 @@ public class CounsellingSession implements Serializable {
             case CANCELLED: return "x-circle";
             case CONFIRMED: return "check-circle";
             case PENDING_RESCHEDULE: return "clock";
-            default: return "calendar"; // SCHEDULED
+            default: return "calendar";
         }
     }
 
@@ -275,5 +340,31 @@ public class CounsellingSession implements Serializable {
     public String getFormattedDate() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
         return date.format(formatter);
+    }
+
+    // Helper methods for role-based display
+    public boolean shouldShowStudentInfo(String userRole) {
+        return "counsellor".equals(userRole);
+    }
+
+    public boolean shouldShowCounsellorInfo(String userRole) {
+        return !"counsellor".equals(userRole);
+    }
+
+    public String getDisplayName(String userRole) {
+        if ("counsellor".equals(userRole)) {
+            return studentName != null ? studentName : 
+                   (studentId != null ? "Student " + studentId : "Student");
+        } else {
+            return counsellor != null ? counsellor.getName() : "Counsellor";
+        }
+    }
+
+    public String getDisplayDetail(String userRole) {
+        if ("counsellor".equals(userRole)) {
+            return studentId != null ? "ID: " + studentId : "";
+        } else {
+            return counsellor != null ? counsellor.getSpecialty() : "";
+        }
     }
 }

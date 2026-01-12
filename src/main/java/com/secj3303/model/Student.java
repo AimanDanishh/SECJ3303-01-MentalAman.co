@@ -183,7 +183,7 @@ public class Student implements Serializable {
     private String getBadgeColorClass() {
         if (riskLevel == null) return "bg-green-100 text-green-700";
         
-        if ("high".equalsIgnoreCase(this.riskLevel)) {
+        if ("severe".equalsIgnoreCase(this.riskLevel)) {
             return "bg-red-100 text-red-700";
         } else if ("moderate".equalsIgnoreCase(this.riskLevel)) {
             return "bg-yellow-100 text-yellow-700";
