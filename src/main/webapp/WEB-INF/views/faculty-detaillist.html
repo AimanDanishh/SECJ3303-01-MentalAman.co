@@ -52,41 +52,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Counsellor-specific: Show session details -->
-                                    <div th:if="${user.role == 'counsellor' and selectedStudent.upcomingSession != null}"
-                                        class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
-                                        <h3 class="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                                            <i data-lucide="calendar" class="w-5 h-5"></i>
-                                            Scheduled Counselling Session
-                                        </h3>
-                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div th:if="${selectedStudent.upcomingSession['date'] != null}">
-                                                <p class="text-sm text-blue-700">Date</p>
-                                                <p class="font-semibold text-blue-900" th:text="${selectedStudent.upcomingSession['date']}"></p>
-                                            </div>
-                                            <div th:if="${selectedStudent.upcomingSession['time'] != null}">
-                                                <p class="text-sm text-blue-700">Time</p>
-                                                <p class="font-semibold text-blue-900" th:text="${selectedStudent.upcomingSession['time']}"></p>
-                                            </div>
-                                            <div th:if="${selectedStudent.upcomingSession['type'] != null}">
-                                                <p class="text-sm text-blue-700">Type</p>
-                                                <p class="font-semibold text-blue-900" th:text="${selectedStudent.upcomingSession['type']}"></p>
-                                            </div>
-                                            <div th:if="${selectedStudent.upcomingSession['status'] != null}">
-                                                <p class="text-sm text-blue-700">Status</p>
-                                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 uppercase">
-                                                    <span th:text="${selectedStudent.upcomingSession['status']}"></span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3 p-3 bg-white rounded border border-blue-100">
-                                            <p class="text-sm text-blue-800">
-                                                💡 Review the student's assessment reports below to prepare for the upcoming session. 
-                                                This will help provide personalized support and guidance.
-                                            </p>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 

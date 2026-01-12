@@ -3,6 +3,7 @@ package com.secj3303.model;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -11,7 +12,8 @@ import java.time.format.DateTimeFormatter;
        indexes = {
            @Index(name = "idx_session_date", columnList = "date"),
            @Index(name = "idx_session_status", columnList = "status"),
-           @Index(name = "idx_counsellor_date", columnList = "counsellor_id, date")
+           @Index(name = "idx_counsellor_date", columnList = "counsellor_id, date"),
+           @Index(name = "idx_student_date", columnList = "student_id, date") // Added index
        })
 public class CounsellingSession implements Serializable {
 
@@ -57,6 +59,9 @@ public class CounsellingSession implements Serializable {
     @JoinColumn(name = "counsellor_id", referencedColumnName = "counsellor_id", nullable = false)
     private Counsellor counsellor;
 
+    @Column(name = "student_id", nullable = false, length = 50) // Added student_id field
+    private String studentId;
+
     @Column(nullable = false)
     private LocalDate date;
 
@@ -77,8 +82,11 @@ public class CounsellingSession implements Serializable {
     @Column(nullable = false, length = 50)
     private SessionStatus status;
 
-    @Column(name = "student_confirmed")
-    private boolean studentConfirmed;
+    @Column(name = "attendance_confirmed")
+    private boolean attendanceConfirmed = false;
+    
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
 
     @Column(length = 500)
     private String notes;
@@ -94,17 +102,19 @@ public class CounsellingSession implements Serializable {
 
     public CounsellingSession() {}
 
-    public CounsellingSession(Counsellor counsellor, LocalDate date, LocalTime startTime, LocalTime endTime,
-                              SessionType type, String location, SessionStatus status, boolean studentConfirmed,
+    // Updated constructor
+    public CounsellingSession(Counsellor counsellor, String studentId, LocalDate date, LocalTime startTime, LocalTime endTime,
+                              SessionType type, String location, SessionStatus status, boolean attendanceConfirmed,
                               String notes, String cancellationReason, boolean reportAvailable, String reportContent) {
         this.counsellor = counsellor;
+        this.studentId = studentId;
         this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
         this.type = type;
         this.location = location;
         this.status = status;
-        this.studentConfirmed = studentConfirmed;
+        this.attendanceConfirmed = attendanceConfirmed;
         this.notes = notes;
         this.cancellationReason = cancellationReason;
         this.reportAvailable = reportAvailable;
@@ -117,6 +127,9 @@ public class CounsellingSession implements Serializable {
 
     public Counsellor getCounsellor() { return counsellor; }
     public void setCounsellor(Counsellor counsellor) { this.counsellor = counsellor; }
+
+    public String getStudentId() { return studentId; } // Added getter
+    public void setStudentId(String studentId) { this.studentId = studentId; } // Added setter
 
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
@@ -157,8 +170,13 @@ public class CounsellingSession implements Serializable {
         throw new IllegalArgumentException("Invalid session status: " + statusString);
     }
 
-    public boolean isStudentConfirmed() { return studentConfirmed; }
-    public void setStudentConfirmed(boolean studentConfirmed) { this.studentConfirmed = studentConfirmed; }
+    public boolean isAttendanceConfirmed() {
+        return attendanceConfirmed;
+    }
+    
+    public void setAttendanceConfirmed(boolean attendanceConfirmed) {
+        this.attendanceConfirmed = attendanceConfirmed;
+    }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
@@ -194,6 +212,15 @@ public class CounsellingSession implements Serializable {
 
     public java.time.Duration getDuration() {
         return java.time.Duration.between(startTime, endTime);
+    }
+
+    // New method to check if session belongs to a student
+    public boolean belongsToStudent(String studentId) {
+        return this.studentId != null && this.studentId.equals(studentId);
+    }
+
+    public boolean belongsToCounsellor(String counsellorId) {
+        return this.counsellor.getId() != null && this.counsellor.getId().equals(counsellorId);
     }
 
     // ------------------------

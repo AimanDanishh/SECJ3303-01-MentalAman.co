@@ -18,6 +18,9 @@ public class Counsellor implements Serializable {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false, length = 100, unique = true)
+    private String email;  // Added email column
+
     @Column(length = 100)
     private String specialty;
 
@@ -47,16 +50,18 @@ public class Counsellor implements Serializable {
     public Counsellor() {}
 
     // Constructor with explicit ID
-    public Counsellor(String id, String name, String specialty, String code) {
+    public Counsellor(String id, String name, String email, String specialty, String code) {
         this.id = id;
         this.name = name;
+        this.email = email;
         this.specialty = specialty;
         this.code = code;
     }
 
     // Constructor that generates ID from name
-    public Counsellor(String name, String specialty, String code) {
+    public Counsellor(String name, String email, String specialty, String code) {
         this.name = name;
+        this.email = email;
         this.specialty = specialty;
         this.code = code;
         this.id = generateIdFromName(name);
@@ -107,6 +112,9 @@ public class Counsellor implements Serializable {
         this.name = name;
     }
 
+    public String getEmail() { return email; }  // Added getter
+    public void setEmail(String email) { this.email = email; }  // Added setter
+
     public String getSpecialty() { return specialty; }
     public void setSpecialty(String specialty) { this.specialty = specialty; }
 
@@ -132,6 +140,7 @@ public class Counsellor implements Serializable {
         return "Counsellor{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
+                ", email='" + email + '\'' +  // Added email to toString
                 ", specialty='" + specialty + '\'' +
                 ", code='" + code + '\'' +
                 '}';

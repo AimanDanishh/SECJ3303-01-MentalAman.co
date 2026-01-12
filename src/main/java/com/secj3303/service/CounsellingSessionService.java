@@ -37,13 +37,50 @@ public class CounsellingSessionService {
     }
 
     @Transactional(readOnly = true)
+    public List<CounsellingSession> getSessionsByStudentId(String studentId) {
+        return sessionDao.findByStudentIdOrderByDateDescStartTimeDesc(studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CounsellingSession> getSessionsByStudentIdAndStatus(String studentId, CounsellingSession.SessionStatus status) {
+        return sessionDao.findByStudentIdAndStatusOrderByDateAsc(studentId, status);
+    }
+
+    @Transactional(readOnly = true)
     public List<CounsellingSession> getUpcomingSessions() {
         return sessionDao.findUpcomingSessions();
     }
 
     @Transactional(readOnly = true)
+    public List<CounsellingSession> getUpcomingSessionsByStudentId(String studentId) {
+        List<CounsellingSession> studentSessions = sessionDao.findByStudentIdOrderByDateDescStartTimeDesc(studentId);
+        LocalDate today = LocalDate.now();
+        
+        return studentSessions.stream()
+                .filter(session -> !session.isPastSession() && 
+                        session.getStatus() != CounsellingSession.SessionStatus.CANCELLED &&
+                        session.getStatus() != CounsellingSession.SessionStatus.COMPLETED)
+                .sorted((s1, s2) -> {
+                    int dateCompare = s1.getDate().compareTo(s2.getDate());
+                    if (dateCompare != 0) return dateCompare;
+                    return s1.getStartTime().compareTo(s2.getStartTime());
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public CounsellingSession getSessionById(Integer id) {
         return sessionDao.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public CounsellingSession getSessionByIdAndStudentId(Integer id, String studentId) {
+        CounsellingSession session = sessionDao.findById(id);
+        if (session != null && session.getStudentId() != null && 
+            session.getStudentId().equals(studentId)) {
+            return session;
+        }
+        return null;
     }
 
     @Transactional
@@ -132,12 +169,16 @@ public class CounsellingSessionService {
     // Session operations
     // ---------------------------
     @Transactional
-    public void bookSession(String counsellorId, LocalDate date, LocalTime start, 
+    public void bookSession(String counsellorId, String studentId, LocalDate date, LocalTime start, 
                         String sessionType, String sessionLocation, String notes) {
         
         Counsellor counsellor = counsellorDao.findById(counsellorId);
         if (counsellor == null) {
             throw new IllegalArgumentException("Invalid counsellor ID: " + counsellorId);
+        }
+        
+        if (studentId == null || studentId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Student ID is required");
         }
         
         // Check for overlapping sessions (excluding cancelled sessions)
@@ -152,13 +193,14 @@ public class CounsellingSessionService {
         
         CounsellingSession session = new CounsellingSession();
         session.setCounsellor(counsellor);
+        session.setStudentId(studentId);  // Set student ID
         session.setDate(date);
         session.setStartTime(start);
         session.setEndTime(start.plusHours(1));
         session.setTypeFromString(sessionType);
         session.setLocation(sessionLocation);
         session.setStatus(CounsellingSession.SessionStatus.SCHEDULED);
-        session.setStudentConfirmed(false);
+        session.setAttendanceConfirmed(false);
         session.setNotes(notes);
         session.setReportAvailable(false);
         session.setReportContent(null);
@@ -172,7 +214,7 @@ public class CounsellingSessionService {
         CounsellingSession session = getSessionById(sessionId);
         validateSessionExists(session, sessionId);
         
-        session.setStudentConfirmed(true);
+        session.setAttendanceConfirmed(true);
         session.setStatus(CounsellingSession.SessionStatus.CONFIRMED);
         updateSession(session);
     }
@@ -227,9 +269,29 @@ public class CounsellingSessionService {
         CounsellingSession session = getSessionById(sessionId);
         validateSessionExists(session, sessionId);
         
+        // Validate report content
+        if (reportContent == null || reportContent.trim().isEmpty()) {
+            throw new IllegalArgumentException("Report content is required");
+        }
+        
+        if (reportContent.trim().length() < 50) {
+            throw new IllegalArgumentException("Report content must be at least 50 characters");
+        }
+        
+        // Check if session can be marked as completed
+        if (session.getStatus() == CounsellingSession.SessionStatus.CANCELLED) {
+            throw new IllegalArgumentException("Cannot mark a cancelled session as completed");
+        }
+        
+        if (session.getStatus() == CounsellingSession.SessionStatus.COMPLETED) {
+            throw new IllegalArgumentException("Session is already marked as completed");
+        }
+        
+        // Update session
         session.setStatus(CounsellingSession.SessionStatus.COMPLETED);
         session.setReportAvailable(true);
         session.setReportContent(reportContent);
+        
         updateSession(session);
     }
     
@@ -263,5 +325,35 @@ public class CounsellingSessionService {
     
     private boolean isTimeOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
         return start1.isBefore(end2) && start2.isBefore(end1);
+    }
+
+    // ---------------------------
+    // Statistics and reporting
+    // ---------------------------
+    @Transactional(readOnly = true)
+    public long countSessionsByStudentId(String studentId) {
+        List<CounsellingSession> studentSessions = sessionDao.findByStudentIdOrderByDateDescStartTimeDesc(studentId);
+        return studentSessions.size();
+    }
+
+    @Transactional(readOnly = true)
+    public long countCompletedSessionsByStudentId(String studentId) {
+        List<CounsellingSession> studentSessions = sessionDao.findByStudentIdOrderByDateDescStartTimeDesc(studentId);
+        return studentSessions.stream()
+                .filter(s -> s.getStatus() == CounsellingSession.SessionStatus.COMPLETED)
+                .count();
+    }
+
+    @Transactional(readOnly = true)
+    public long countUpcomingSessionsByStudentId(String studentId) {
+        List<CounsellingSession> upcomingSessions = getUpcomingSessionsByStudentId(studentId);
+        return upcomingSessions.size();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasAccessToSession(Integer sessionId, String studentId) {
+        CounsellingSession session = getSessionById(sessionId);
+        return session != null && session.getStudentId() != null && 
+               session.getStudentId().equals(studentId);
     }
 }
