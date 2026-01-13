@@ -1,116 +1,254 @@
-<th:block th:fragment="content(modules, user, totalStudents, highRiskCount, moderateRiskCount, avgCompletion, avgLoginFrequency, filteredStudents, departments, filterRisk, filterDepartment, searchQuery, ...)">
-    
+<th:block th:fragment="content(modules, completedCount, inProgressCount, totalModules, selectedModule, selectedLesson, showQuiz, quizScore, lessons, quizQuestions, achievement, user, students, referrals, reasons, selectedStudent, showForm, formData, showSuccess, showError, errorMessage)">
+
     <div class="max-w-[1600px] mx-auto px-4 py-6">
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-slate-900">Student Engagement Analytics</h1>
-            <p class="text-slate-500 text-sm mt-1">Monitor system engagement and student progress to identify at-risk students</p>
-        </div>
+        
+        <div id="dashboard-view">
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold text-slate-900">Student Engagement Analytics</h1>
+                <p class="text-slate-500 text-sm mt-1">Monitor system engagement and student progress to identify at-risk students</p>
+            </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Students</p><h3 class="text-3xl font-bold text-slate-900" th:text="${totalStudents}">8</h3></div>
-                <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">High Risk</p><h3 class="text-3xl font-bold text-red-600" th:text="${highRiskCount}">2</h3></div>
-                <i data-lucide="alert-circle" class="w-6 h-6 text-red-500"></i>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Moderate Risk</p><h3 class="text-3xl font-bold text-orange-500" th:text="${moderateRiskCount}">2</h3></div>
-                <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-500"></i>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Avg Completion</p><h3 class="text-3xl font-bold text-slate-900" th:text="${avgCompletion} + '%'">55%</h3></div>
-                <i data-lucide="book-open" class="w-6 h-6 text-purple-500"></i>
-            </div>
-            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Avg Logins/mo</p><h3 class="text-3xl font-bold text-slate-900" th:text="${avgLoginFrequency}">30</h3></div>
-                <i data-lucide="zap" class="w-6 h-6 text-green-500"></i>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl border border-slate-200 p-4 mb-8 shadow-sm">
-            <form th:action="@{/analytics}" method="get" class="flex flex-col md:flex-row gap-4 items-center">
-                <div class="relative flex-1">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-                    <input type="text" name="searchQuery" th:value="${searchQuery}" placeholder="Search by name, student ID, or email..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Students</p><h3 class="text-3xl font-bold text-slate-900" th:text="${totalStudents}">0</h3></div>
+                    <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
                 </div>
-                <div class="flex items-center gap-3">
-                    <select name="filterRisk" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                        <option value="all">All Risks</option>
-                        <option value="high" th:selected="${filterRisk == 'high'}">High Risk</option>
-                        <option value="moderate" th:selected="${filterRisk == 'moderate'}">Moderate Risk</option>
-                    </select>
-                    <select name="filterDepartment" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
-                        <option th:each="dept : ${departments}" th:value="${dept}" th:text="${dept == 'all' ? 'All Departments' : dept}" th:selected="${filterDepartment == dept}"></option>
-                    </select>
-                    <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                        <i data-lucide="share-2" class="w-4 h-4"></i> Export
-                    </button>
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">High Risk</p><h3 class="text-3xl font-bold text-red-600" th:text="${highRiskCount}">0</h3></div>
+                    <i data-lucide="alert-circle" class="w-6 h-6 text-red-500"></i>
                 </div>
-            </form>
-        </div>
-
-        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-2">
-                    <i data-lucide="bar-chart" class="w-4 h-4 text-blue-600"></i>
-                    Student Engagement Overview (<span th:text="${filteredStudents.size()}"></span>)
-                </h3>
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Moderate Risk</p><h3 class="text-3xl font-bold text-orange-500" th:text="${moderateRiskCount}">0</h3></div>
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-500"></i>
+                </div>
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Avg Completion</p><h3 class="text-3xl font-bold text-slate-900" th:text="${avgCompletion} + '%'">0%</h3></div>
+                    <i data-lucide="book-open" class="w-6 h-6 text-purple-500"></i>
+                </div>
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Avg Logins/mo</p><h3 class="text-3xl font-bold text-slate-900" th:text="${avgLoginFrequency}">0</h3></div>
+                    <i data-lucide="zap" class="w-6 h-6 text-green-500"></i>
+                </div>
             </div>
-            <div class="divide-y divide-slate-100">
-                <div th:each="student : ${filteredStudents}" 
-                     class="px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
-                     th:onclick="'openInterventionModal(' + ${#json.toJson(student)} + ')'">
-                    <div class="flex items-center gap-4">
-                        <div th:classappend="${student.isHighRisk() ? 'bg-red-600' : (student.isModerateRisk() ? 'bg-orange-500' : 'bg-green-600')}" 
-                             class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs" th:text="${student.initials}"></div>
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-bold text-slate-900 text-sm" th:text="${student.name}"></span>
-                                <span th:classappend="${student.isHighRisk() ? 'bg-red-50 text-red-600' : (student.isModerateRisk() ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600')}" 
-                                      class="px-2 py-0.5 rounded text-[10px] font-bold uppercase" th:text="${student.riskLevel}"></span>
-                                <i th:if="${student.isTrendDown()}" data-lucide="trending-down" class="w-3.5 h-3.5 text-red-500"></i>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-4 mb-8 shadow-sm">
+                <form th:action="@{/analytics}" method="get" class="flex flex-col md:flex-row gap-4 items-center">
+                    <div class="relative flex-1 w-full">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                        <input type="text" name="searchQuery" th:value="${searchQuery}" placeholder="Search by name, student ID, or email..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <select name="filterRisk" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none cursor-pointer">
+                            <option value="all">All Risk Levels</option>
+                            <option value="high" th:selected="${filterRisk == 'high'}">High Risk</option>
+                            <option value="moderate" th:selected="${filterRisk == 'moderate'}">Moderate Risk</option>
+                        </select>
+                        <select name="filterDepartment" onchange="this.form.submit()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none cursor-pointer">
+                            <option th:each="dept : ${departments}" th:value="${dept}" th:text="${dept == 'all' ? 'All Departments' : dept}" th:selected="${filterDepartment == dept}"></option>
+                        </select>
+                        <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-900 uppercase flex items-center gap-2">
+                        <i data-lucide="bar-chart" class="w-4 h-4 text-blue-600"></i>
+                        Student Engagement Overview (<span th:text="${students != null ? students.size() : 0}">0</span>)
+                    </h3>
+                </div>
+                
+                <div class="divide-y divide-slate-100">
+                    <div th:each="student : ${students}" 
+                         class="px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group"
+                         th:onclick="showDetail(
+                             [[${student.initials}]], [[${student.name}]], [[${student.email}]], [[${student.studentId}]], [[${student.riskLevel}]],
+                             [[${student.loginFrequency}]], [[${student.moduleCompletion}]], [[${student.lastLogin}]],
+                             [[${student.forumPosts}]], [[${student.assessmentsTaken}]], [[${student.aiCoachUsage}]]
+                         )">
+                        
+                        <div class="flex items-center gap-4">
+                            <div th:classappend="${student.riskLevel == 'high' ? 'bg-red-600' : (student.riskLevel == 'moderate' ? 'bg-orange-500' : 'bg-green-600')}" 
+                                 class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs" 
+                                 th:text="${student.initials}">AB</div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="font-bold text-slate-900 text-sm" th:text="${student.name}">Name</span>
+                                    <span th:classappend="${student.riskLevel == 'high' ? 'bg-red-50 text-red-600' : (student.riskLevel == 'moderate' ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600')}" 
+                                          class="px-2 py-0.5 rounded text-[10px] font-bold uppercase" th:text="${student.riskLevel}">RISK</span>
+                                    <i th:if="${student.trend == 'down'}" data-lucide="trending-down" class="w-3.5 h-3.5 text-red-500"></i>
+                                </div>
+                                <p class="text-[11px] text-slate-400" th:text="${student.studentId} + ' • ' + ${student.department}">Info</p>
                             </div>
-                            <p class="text-[11px] text-slate-400" th:text="${student.studentId} + ' • ' + ${student.department} + ' • Last login: ' + ${student.lastLogin}"></p>
+                        </div>
+
+                        <div class="flex items-center gap-12 text-right">
+                            <div><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Logins</p><p class="text-xs font-bold text-slate-700" th:text="${student.loginFrequency}">0</p></div>
+                            <div class="w-16"><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Completion</p><p class="text-xs font-bold" th:classappend="${student.moduleCompletion < 50 ? 'text-red-600' : 'text-green-600'}" th:text="${student.moduleCompletion} + '%'">0%</p></div>
+                            <div><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Posts</p><p class="text-xs font-bold text-slate-700" th:text="${student.forumPosts}">0</p></div>
+                            <div><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Assessments</p><p class="text-xs font-bold text-slate-700" th:text="${student.assessmentsTaken}">0</p></div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-12 text-right">
-                        <div><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Logins</p><p class="text-xs font-bold text-slate-700" th:text="${student.loginFrequency}"></p></div>
-                        <div class="w-24"><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Completion</p><p class="text-xs font-bold text-green-600" th:text="${student.moduleCompletion} + '%'"></p></div>
-                        <div><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Posts</p><p class="text-xs font-bold text-slate-700" th:text="${student.forumPosts}"></p></div>
-                        <div><p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Assessments</p><p class="text-xs font-bold text-slate-700" th:text="${student.assessmentsTaken}"></p></div>
+                    
+                    <div th:if="${students == null or students.empty}" class="px-6 py-8 text-center text-slate-400 text-sm">
+                        No students found matching your criteria.
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="interventionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
-        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="flag" class="w-5 h-5 text-red-600"></i> Intervention Flag</h3>
-                <button onclick="closeInterventionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <form th:action="@{/analytics/flag}" method="get" class="p-8">
-                <input type="hidden" id="modalStudentId" name="id">
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-                    <p class="text-[10px] font-bold text-blue-600 uppercase mb-1">Student</p>
-                    <h4 id="modalStudentName" class="text-lg font-bold text-blue-900"></h4>
+
+        <div id="detail-view" class="hidden animate-fade-in">
+            <button onclick="hideDetail()" class="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mb-6 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Analytics
+            </button>
+
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div id="d-initials" class="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl bg-slate-200">AB</div>
+                    <div>
+                        <h1 id="d-name" class="text-2xl font-bold text-slate-900">Student Name</h1>
+                        <div class="flex items-center gap-3 mt-1">
+                            <span id="d-email" class="text-sm text-slate-500">email@uni.edu</span>
+                            <span class="text-xs text-slate-300">•</span>
+                            <span id="d-id" class="text-xs text-slate-500">ID: 123</span>
+                            <span id="d-risk" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border">RISK</span>
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow-md">Flag Student</button>
-            </form>
-        </div>
-    </div>
+                <button onclick="alert('Flagged for follow-up')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors">
+                    <i data-lucide="flag" class="w-4 h-4"></i> Flag for Follow-up
+                </button>
+            </div>
 
-    <script>
-        function openInterventionModal(student) {
-            document.getElementById('modalStudentId').value = student.id;
-            document.getElementById('modalStudentName').innerText = student.name;
-            document.getElementById('interventionModal').classList.remove('hidden');
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex justify-between items-start mb-2"><p class="text-xs font-bold text-slate-400 uppercase">Login Frequency</p><i data-lucide="activity" class="w-4 h-4 text-blue-500"></i></div>
+                    <h3 id="d-logins" class="text-3xl font-bold text-slate-900">0</h3>
+                    <p class="text-xs text-slate-400 mt-1">logins this month</p>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex justify-between items-start mb-2"><p class="text-xs font-bold text-slate-400 uppercase">Module Completion</p><i data-lucide="book-open" class="w-4 h-4 text-purple-500"></i></div>
+                    <h3 id="d-completion-text" class="text-3xl font-bold text-slate-900 mb-2">0%</h3>
+                    <div class="w-full bg-slate-100 rounded-full h-2">
+                        <div id="d-completion-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex justify-between items-start mb-2"><p class="text-xs font-bold text-slate-400 uppercase">Last Login</p><i data-lucide="clock" class="w-4 h-4 text-orange-500"></i></div>
+                    <h3 id="d-lastlogin" class="text-xl font-bold text-slate-900">Date</h3>
+                    <p class="text-xs text-slate-400 mt-1">Session duration: 45m</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4">System Usage Details</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div class="flex items-center gap-3"><i data-lucide="message-square" class="w-4 h-4 text-blue-500"></i><span class="text-sm text-slate-600 font-medium">Forum Posts</span></div>
+                            <span id="d-posts" class="text-sm font-bold text-slate-900">0</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div class="flex items-center gap-3"><i data-lucide="file-text" class="w-4 h-4 text-purple-500"></i><span class="text-sm text-slate-600 font-medium">Assessments Taken</span></div>
+                            <span id="d-assessments" class="text-sm font-bold text-slate-900">0</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div class="flex items-center gap-3"><i data-lucide="bot" class="w-4 h-4 text-green-500"></i><span class="text-sm text-slate-600 font-medium">AI Coach Sessions</span></div>
+                            <span id="d-ai" class="text-sm font-bold text-slate-900">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4">Engagement Analysis</h3>
+                    <div id="d-analysis-box" class="p-4 rounded-lg border mb-4">
+                        <h4 id="d-analysis-title" class="text-sm font-bold mb-1">Status</h4>
+                        <p id="d-analysis-desc" class="text-xs">Description</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-100">
+                        <h4 class="text-sm font-bold text-blue-800 mb-1">Recommendations</h4>
+                        <p id="d-recommendation" class="text-xs text-blue-600">Recommendation text</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            function showDetail(initials, name, email, id, risk, logins, completion, lastLogin, posts, assessments, ai) {
+                // 1. Hide Dashboard, Show Detail
+                document.getElementById('dashboard-view').classList.add('hidden');
+                document.getElementById('detail-view').classList.remove('hidden');
+
+                // 2. Populate Basic Info
+                document.getElementById('d-initials').innerText = initials;
+                document.getElementById('d-name').innerText = name;
+                document.getElementById('d-email').innerText = email;
+                document.getElementById('d-id').innerText = 'ID: ' + id;
+                document.getElementById('d-risk').innerText = risk + ' RISK';
+                
+                // 3. Populate Stats
+                document.getElementById('d-logins').innerText = logins;
+                document.getElementById('d-completion-text').innerText = completion + '%';
+                document.getElementById('d-completion-bar').style.width = completion + '%';
+                document.getElementById('d-lastlogin').innerText = lastLogin;
+                document.getElementById('d-posts').innerText = posts;
+                document.getElementById('d-assessments').innerText = assessments;
+                document.getElementById('d-ai').innerText = ai;
+
+                // 4. Style Risk Colors
+                const riskBadge = document.getElementById('d-risk');
+                const initialsCircle = document.getElementById('d-initials');
+                const analysisBox = document.getElementById('d-analysis-box');
+                const analysisTitle = document.getElementById('d-analysis-title');
+                const analysisDesc = document.getElementById('d-analysis-desc');
+                const recText = document.getElementById('d-recommendation');
+
+                // Reset classes
+                riskBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase border";
+                initialsCircle.className = "w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl";
+                analysisBox.className = "p-4 rounded-lg border mb-4";
+
+                if (risk.toLowerCase() === 'high') {
+                    riskBadge.classList.add('bg-red-50', 'text-red-600', 'border-red-100');
+                    initialsCircle.classList.add('bg-red-600');
+                    analysisBox.classList.add('bg-red-50', 'border-red-100');
+                    analysisTitle.className = "text-sm font-bold mb-1 text-red-800";
+                    analysisTitle.innerText = "Critical Attention Needed";
+                    analysisDesc.className = "text-xs text-red-600";
+                    analysisDesc.innerText = "Student has missed multiple logins and assessments. Immediate intervention required.";
+                    recText.innerText = "Schedule a 1-on-1 counseling session and review academic workload.";
+                } else if (risk.toLowerCase() === 'moderate') {
+                    riskBadge.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-100');
+                    initialsCircle.classList.add('bg-orange-500');
+                    analysisBox.classList.add('bg-orange-50', 'border-orange-100');
+                    analysisTitle.className = "text-sm font-bold mb-1 text-orange-800";
+                    analysisTitle.innerText = "Moderate Concerns";
+                    analysisDesc.className = "text-xs text-orange-600";
+                    analysisDesc.innerText = "Student engagement has dropped slightly. Recommend monitoring login frequency.";
+                    recText.innerText = "Send a check-in message via the AI Coach or email about missed modules.";
+                } else {
+                    riskBadge.classList.add('bg-green-50', 'text-green-600', 'border-green-100');
+                    initialsCircle.classList.add('bg-green-600');
+                    analysisBox.classList.add('bg-green-50', 'border-green-100');
+                    analysisTitle.className = "text-sm font-bold mb-1 text-green-800";
+                    analysisTitle.innerText = "Good Engagement";
+                    analysisDesc.className = "text-xs text-green-600";
+                    analysisDesc.innerText = "Student is actively engaged with the platform and shows positive participation trends.";
+                    recText.innerText = "Encourage student to take on advanced modules or peer mentorship roles.";
+                }
+            }
+
+            function hideDetail() {
+                document.getElementById('detail-view').classList.add('hidden');
+                document.getElementById('dashboard-view').classList.remove('hidden');
+            }
+
             if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-        function closeInterventionModal() { document.getElementById('interventionModal').classList.add('hidden'); }
-    </script>
-    <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
+        </script>
+    </div>
 </th:block>

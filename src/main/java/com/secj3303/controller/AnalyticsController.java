@@ -1,9 +1,7 @@
 package com.secj3303.controller;
 
-// CRUCIAL: java.util imports prevent 'ArrayList error'
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -34,36 +32,51 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "all") String filterDepartment,
             Model model) {
 
-        // 1. Analytics Logic
+        // 1. Analytics Data Calculation
         List<StudentEngagement> filtered = analyticsService.filterStudents(searchQuery, filterRisk, filterDepartment);
         
+        // 2. Core Analytics Attributes
         model.addAttribute("totalStudents", analyticsService.getTotalStudents());
         model.addAttribute("highRiskCount", analyticsService.getHighRiskCount());
         model.addAttribute("moderateRiskCount", analyticsService.getModerateRiskCount());
         model.addAttribute("avgCompletion", analyticsService.getAvgCompletion(analyticsService.getAllStudents()));
         model.addAttribute("avgLoginFrequency", analyticsService.getAvgLoginFrequency(analyticsService.getAllStudents()));
-        
         model.addAttribute("filteredStudents", filtered);
         model.addAttribute("departments", analyticsService.getAllDepartments());
         model.addAttribute("searchQuery", searchQuery == null ? "" : searchQuery);
         model.addAttribute("filterRisk", filterRisk);
         model.addAttribute("filterDepartment", filterDepartment);
 
-        // 2. Sidebar & Layout Compatibility (Crucial for ROLE_ADMINISTRATOR view)
+        // 3. Layout Compatibility (Matches app-layout.html's th:replace parameters)
         model.addAttribute("currentView", DEFAULT_VIEW);
         
-        Map<String, String> user = new HashMap<>();
-        user.put("name", "Admin");
-        user.put("role", "ROLE_ADMINISTRATOR"); 
-        model.addAttribute("user", user);
+        // Using HashMap for better compatibility across Java versions
+        Map<String, String> userMap = new HashMap<>();
+        userMap.put("name", "Admin");
+        userMap.put("role", "ROLE_ADMINISTRATOR");
+        model.addAttribute("user", userMap);
 
-        // 3. Placeholder Attributes for app-layout
-        model.addAttribute("modules", new ArrayList<Object>());
-        model.addAttribute("lessons", new ArrayList<Object>());
-        model.addAttribute("quizQuestions", new ArrayList<Object>());
+        // 4. Placeholder Attributes to prevent "Property not found" errors in app-layout
+        model.addAttribute("modules", new ArrayList<>());
+        model.addAttribute("lessons", new ArrayList<>());
+        model.addAttribute("quizQuestions", new ArrayList<>());
         model.addAttribute("completedCount", 0);
         model.addAttribute("inProgressCount", 0);
         model.addAttribute("totalModules", 0);
+        model.addAttribute("students", filtered); 
+        model.addAttribute("referrals", new ArrayList<>());
+        model.addAttribute("reasons", new ArrayList<>());
+        model.addAttribute("selectedModule", null);
+        model.addAttribute("selectedLesson", null);
+        model.addAttribute("showQuiz", false);
+        model.addAttribute("quizScore", 0);
+        model.addAttribute("achievement", null);
+        model.addAttribute("selectedStudent", null);
+        model.addAttribute("showForm", false);
+        model.addAttribute("formData", null);
+        model.addAttribute("showSuccess", false);
+        model.addAttribute("showError", false);
+        model.addAttribute("errorMessage", "");
 
         return "app-layout";
     }
