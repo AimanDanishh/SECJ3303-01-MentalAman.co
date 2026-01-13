@@ -4,20 +4,26 @@
 
 <div class="p-8 max-w-3xl mx-auto">
 
-    <h1 class="text-2xl font-bold mb-6">Add Quiz Question</h1>
+    <h1 class="text-2xl font-bold mb-6"
+        th:text="${quiz.id == null ? 'Add Quiz Question' : 'Edit Quiz Question'}">
+    </h1>
 
     <form th:action="@{/learning/manage/quizzes/save}"
           th:object="${quiz}"
           method="post"
           class="space-y-6">
 
+        <!-- 🔑 REQUIRED FOR EDIT -->
+        <input type="hidden" th:field="*{id}">
+
+        <!-- REQUIRED TO KEEP MODULE -->
         <input type="hidden" name="moduleId" th:value="${moduleId}" />
 
         <!-- QUESTION -->
         <div>
             <label class="block font-medium mb-1">Question</label>
             <input th:field="*{question}"
-                   class="w-full border rounded px-3 py-2 h-10"
+                   class="w-full border rounded px-3 py-2"
                    required />
         </div>
 
@@ -25,31 +31,31 @@
         <div class="space-y-3">
             <label class="block font-medium">Options</label>
 
-            <input name="options[0]" class="w-full border rounded px-3 py-2 h-10" required />
-            <input name="options[1]" class="w-full border rounded px-3 py-2 h-10" required />
-            <input name="options[2]" class="w-full border rounded px-3 py-2 h-10" required />
-            <input name="options[3]" class="w-full border rounded px-3 py-2 h-10" required />
+            <div th:each="i : ${#numbers.sequence(0,3)}" class="flex gap-3 items-center">
+                <input type="text"
+                       name="optionTexts"
+                       th:value="${quiz.options.size() > i ? quiz.options[i] : ''}"
+                       class="w-full border rounded px-3 py-2"
+                       placeholder="Option [[${i + 1}]]"
+                       required />
+
+                <input type="radio"
+                       th:field="*{correctAnswer}"
+                       th:value="${i}"
+                       required />
+                <span>Correct</span>
+            </div>
         </div>
 
-        <!-- ✅ CORRECT ANSWER (CRITICAL FIX) -->
-        <div>
-            <label class="block font-medium mb-1">Correct Answer</label>
-            <select th:field="*{correctAnswer}"
-                    class="w-full border rounded px-3 py-2 h-10 bg-white appearance-auto"
-                    required>
-                <option value="">-- Select Correct Option --</option>
-                <option value="0">Option A</option>
-                <option value="1">Option B</option>
-                <option value="2">Option C</option>
-                <option value="3">Option D</option>
-            </select>
-        </div>
-
+        <!-- ACTIONS -->
         <div class="flex gap-4">
-            <button class="px-4 py-2 bg-blue-600 text-white rounded">
+            <button type="submit"
+                    class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                 Save Question
             </button>
-            <a th:href="@{/learning/manage/modules}" class="px-4 py-2 border rounded">
+
+            <a th:href="@{/learning/manage/modules}"
+               class="px-6 py-2 border rounded hover:bg-slate-100">
                 Cancel
             </a>
         </div>

@@ -20,7 +20,7 @@
     <!-- Module List -->
     <div class="space-y-4">
         <div th:each="module : ${modules}"
-             class="border rounded-lg p-6 bg-white shadow-sm">
+             class="border rounded-lg p-6 bg-white shadow-sm space-y-6">
 
             <!-- Module Header -->
             <div class="flex justify-between items-center">
@@ -31,7 +31,9 @@
 
                 <div class="flex gap-2">
                     <a th:href="@{/learning/manage/modules/edit/{id}(id=${module.id})}"
-                       class="px-3 py-1 border rounded hover:bg-slate-100">Edit</a>
+                       class="px-3 py-1 border rounded hover:bg-slate-100">
+                        Edit
+                    </a>
 
                     <form th:action="@{/learning/manage/modules/delete/{id}(id=${module.id})}"
                           method="post"
@@ -44,12 +46,30 @@
             </div>
 
             <!-- Lessons -->
-            <div class="mt-4">
+            <div>
                 <h3 class="font-semibold mb-2">Lessons</h3>
 
-                <ul class="list-disc ml-6 space-y-1">
+                <ul class="space-y-2 ml-4">
                     <li th:each="lesson : ${module.lessons}"
-                        th:text="${lesson.title}"></li>
+                        class="flex justify-between items-center border-b pb-1">
+
+                        <span th:text="${lesson.title}"></span>
+
+                        <div class="flex gap-3">
+                            <a th:href="@{/learning/manage/lessons/edit/{id}(id=${lesson.id})}"
+                               class="text-sm text-blue-600 hover:underline">
+                                Edit
+                            </a>
+
+                            <form th:action="@{/learning/manage/lessons/delete/{id}(id=${lesson.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Delete this lesson?')">
+                                <button class="text-sm text-red-600 hover:underline">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </li>
                 </ul>
 
                 <a th:href="@{/learning/manage/lessons/create(moduleId=${module.id})}"
@@ -59,12 +79,30 @@
             </div>
 
             <!-- Quizzes -->
-            <div class="mt-4">
+            <div>
                 <h3 class="font-semibold mb-2">Quiz Questions</h3>
 
-                <ul class="list-disc ml-6 space-y-1">
+                <ul class="space-y-2 ml-4">
                     <li th:each="quiz : ${module.quizzes}"
-                        th:text="${quiz.question}"></li>
+                        class="flex justify-between items-center border-b pb-1">
+
+                        <span th:text="${quiz.question}"></span>
+
+                        <div class="flex gap-3">
+                            <a th:href="@{/learning/manage/quizzes/edit/{id}(id=${quiz.id})}"
+                               class="text-sm text-blue-600 hover:underline">
+                                Edit
+                            </a>
+
+                            <form th:action="@{/learning/manage/quizzes/delete/{id}(id=${quiz.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Delete this quiz question?')">
+                                <button class="text-sm text-red-600 hover:underline">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </li>
                 </ul>
 
                 <a th:href="@{/learning/manage/quizzes/create(moduleId=${module.id})}"
