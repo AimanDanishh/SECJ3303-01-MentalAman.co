@@ -9,13 +9,19 @@
 
     <div class="p-8 max-w-3xl mx-auto">
 
-        <h1 class="text-2xl font-bold mb-6">Add Lesson</h1>
+        <h1 class="text-2xl font-bold mb-6"
+            th:text="${lesson.id == null ? 'Add Lesson' : 'Edit Lesson'}">
+        </h1>
 
         <form th:action="@{/learning/manage/lessons/save}"
               th:object="${lesson}"
               method="post"
               class="space-y-6">
 
+            <!-- 🔑 REQUIRED FOR EDIT -->
+            <input type="hidden" th:field="*{id}">
+
+            <!-- REQUIRED TO KEEP MODULE -->
             <input type="hidden" name="moduleId" th:value="${moduleId}" />
 
             <!-- LESSON TITLE -->
@@ -35,7 +41,7 @@
                           required></textarea>
             </div>
 
-            <!-- TYPE (ADDED) -->
+            <!-- TYPE -->
             <div>
                 <label class="block font-medium mb-1">Type</label>
                 <select th:field="*{type}"
@@ -48,7 +54,7 @@
                 </select>
             </div>
 
-            <!-- URL (ADDED) -->
+            <!-- URL -->
             <div>
                 <label class="block font-medium mb-1">URL</label>
                 <input th:field="*{url}"

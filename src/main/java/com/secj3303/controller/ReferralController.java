@@ -1,211 +1,104 @@
 package com.secj3303.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import java.util.*;
 import javax.servlet.http.HttpSession;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import com.secj3303.model.Referral;
 import com.secj3303.model.Student;
+import com.secj3303.dao.StudentDao;
+import com.secj3303.dao.ReferralDao;
 
 @Controller
 @RequestMapping("/referral")
 public class ReferralController {
 
-    private static final String REFERRALS_KEY = "submittedReferrals";
     private static final String DEFAULT_VIEW = "referral";
+    
+    @Autowired
+    private StudentDao studentDao;
+    
+    @Autowired
+    private ReferralDao referralDao;
+    
     private static final List<String> REASONS = Arrays.asList(
         "Academic Performance Decline", "Attendance Issues", "Behavioral Changes", 
         "Social Withdrawal", "Emotional Distress", "Health Concerns", "Other"
     );
-    
-    // --- Mock Data Setup ---
-
-    private List<Student> getMockStudents() {
-        Student s1 = new Student(
-            "Emma Wilson",
-            "emma.wilson@university.edu",
-            "S2021001",
-            "Computer Science",
-            "Year 3",
-            "B-",
-            78,
-            "2 days ago"
-        );
-        s1.setRiskLevel("moderate");
-
-        Student s2 = new Student(
-            "Michael Chen",
-            "michael.chen@university.edu",
-            "S2021002",
-            "Engineering",
-            "Year 2",
-            "C",
-            65,
-            "1 week ago"
-        );
-        s2.setRiskLevel("high");
-
-        Student s3 = new Student(
-            "Sarah Johnson",
-            "sarah.johnson@university.edu",
-            "S2021003",
-            "Psychology",
-            "Year 4",
-            "A",
-            95,
-            "1 hour ago"
-        );
-        s3.setRiskLevel("low");
-
-        Student s4 = new Student(
-            "David Martinez",
-            "david.martinez@university.edu",
-            "S2021004",
-            "Business",
-            "Year 1",
-            "C+",
-            72,
-            "4 days ago"
-        );
-        s4.setRiskLevel("moderate");
-
-        Student s5 = new Student(
-            "Olivia Brown",
-            "olivia.brown@university.edu",
-            "S2021005",
-            "Medicine",
-            "Year 3",
-            "B+",
-            88,
-            "1 day ago"
-        );
-        s5.setRiskLevel("low");
-
-        return Arrays.asList(s1, s2, s3, s4, s5);
-    }
-    
-    private List<Referral> getReferrals(HttpSession session) {
-        List<Referral> referrals = (List<Referral>) session.getAttribute(REFERRALS_KEY);
-        if (referrals == null) {
-            referrals = new ArrayList<>(Arrays.asList(
-                new Referral(1, "John Smith", "S2021010", "Academic Performance", "Significant drop in assignment quality over the past month", "medium", "Prof. Anderson", "Nov 10, 2025", "in-progress"),
-                new Referral(2, "Lisa Chen", "S2021015", "Attendance Issues", "Missed 5 consecutive classes without explanation", "high", "Dr. Johnson", "Nov 8, 2025", "reviewed")
-            ));
-            session.setAttribute(REFERRALS_KEY, referrals);
-        }
-        return referrals;
-    }
-
-    // --- Main View and Selection Handler ---
 
     @GetMapping
-    public String referralDashboard(
-        @RequestParam(required = false) Integer studentId,
-        Model model, HttpSession session
-    ) {
+    public String referralDashboard(@RequestParam(required = false) Integer studentId, Model model, HttpSession session) {
         model.addAttribute("currentView", DEFAULT_VIEW);
-        model.addAttribute("students", getMockStudents());
-        model.addAttribute("referrals", getReferrals(session));
+        
+        // Mock Session User if not present (Keep this for login simulation)
+        if (session.getAttribute("currentUser") == null) {
+            Map<String, String> faculty = new HashMap<>();
+            faculty.put("name", "Dr. Sarah Miller");
+            faculty.put("role", "Faculty");
+            session.setAttribute("currentUser", faculty);
+        }
+
+        // 1. Fetch real students from Database
+        List<Student> students = studentDao.findAll();
+        model.addAttribute("students", students);
+        
         model.addAttribute("reasons", REASONS);
         
-        Optional<Student> studentOpt = Optional.empty();
+        // 2. Fetch real referrals from Database
+        List<Referral> referrals = referralDao.findAll();
+        model.addAttribute("referrals", referrals);
+
+        // 3. Handle Form Selection
         if (studentId != null) {
-            studentOpt = getMockStudents().stream().filter(s -> s.getId() == studentId).findFirst();
-        }
-
-        if (studentOpt.isPresent()) {
-            // Show form mode
-            model.addAttribute("selectedStudent", studentOpt.get());
-            model.addAttribute("showForm", true);
-            // Provide a blank form object, or pre-populate if needed
-            if (!model.containsAttribute("formData")) {
-                 model.addAttribute("formData", new Referral());
+            Optional<Student> studentOpt = studentDao.findById(studentId);
+            if (studentOpt.isPresent()) {
+                model.addAttribute("selectedStudent", studentOpt.get());
+                model.addAttribute("showForm", true);
+                
+                if (!model.containsAttribute("formData")) {
+                    Referral form = new Referral();
+                    // Pre-fill the temporary ID so we can find the student on submit
+                    form.setStudentId(studentOpt.get().getStudentId()); 
+                    model.addAttribute("formData", form);
+                }
             }
-        } else {
-            // Show selection mode or submitted referral list
-            model.addAttribute("selectedStudent", null);
-            model.addAttribute("showForm", false);
         }
-
         return "app-layout";
     }
-    
-    // --- Form Submission Handler ---
 
     @PostMapping("/submit")
-    public String submitReferral(
-        @RequestParam String studentId, // Student ID hidden field
-        @ModelAttribute("formData") Referral formData, // Referral data
-        HttpSession session, RedirectAttributes redirect
-    ) {
-        // Find the selected student again for final data assembly
-        Optional<Student> studentOpt = getMockStudents().stream().filter(s -> s.getStudentId().equals(studentId)).findFirst();
+    public String submitReferral(@RequestParam String studentId, 
+                                 @ModelAttribute("formData") Referral formData, 
+                                 HttpSession session, 
+                                 RedirectAttributes redirect) {
         
-        if (studentOpt.isEmpty()) {
-            redirect.addFlashAttribute("errorMessage", "Error: Student not found.");
-            return "redirect:/referral";
+        // 1. Find the actual student entity
+        Optional<Student> studentOpt = studentDao.findByStudentId(studentId);
+        
+        if (studentOpt.isPresent()) {
+            Student student = studentOpt.get();
+            
+            // 2. Link Student to Referral
+            formData.setStudent(student);
+            
+            // 3. Set metadata
+            Map<String, String> user = (Map<String, String>) session.getAttribute("currentUser");
+            if (user != null) {
+                formData.setSubmittedBy(user.get("name"));
+            }
+            
+            // 4. Save to Database
+            referralDao.save(formData);
+            
+            redirect.addFlashAttribute("showSuccess", true);
+        } else {
+            // Handle case where student ID doesn't exist
+            redirect.addFlashAttribute("error", "Student not found.");
         }
         
-        // --- Validation Logic (Replicating handleSubmit) ---
-        
-        if (formData.getReason() == null || formData.getReason().isEmpty()) {
-            redirect.addFlashAttribute("errorMessage", "Please select a reason for referral.");
-        } else if (formData.getObservations() == null || formData.getObservations().trim().length() < 20) {
-            redirect.addFlashAttribute("errorMessage", "Observations must be at least 20 characters long.");
-        }
-        
-        // If there's an error message, redirect back to the form
-        if (redirect.getFlashAttributes().containsKey("errorMessage")) {
-            redirect.addFlashAttribute("showError", true);
-            redirect.addFlashAttribute("formData", formData); // Re-populate form data
-            redirect.addAttribute("studentId", studentOpt.get().getId()); // Keep student selected
-            return "redirect:/referral";
-        }
-
-        // Simulate submission failure (10% chance)
-        if (ThreadLocalRandom.current().nextDouble() < 0.1) {
-            redirect.addFlashAttribute("errorMessage", "Failed to submit referral. Network error. Please try again.");
-            redirect.addFlashAttribute("showError", true);
-            redirect.addFlashAttribute("formData", formData); // Re-populate form data
-            redirect.addAttribute("studentId", studentOpt.get().getId());
-            return "redirect:/referral";
-        }
-
-        // --- Successful Submission ---
-        
-        List<Referral> referrals = getReferrals(session);
-        AtomicInteger maxId = new AtomicInteger(referrals.stream().mapToInt(Referral::getId).max().orElse(0));
-
-        // Create the final Referral object
-        Referral newReferral = new Referral();
-        newReferral.setId(maxId.incrementAndGet());
-        newReferral.setStudentName(studentOpt.get().getName());
-        newReferral.setStudentId(studentOpt.get().getStudentId());
-        newReferral.setReason(formData.getReason());
-        newReferral.setObservations(formData.getObservations());
-        newReferral.setUrgency(formData.getUrgency());
-        newReferral.setAdditionalNotes(formData.getAdditionalNotes());
-        newReferral.setSubmittedBy("Current Faculty");
-        newReferral.setStatus("pending"); 
-        
-        referrals.add(0, newReferral); // Add to the top
-        session.setAttribute(REFERRALS_KEY, referrals);
-
-        redirect.addFlashAttribute("showSuccess", true);
         return "redirect:/referral";
     }
 }

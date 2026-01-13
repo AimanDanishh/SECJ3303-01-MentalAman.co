@@ -59,8 +59,9 @@ public class CounsellingSessionController {
             // Students can only see their own sessions
             sessions = sessionService.getSessionsByStudentId(studentId);
         } else if ("counsellor".equals(user.getRole())) {
-            // Counsellors can see all sessions (or filter to their own if needed)
-            sessions = sessionService.getAllSessions();
+            // Counsellors can see ONLY their own sessions
+            String counsellorIdFromAuth = getCounsellorIdFromAuthentication(authentication);
+            sessions = sessionService.getSessionsByCounsellorId(counsellorIdFromAuth);
         } else {
             // Admin or other roles can see all sessions
             sessions = sessionService.getAllSessions();
@@ -105,6 +106,7 @@ public class CounsellingSessionController {
 
         return "counselling-session";
     }
+
 
     // ---------------------------
     // Confirm attendance

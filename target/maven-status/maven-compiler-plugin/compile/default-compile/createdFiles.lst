@@ -24,9 +24,11 @@ com\secj3303\dao\StudentDaoHibernate.class
 com\secj3303\dao\GenericDao.class
 com\secj3303\model\Post.class
 com\secj3303\controller\ForumManagementController$ReportedPostDTO.class
+com\secj3303\dao\ReferralDaoHibernate.class
 com\secj3303\model\DashboardData$StatItem.class
 com\secj3303\dao\PostDaoImpl.class
 com\secj3303\model\CarePlanModels$CarePlanData.class
+com\secj3303\model\CarePlan.class
 com\secj3303\dao\ModuleProgressDaoHibernate.class
 com\secj3303\controller\ModuleManagementController.class
 com\secj3303\model\AdminData.class
@@ -48,6 +50,7 @@ com\secj3303\dao\LessonDaoHibernate.class
 com\secj3303\model\TimeSlot.class
 com\secj3303\controller\SelfAssessmentController.class
 com\secj3303\controller\CarePlanController$UserDTO.class
+com\secj3303\dao\ReferralDao.class
 com\secj3303\dao\PersonDao.class
 com\secj3303\model\User.class
 com\secj3303\dao\QuestionDaoHibernate.class
@@ -65,6 +68,7 @@ com\secj3303\config\DataInitializer.class
 com\secj3303\dao\StudentDao.class
 com\secj3303\dao\CategoryDaoImpl.class
 com\secj3303\model\CounsellingSession.class
+com\secj3303\dao\CarePlanDaoHibernate.class
 com\secj3303\model\Lesson.class
 com\secj3303\controller\CounsellingSessionController.class
 com\secj3303\controller\AnalyticsController.class
@@ -75,6 +79,7 @@ com\secj3303\model\Message.class
 com\secj3303\model\Reply.class
 com\secj3303\model\CounsellingSession$1.class
 com\secj3303\controller\ForumManagementController.class
+com\secj3303\model\CarePlanActivity.class
 com\secj3303\dao\GamificationDao.class
 com\secj3303\dao\AssessmentDaoHibernate.class
 com\secj3303\dao\ModuleProgressDao.class
@@ -117,6 +122,7 @@ com\secj3303\dao\PostDao.class
 com\secj3303\model\Assessment.class
 com\secj3303\dao\AssessmentAnswerDao.class
 com\secj3303\dao\QuestionDao.class
+com\secj3303\dao\CarePlanDao.class
 com\secj3303\dao\CounsellingSessionDao.class
 com\secj3303\model\ContentManagementModels.class
 com\secj3303\dao\LearningModuleDao.class

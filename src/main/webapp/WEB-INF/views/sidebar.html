@@ -59,8 +59,7 @@
 
             <!-- Learning Modules (STUDENT, FACULTY, COUNSELLOR) -->
             <a th:if="${#authorization.expression('hasRole(''STUDENT'')') 
-                     or #authorization.expression('hasRole(''FACULTY'')')
-                     or #authorization.expression('hasRole(''COUNSELLOR'')')}"
+                     or #authorization.expression('hasRole(''FACULTY'')')}"
                th:href="@{/learning}"
                th:classappend="${currentView == 'learning'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                class="flex items-center gap-3 px-4 py-3 rounded-lg">
@@ -113,7 +112,10 @@
             </a>
 
             <!-- Self-Assessment (ALL) -->
-            <a th:href="@{/assessment}"
+            <a th:if="${#authorization.expression('hasRole(''STUDENT'')') 
+                     or #authorization.expression('hasRole(''COUNSELLOR'')')
+                     or #authorization.expression('hasRole(''FACULTY'')')}"
+               th:href="@{/assessment}"
                th:classappend="${currentView == 'assessment'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
                class="flex items-center gap-3 px-4 py-3 rounded-lg">
                 <script>document.write('<i data-lucide="activity" class="w-5 h-5"></i>');</script>
@@ -149,13 +151,7 @@
                 <span>Student Analytics</span>
             </a>
 
-            <!-- At-Risk Referral (FACULTY) -->
-            <a th:if="${#authorization.expression('hasRole(''FACULTY'')')}"
-               th:href="@{/referral}"
-               th:classappend="${currentView == 'referral'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg">
-               
-            <!-- Content Management (Faculty, Admin) -->
+            <!-- Forum Management (Faculty, Admin) -->
             <a th:if="${#authorization.expression('hasRole(''COUNSELLOR'')') 
                      or #authorization.expression('hasRole(''ADMINISTRATOR'')')}"th:href="@{/forum-management}"
                 th:classappend="${currentView == 'forum-management'} ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'"

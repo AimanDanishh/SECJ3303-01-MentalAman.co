@@ -2,8 +2,10 @@ package com.secj3303.service;
 
 import com.secj3303.dao.CounsellorDao;
 import com.secj3303.dao.CounsellingSessionDao;
+import com.secj3303.dao.StudentDao;
 import com.secj3303.model.Counsellor;
 import com.secj3303.model.CounsellingSession;
+import com.secj3303.model.Student;
 import com.secj3303.model.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,7 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,18 +27,36 @@ public class CounsellingSessionService {
 
     @Autowired
     private CounsellorDao counsellorDao;
+    
+    @Autowired
+    private StudentDao studentDao;
 
     // ---------------------------
     // Core CRUD operations
     // ---------------------------
     @Transactional(readOnly = true)
     public List<CounsellingSession> getAllSessions() {
-        return sessionDao.findAll();
+        List<CounsellingSession> sessions = sessionDao.findAll();
+        attachStudentNamesToSessions(sessions);
+        return sessions;
     }
 
     @Transactional(readOnly = true)
     public List<CounsellingSession> getSessionsByCounsellor(Counsellor counsellor) {
-        return sessionDao.findByCounsellor(counsellor);
+        List<CounsellingSession> sessions = sessionDao.findByCounsellor(counsellor);
+        attachStudentNamesToSessions(sessions);
+        return sessions;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CounsellingSession> getSessionsByCounsellorId(String counsellorId) {
+        Counsellor counsellor = counsellorDao.findById(counsellorId);
+        if (counsellor == null) {
+            return List.of();
+        }
+        List<CounsellingSession> sessions = sessionDao.findByCounsellor(counsellor);
+        attachStudentNamesToSessions(sessions);
+        return sessions;
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +71,9 @@ public class CounsellingSessionService {
 
     @Transactional(readOnly = true)
     public List<CounsellingSession> getUpcomingSessions() {
-        return sessionDao.findUpcomingSessions();
+        List<CounsellingSession> sessions = sessionDao.findUpcomingSessions();
+        attachStudentNamesToSessions(sessions);
+        return sessions;
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +95,11 @@ public class CounsellingSessionService {
 
     @Transactional(readOnly = true)
     public CounsellingSession getSessionById(Integer id) {
-        return sessionDao.findById(id);
+        CounsellingSession session = sessionDao.findById(id);
+        if (session != null) {
+            attachStudentNameToSession(session);
+        }
+        return session;
     }
 
     @Transactional(readOnly = true)
@@ -78,6 +107,18 @@ public class CounsellingSessionService {
         CounsellingSession session = sessionDao.findById(id);
         if (session != null && session.getStudentId() != null && 
             session.getStudentId().equals(studentId)) {
+            attachStudentNameToSession(session);
+            return session;
+        }
+        return null;
+    }
+
+    @Transactional(readOnly = true)
+    public CounsellingSession getSessionByIdAndCounsellorId(Integer id, String counsellorId) {
+        CounsellingSession session = sessionDao.findById(id);
+        if (session != null && session.getCounsellor() != null && 
+            session.getCounsellor().getId().equals(counsellorId)) {
+            attachStudentNameToSession(session);
             return session;
         }
         return null;
@@ -112,6 +153,59 @@ public class CounsellingSessionService {
     }
 
     // ---------------------------
+    // Helper methods for student info
+    // ---------------------------
+    private void attachStudentNamesToSessions(List<CounsellingSession> sessions) {
+        if (sessions == null || sessions.isEmpty()) return;
+        
+        // Collect unique student IDs
+        Map<String, String> studentNameMap = new HashMap<>();
+        
+        for (CounsellingSession session : sessions) {
+            String studentId = session.getStudentId();
+            if (studentId != null && !studentNameMap.containsKey(studentId)) {
+                // Try to find student by studentId
+                Optional<Student> student = studentDao.findByStudentId(studentId);
+                if (student.isPresent()) {
+                    studentNameMap.put(studentId, student.get().getName());
+                } else {
+                    // Try to find by email (studentId might be email)
+                    Optional<Student> studentByEmail = studentDao.findByEmail(studentId);
+                    if (studentByEmail.isPresent()) {
+                        studentNameMap.put(studentId, studentByEmail.get().getName());
+                    } else {
+                        studentNameMap.put(studentId, null); // No student found
+                    }
+                }
+            }
+        }
+        
+        // Attach student names to sessions
+        for (CounsellingSession session : sessions) {
+            String studentId = session.getStudentId();
+            if (studentId != null && studentNameMap.containsKey(studentId)) {
+                session.setStudentName(studentNameMap.get(studentId));
+            }
+        }
+    }
+    
+    private void attachStudentNameToSession(CounsellingSession session) {
+        if (session == null || session.getStudentId() == null) return;
+        
+        String studentId = session.getStudentId();
+        Optional<Student> student = studentDao.findByStudentId(studentId);
+        if (student.isPresent()) {
+            session.setStudentName(student.get().getName());
+        } else {
+            // Try email
+            Optional<Student> studentByEmail = studentDao.findByEmail(studentId);
+            if (studentByEmail.isPresent()) {
+                session.setStudentName(studentByEmail.get().getName());
+            }
+        }
+    }
+
+    // ---------------------------
     // TimeSlot generation
     // ---------------------------
     @Transactional(readOnly = true)
@@ -127,7 +221,7 @@ public class CounsellingSessionService {
     }
 
     // ---------------------------
-    // Custom queries needed for service methods
+    // Custom queries
     // ---------------------------
     @Transactional(readOnly = true)
     public List<CounsellingSession> findByCounsellorAndDate(String counsellorId, LocalDate date) {
@@ -135,12 +229,15 @@ public class CounsellingSessionService {
         if (counsellor == null) {
             return List.of();
         }
-        return sessionDao.findByCounsellorAndDate(counsellor, date);
+        List<CounsellingSession> sessions = sessionDao.findByCounsellorAndDate(counsellor, date);
+        attachStudentNamesToSessions(sessions);
+        return sessions;
     }
 
     @Transactional(readOnly = true)
     public List<CounsellingSession> findByCounsellorAndStatusNot(Counsellor counsellor, CounsellingSession.SessionStatus excludedStatus) {
         List<CounsellingSession> counsellorSessions = sessionDao.findByCounsellor(counsellor);
+        attachStudentNamesToSessions(counsellorSessions);
         return counsellorSessions.stream()
                 .filter(session -> session.getStatus() != excludedStatus)
                 .collect(Collectors.toList());
@@ -148,8 +245,8 @@ public class CounsellingSessionService {
 
     @Transactional(readOnly = true)
     public List<CounsellingSession> findByDateAfter(LocalDate date) {
-        // Use findAll and filter, or add a new DAO method
         List<CounsellingSession> allSessions = sessionDao.findAll();
+        attachStudentNamesToSessions(allSessions);
         return allSessions.stream()
                 .filter(session -> !session.getDate().isBefore(date))
                 .collect(Collectors.toList());
@@ -157,12 +254,16 @@ public class CounsellingSessionService {
 
     @Transactional(readOnly = true)
     public List<CounsellingSession> findByStatus(CounsellingSession.SessionStatus status) {
-        return sessionDao.findByStatus(status);
+        List<CounsellingSession> sessions = sessionDao.findByStatus(status);
+        attachStudentNamesToSessions(sessions);
+        return sessions;
     }
 
     @Transactional(readOnly = true)
     public List<CounsellingSession> findByStudentConfirmed(boolean confirmed) {
-        return sessionDao.findByStudentConfirmed(confirmed);
+        List<CounsellingSession> sessions = sessionDao.findByStudentConfirmed(confirmed);
+        attachStudentNamesToSessions(sessions);
+        return sessions;
     }
 
     // ---------------------------
@@ -191,9 +292,22 @@ public class CounsellingSessionService {
             throw new IllegalArgumentException("Selected time slot is not available");
         }
         
+        // Try to get student name for the session
+        String studentName = null;
+        Optional<Student> student = studentDao.findByStudentId(studentId);
+        if (student.isPresent()) {
+            studentName = student.get().getName();
+        } else {
+            Optional<Student> studentByEmail = studentDao.findByEmail(studentId);
+            if (studentByEmail.isPresent()) {
+                studentName = studentByEmail.get().getName();
+            }
+        }
+        
         CounsellingSession session = new CounsellingSession();
         session.setCounsellor(counsellor);
-        session.setStudentId(studentId);  // Set student ID
+        session.setStudentId(studentId);
+        session.setStudentName(studentName);
         session.setDate(date);
         session.setStartTime(start);
         session.setEndTime(start.plusHours(1));
@@ -351,9 +465,30 @@ public class CounsellingSessionService {
     }
 
     @Transactional(readOnly = true)
+    public long countSessionsByCounsellorId(String counsellorId) {
+        List<CounsellingSession> counsellorSessions = getSessionsByCounsellorId(counsellorId);
+        return counsellorSessions.size();
+    }
+
+    @Transactional(readOnly = true)
+    public long countCompletedSessionsByCounsellorId(String counsellorId) {
+        List<CounsellingSession> counsellorSessions = getSessionsByCounsellorId(counsellorId);
+        return counsellorSessions.stream()
+                .filter(s -> s.getStatus() == CounsellingSession.SessionStatus.COMPLETED)
+                .count();
+    }
+
+    @Transactional(readOnly = true)
     public boolean hasAccessToSession(Integer sessionId, String studentId) {
         CounsellingSession session = getSessionById(sessionId);
         return session != null && session.getStudentId() != null && 
                session.getStudentId().equals(studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasCounsellorAccessToSession(Integer sessionId, String counsellorId) {
+        CounsellingSession session = getSessionById(sessionId);
+        return session != null && session.getCounsellor() != null && 
+               session.getCounsellor().getId().equals(counsellorId);
     }
 }
