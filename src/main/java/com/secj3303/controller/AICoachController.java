@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody; // CRITICAL IMPORT
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.secj3303.model.Message;
@@ -30,7 +31,6 @@ public class AICoachController {
         List<Message> history = (List<Message>) session.getAttribute(HISTORY_KEY);
         if (history == null) {
             history = new ArrayList<>();
-            // Matches the welcome message in the image
             Message greeting = new Message("Hello! I'm your AI Mental Health Coach. I'm here to provide support and guidance for your wellbeing journey. How are you feeling today?", "ai");
             history.add(greeting);
             session.setAttribute(HISTORY_KEY, history);
@@ -38,7 +38,7 @@ public class AICoachController {
         return history;
     }
     
-    // --- Helper: Inject Mock Data for App Layout ---
+    // Helper to inject mock data so app-layout doesn't break
     private void addMockLayoutData(Model model) {
         model.addAttribute("modules", new ArrayList<>());
         model.addAttribute("lessons", new ArrayList<>());
@@ -55,16 +55,12 @@ public class AICoachController {
     
     @GetMapping
     public String coachView(HttpSession session, Model model) {
-        // 1. Inject Layout Data (Fixes blank screen)
         addMockLayoutData(model);
+        model.addAttribute("currentView", "coach");
         
-        model.addAttribute("currentView", "coach"); // Matches coach.html filename
-        
-        // 2. Get Chat History
         List<Message> history = getChatHistory(session);
         model.addAttribute("messages", history);
 
-        // 3. User Setup (Matches Sidebar)
         Object user = session.getAttribute("currentUser");
         if (user == null) {
             Map<String, String> demoUser = new HashMap<>();
@@ -79,26 +75,34 @@ public class AICoachController {
         return "app-layout";
     }
 
+    // --- UPDATED METHOD FOR AJAX ---
     @PostMapping("/send")
-    public String sendMessage(@RequestParam String inputMessage, HttpSession session, RedirectAttributes redirect) {
+    @ResponseBody // <--- This is the key change! Returns JSON instead of HTML redirect
+    public Message sendMessage(@RequestParam String inputMessage, HttpSession session) {
         String cleanMessage = inputMessage.trim();
-        if (cleanMessage.isEmpty()) return "redirect:/coach";
+        if (cleanMessage.isEmpty()) return null;
 
         List<Message> history = getChatHistory(session);
+        
+        // 1. Add User Message
         history.add(new Message(cleanMessage, "user"));
         
-        // Simulate thinking delay
+        // 2. Simulate Thinking Delay (Optional, adds realism)
         try {
             TimeUnit.MILLISECONDS.sleep(500 + ThreadLocalRandom.current().nextInt(500));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        String aiResponse = generateAIResponse(cleanMessage);
-        history.add(new Message(aiResponse, "ai"));
+        // 3. Generate and Add AI Response
+        String responseText = generateAIResponse(cleanMessage);
+        Message aiMessage = new Message(responseText, "ai");
+        history.add(aiMessage);
+        
         session.setAttribute(HISTORY_KEY, history);
 
-        return "redirect:/coach";
+        // 4. Return ONLY the AI message to the frontend
+        return aiMessage;
     }
 
     @PostMapping("/clear")
