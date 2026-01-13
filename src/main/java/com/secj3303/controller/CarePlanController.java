@@ -58,7 +58,7 @@ public class CarePlanController {
         if (studentId == null) studentId = 1; 
 
         // --- USERNAME LOGIC ---
-        String name = (String) session.getAttribute("userName");
+        String name = (String) session.getAttribute("email");
         if (name == null) name = userName != null ? userName : "Student User";
         
         // DEBUG: Print to Console to verify what name is being used

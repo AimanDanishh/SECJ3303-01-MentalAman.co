@@ -38,9 +38,9 @@
                                         <h3 class="font-bold text-slate-900" th:text="${student.name}"></h3>
                                         <p class="text-[11px] text-slate-500" th:text="${student.studentId} + ' • ' + ${student.department}"></p>
                                     </div>
-                                    <div class="text-center"><p class="text-[9px] uppercase text-slate-400 font-bold mb-0.5">Grade</p><p class="text-xs font-semibold" th:text="${student.grade}"></p></div>
+                                    <div class="text-center"><p class="text-[9px] uppercase text-slate-400 font-bold mb-0.5">Grade</p><p class="text-xs font-semibold" th:text="${student.currentGrade}"></p></div>
                                     <div class="text-center"><p class="text-[9px] uppercase text-slate-400 font-bold mb-0.5">Attendance</p><p class="text-xs font-bold text-green-600" th:text="${student.attendance} + '%'"></p></div>
-                                    <div class="text-center"><p class="text-[9px] uppercase text-slate-400 font-bold mb-0.5">Last Active</p><p class="text-xs text-slate-500" th:text="${student.lastActive}"></p></div>
+                                    <div class="text-center"><p class="text-[9px] uppercase text-slate-400 font-bold mb-0.5">Last Active</p><p class="text-xs text-slate-500" th:text="${student.lastActivity}"></p></div>
                                 </div>
                             </div>
                         </a>

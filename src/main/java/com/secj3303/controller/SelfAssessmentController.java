@@ -73,35 +73,6 @@ public class SelfAssessmentController {
         String email = authentication.getName();
         Optional<Student> studentOpt = assessmentService.getStudentByEmail(email);
         
-        // AUTO-CREATE STUDENT if not found (for demo/testing)
-        if (studentOpt.isEmpty()) {
-            Student newStudent = new Student();
-            String username = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
-            
-            // Create a proper name from email
-            String[] nameParts = username.split("\\.");
-            StringBuilder nameBuilder = new StringBuilder();
-            for (String part : nameParts) {
-                if (!part.isEmpty()) {
-                    nameBuilder.append(Character.toUpperCase(part.charAt(0)))
-                               .append(part.substring(1)).append(" ");
-                }
-            }
-            String studentName = nameBuilder.toString().trim();
-            if (studentName.isEmpty()) studentName = "Student User";
-            
-            newStudent.setName(studentName);
-            newStudent.setEmail(email);
-            newStudent.setStudentId("S" + System.currentTimeMillis() % 1000000);
-            newStudent.setDepartment("General Studies");
-            newStudent.setYear("Year 1");
-            newStudent.setLastActivity(java.time.LocalDate.now().toString());
-            newStudent.setRiskLevel("low");
-            
-            Student savedStudent = assessmentService.saveStudent(newStudent);
-            return Optional.of(savedStudent);
-        }
-        
         return studentOpt;
     }
     
